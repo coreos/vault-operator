@@ -35,9 +35,6 @@ spec:
         command: ["/bin/vault", "server", "-config=/run/vault-config/vault.hcl"]
         ports:
         - containerPort: 8200
-        env:
-        - name: ETCD_HA_ENABLED
-          value: "false"
         resources: {}
         volumeMounts:
         - name: vault-config-volume
