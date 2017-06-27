@@ -1,0 +1,13 @@
+apiVersion: etcd.coreos.com/v1beta1
+kind: Cluster
+metadata:
+  name: example
+spec:
+  size: 3
+  version: 3.1.4
+  TLS:
+    static:
+      member:
+        peerSecret: etcd-server-peer-tls
+        clientSecret: etcd-server-client-tls
+      operatorSecret: operator-etcd-client-tls

@@ -4,25 +4,25 @@ An Operator for creating Vault instances.
 
 ## Getting Started
 
-Create an etcd cluster with the Operator named `vault-etcd`
+Install the CAs, deployments, etcd Operator, and Vault in the `default` namespace. It must be installed into the `default` namespace to make the CA certs work. You must have `kubectl get pods` working when running this script.
 
 ```
-kubectl create -f vault.yaml -n kube-system
-kubectl create configmap vault --from-file=vault.hcl -n kube-system
+./install.sh
 ```
 
-```
-ns='kube-system' label='app=vault' kubectl -n $ns get pod -l $label -o jsonpath='{.items[1].metadata.name}' | xargs -I{} kubectl -n $ns port-forward {} 8200
-```
+Proxy the vault service to your local machine so you can use the command line tooling to localhost.
 
 ```
-export VAULT_ADDR='http://127.0.0.1:8200'
-vault init
+export ns='default' label='app=vault'; kubectl -n $ns get pod -l $label -o jsonpath='{.items[0].metadata.name}' | xargs -I{} kubectl -n $ns port-forward {} 8200
+```
+
+Run `vault init` to get things going, this should print out the Vault unseal keys, unsealing Vault should get you a fully working setup!
+
+```
+export VAULT_ADDR='https://localhost:8200'
+vault init --ca-cert=example-certs/ca.pem
 vault unseal
 ```
-
-
-boom
 
 
 ### Debugging

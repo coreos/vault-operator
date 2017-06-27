@@ -35,10 +35,17 @@ spec:
         command: ["/bin/vault", "server", "-config=/run/vault-config/vault.hcl"]
         ports:
         - containerPort: 8200
+        env:
+        - name: ETCD_HA_ENABLED
+          value: "false"
         resources: {}
         volumeMounts:
         - name: vault-config-volume
           mountPath: /run/vault-config
+        - name: vault-server-tls
+          mountPath: /run/vault-listener/
+        - name: vault-etcd-client-tls
+          mountPath: /run/vault-etcd/
         securityContext:
           capabilities:
             add:
@@ -47,12 +54,13 @@ spec:
         - name: vault-config-volume
           configMap:
             name: vault
+        - name: vault-server-tls
+          secret:
+            defaultMode: 420
+            secretName: vault-server-tls
+        - name: vault-etcd-client-tls
+          secret:
+            defaultMode: 420
+            secretName: vault-etcd-client-tls
+
 status: {}
----
-apiVersion: etcd.coreos.com/v1beta1
-kind: Cluster
-metadata:
-  name: vault-etcd
-spec:
-  size: 3
-  version: 3.1.4
