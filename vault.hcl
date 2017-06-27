@@ -7,7 +7,7 @@ storage "etcd" {
 }
 
 listener "tcp" {
-  address     = "localhost:8200"
+  address     = "0.0.0.0:8200"
   tls_cert_file = "/run/vault-listener/server.pem"
   tls_key_file = "/run/vault-listener/server-key.pem"
 }
