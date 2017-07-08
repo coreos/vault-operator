@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	ProberResourceKind   = "Vault"
-	ProberResourcePlural = "Vaults"
+	VaultResourceKind   = "Vault"
+	VaultResourcePlural = "Vaults"
 )
 
 type VaultList struct {
