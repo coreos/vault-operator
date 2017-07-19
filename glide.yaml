@@ -1,0 +1,8 @@
+package: github.com/coreos-inc/vault-operator
+import:
+- package: k8s.io/apiextensions-apiserver
+  version: 3eb4c5fefbe7ad866747f78c7e4994cb555170c6
+- package: k8s.io/apimachinery
+  version: abe34e4f5b4413c282a83011892cbeea5b32223b
+- package: k8s.io/client-go
+  version: cc44961f935a644fb82c0f4b6591543704578db7
