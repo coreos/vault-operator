@@ -32,6 +32,11 @@ type VaultSpec struct {
 
 	// Version of Vault to be deployed.
 	Version string `json:"version"`
+	
+	// Name of the config map that configurates Vault.
+	// If storage is not provided in the configuration file, a managed 
+	// etcd storage will be created.
+	ConfigMapName string `json:"configMapName"`
 }
 
 type VaultStatus struct {
