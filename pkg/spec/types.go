@@ -35,4 +35,12 @@ type VaultSpec struct {
 }
 
 type VaultStatus struct {
+	// Number of available replicas.
+	AvailableReplicas int `json:"availableReplicas"`
+	
+	// Initialized indicates if the Vault service is initialized.
+	Initialized bool `json:"initialized"`
+	
+	// Number of sealed replicas.
+	SealedReplicas int `json:"sealedReplicas"`
 }
