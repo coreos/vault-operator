@@ -34,7 +34,7 @@ type VaultSpec struct {
 	Version string `json:"version"`
 	
 	// Name of the config map that configurates Vault.
-	// The storage is configuration will be ingored.
+	// The storage fields in the configuration will be ingored.
 	ConfigMapName string `json:"configMapName"`
 }
 
