@@ -40,10 +40,11 @@ type VaultStatus struct {
 	
 	// Endpoints of available replicas.
 	// Avaliable replica is a running Vault pod, but not necessarily unsealed and ready
-	// to serve requests).
+	// to serve requests.
 	AvailableReplicas []string `json:"availableReplicas"`
 	
-	// Endpoints of ready Vault replicas.
+	// Endpoints of ready Vault replicas. Ready replicas are unsealed and ready to serve
+	// requests.
 	ReadyReplicas []string `json:"sealedReplicas"`
 	
 	// Endpoints of Sealed Vault replicas. Sealed replicas MUST be manually unsealed to
