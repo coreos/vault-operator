@@ -35,12 +35,18 @@ type VaultSpec struct {
 }
 
 type VaultStatus struct {
-	// Number of available replicas.
-	AvailableReplicas int `json:"availableReplicas"`
-	
 	// Initialized indicates if the Vault service is initialized.
 	Initialized bool `json:"initialized"`
 	
-	// Number of sealed replicas.
-	SealedReplicas int `json:"sealedReplicas"`
+	// Endpoints of available replicas.
+	// Avaliable replica is a running Vault pod, but not necessarily unsealed and ready
+	// to serve requests).
+	AvailableReplicas []string `json:"availableReplicas"`
+	
+	// Endpoints of ready Vault replicas.
+	ReadyReplicas []string `json:"sealedReplicas"`
+	
+	// Endpoints of Sealed Vault replicas. Sealed replicas MUST be manually unsealed to
+	// be ready to serve requests.
+	SealedReplicas []string `json:"unsealedReplicas"`
 }
