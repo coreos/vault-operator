@@ -32,6 +32,10 @@ type VaultSpec struct {
 
 	// Version of Vault to be deployed.
 	Version string `json:"version"`
+	
+	// Name of the config map that configurates Vault.
+	// The storage fields in the configuration will be ingored.
+	ConfigMapName string `json:"configMapName"`
 }
 
 type VaultStatus struct {
