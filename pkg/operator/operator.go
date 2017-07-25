@@ -23,13 +23,14 @@ func New() *Vaults {
 	}
 }
 
-func (v *Vaults) Start(ctx context.Context) {
+func (v *Vaults) Start(ctx context.Context) error {
 	err := v.init(ctx)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	v.run(ctx)
 	<-ctx.Done()
+	return ctx.Err()
 }
 
 func (v *Vaults) init(ctx context.Context) error {

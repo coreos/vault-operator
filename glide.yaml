@@ -6,3 +6,5 @@ import:
   version: abe34e4f5b4413c282a83011892cbeea5b32223b
 - package: k8s.io/client-go
   version: cc44961f935a644fb82c0f4b6591543704578db7
+- package: github.com/Sirupsen/logrus
+  version: v1.0.0
