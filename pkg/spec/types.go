@@ -45,9 +45,9 @@ type VaultStatus struct {
 	
 	// Endpoints of ready Vault replicas. Ready replicas are unsealed and ready to serve
 	// requests.
-	ReadyReplicas []string `json:"sealedReplicas"`
+	ReadyReplicas []string `json:"readyReplicas"`
 	
 	// Endpoints of Sealed Vault replicas. Sealed replicas MUST be manually unsealed to
 	// be ready to serve requests.
-	SealedReplicas []string `json:"unsealedReplicas"`
+	SealedReplicas []string `json:"sealedReplicas"`
 }
