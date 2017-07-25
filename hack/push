@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+if ! which docker > /dev/null; then
+	echo "docker needs to be installed"
+	exit 1
+fi
+
+: ${IMAGE:?"Need to set IMAGE, e.g. quay.io/coreos/vault-operator"}
+
+echo "building container..."
+docker build --tag "${IMAGE}" -f hack/Dockerfile . 1>/dev/null
+
+echo "pushing container..."
+docker push "${IMAGE}" 1>/dev/null
