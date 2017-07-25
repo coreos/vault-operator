@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+
+function unit_pass {
+	TEST_PKGS=`go list ./cmd/... ./pkg/...`
+	for pkg in $TEST_PKGS
+	do
+		go test $pkg
+	done
+}
+
+unit_pass
+
+echo "=== success ==="
+
