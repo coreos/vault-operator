@@ -8,12 +8,14 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 type Vaults struct {
 	namespace string
 
+	kubecli       kubernetes.Interface
 	restClient    *rest.RESTClient
 	kubeExtClient apiextensionsclient.Interface
 }
@@ -24,6 +26,7 @@ func New() *Vaults {
 
 	return &Vaults{
 		namespace:     os.Getenv("MY_POD_NAMESPACE"),
+		kubecli:       k8sutil.MustNewKubeClient(),
 		restClient:    vc.RESTClient(),
 		kubeExtClient: k8sutil.MustNewKubeExtClient(),
 	}

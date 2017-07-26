@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/coreos-inc/vault-operator/pkg/spec"
+	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
@@ -37,6 +38,12 @@ func (v *Vaults) run(ctx context.Context) {
 }
 
 func (v *Vaults) onAdd(obj interface{}) {
+	vr := obj.(*spec.Vault)
+	err := k8sutil.DeployVault(v.kubecli, vr)
+	if err != nil {
+		// TODO: retry or report failure status in CR
+		panic(err)
+	}
 	// nothing
 }
 
