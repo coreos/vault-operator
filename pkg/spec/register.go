@@ -6,15 +6,22 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+const (
+	VaultResourceKind   = "Vault"
+	VaultResourcePlural = "vaults"
+)
+
 var (
 	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 	AddToScheme   = SchemeBuilder.AddToScheme
+
+	CRDName = VaultResourcePlural + "." + groupName
 )
 
-const GroupName = "vault.coreos.com"
+const groupName = "vault.coreos.com"
 
 // SchemeGroupVersion is the group version used to register these objects.
-var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1alpha1"}
+var SchemeGroupVersion = schema.GroupVersion{Group: groupName, Version: "v1alpha1"}
 
 // addKnownTypes adds the set of types defined in this package to the supplied scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
