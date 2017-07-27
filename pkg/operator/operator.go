@@ -8,6 +8,7 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -44,5 +45,9 @@ func (v *Vaults) Start(ctx context.Context) error {
 }
 
 func (v *Vaults) init(ctx context.Context) error {
-	return k8sutil.CreateVaultCRD(v.kubeExtClient)
+	err := k8sutil.CreateVaultCRD(v.kubeExtClient)
+	if apierrors.IsAlreadyExists(err) {
+		return nil
+	}
+	return err
 }
