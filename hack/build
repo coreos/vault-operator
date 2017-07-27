@@ -9,7 +9,6 @@ function go_build {
 	if [ ! -z ${GOINSTALL+x} ] && [ "${GOINSTALL}" = "y" ]
 	then
   		GOBIN=${bin_dir} GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go install ./cmd/${1}/
-  		mv ${bin_dir}/${1} ${bin_dir}/${1}
 	else
   		GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ${bin_dir}/${1} ./cmd/${1}/
 	fi
