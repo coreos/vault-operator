@@ -15,6 +15,11 @@ var (
 )
 
 // DeployVault deploys a vault service.
+// DeployVault is a multi-steps process. It creates the deployment, the service and
+// other related Kubernetes objects for Vault. Any intermediate step can fail.
+//
+// DeployVault is idempotent. If an object already exists, this function will ignore creating
+// it and return no error. It is safe to retry on this function.
 func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	// TODO: set owner ref.
 
@@ -73,8 +78,10 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	}
 
 	_, err = kubecli.CoreV1().Services(v.Namespace).Create(svc)
-
-	return err
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		return err
+	}
+	return nil
 }
 
 // VaultServiceAddr returns the DNS record of the vault service in the given namespace.
