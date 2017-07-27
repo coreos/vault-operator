@@ -36,7 +36,7 @@ func CreateVaultCRD(clientset apiextensionsclient.Interface) error {
 
 	// wait for CR creation
 	return wait.Poll(500*time.Millisecond, 60*time.Second, func() (bool, error) {
-		crd, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Get(vaultCRDName, metav1.GetOptions{})
+		crd, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Get(spec.CRDName, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}

@@ -33,6 +33,7 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 					"/bin/vault",
 					"server",
 					"-dev",
+					"-dev-listen-address=0.0.0.0:8200",
 				},
 			}},
 		},
@@ -74,4 +75,10 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	_, err = kubecli.CoreV1().Services(v.Namespace).Create(svc)
 
 	return err
+}
+
+// VaultServiceAddr returns the DNS record of the vault service in the given namespace.
+func VaultServiceAddr(name, namespace string) string {
+	// TODO: change this to https
+	return "http://" + name + "." + namespace + ":8200"
 }
