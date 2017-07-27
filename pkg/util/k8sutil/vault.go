@@ -89,3 +89,25 @@ func VaultServiceAddr(name, namespace string) string {
 	// TODO: change this to https
 	return "http://" + name + "." + namespace + ":8200"
 }
+
+// DestroVault destroys a vault service.
+// TODO: remove this function when CRD GC is enabled.
+func DestroyVault(kubecli kubernetes.Interface, v *spec.Vault) error {
+	bg := metav1.DeletePropagationBackground
+	do := &metav1.DeleteOptions{PropagationPolicy: &bg}
+
+	ns, n := v.GetNamespace(), v.GetName()
+	err := kubecli.AppsV1beta1().
+		Deployments(ns).
+		Delete(n, do)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+
+	err = kubecli.CoreV1().Services(ns).Delete(n, do)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+
+	return nil
+}
