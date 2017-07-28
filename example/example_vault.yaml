@@ -4,3 +4,4 @@ metadata:
   name: "example-vault"
 spec:
   replicas: 1
+  configMapName: "example-vault-config"
