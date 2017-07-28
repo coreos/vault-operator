@@ -1,6 +1,8 @@
 package k8sutil
 
 import (
+	"path/filepath"
+
 	"github.com/coreos-inc/vault-operator/pkg/spec"
 
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
@@ -11,7 +13,9 @@ import (
 )
 
 var (
-	vaultImage = "vault"
+	vaultImage         = "vault"
+	vaultConfigVolName = "vault-config"
+	vaultConfigPath    = "/run/vault-config/vault.hcl"
 )
 
 // DeployVault deploys a vault service.
@@ -37,8 +41,31 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 				Command: []string{
 					"/bin/vault",
 					"server",
-					"-dev",
-					"-dev-listen-address=0.0.0.0:8200",
+					"-config=" + vaultConfigPath,
+				},
+				VolumeMounts: []v1.VolumeMount{{
+					Name:      vaultConfigVolName,
+					MountPath: filepath.Dir(vaultConfigPath),
+				}},
+				SecurityContext: &v1.SecurityContext{
+					Capabilities: &v1.Capabilities{
+						// Vault requires mlock syscall to work.
+						// Without this it would fail "Error initializing core: Failed to lock memory: cannot allocate memory"
+						Add: []v1.Capability{"IPC_LOCK"},
+					},
+				},
+				Ports: []v1.ContainerPort{{
+					ContainerPort: int32(8200),
+				}},
+			}},
+			Volumes: []v1.Volume{{
+				Name: vaultConfigVolName,
+				VolumeSource: v1.VolumeSource{
+					ConfigMap: &v1.ConfigMapVolumeSource{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: v.Spec.ConfigMapName,
+						},
+					},
 				},
 			}},
 		},
