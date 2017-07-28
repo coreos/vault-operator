@@ -7,6 +7,7 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/client"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 
+	etcdCRClient "github.com/coreos/etcd-operator/pkg/client"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
@@ -19,6 +20,7 @@ type Vaults struct {
 	kubecli       kubernetes.Interface
 	restClient    *rest.RESTClient
 	kubeExtClient apiextensionsclient.Interface
+	etcdCRCli     etcdCRClient.EtcdClusterCR
 }
 
 // New creates a vault operator.
@@ -30,6 +32,7 @@ func New() *Vaults {
 		kubecli:       k8sutil.MustNewKubeClient(),
 		restClient:    vc.RESTClient(),
 		kubeExtClient: k8sutil.MustNewKubeExtClient(),
+		etcdCRCli:     etcdCRClient.MustNewCRInCluster(),
 	}
 }
 

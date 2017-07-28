@@ -1,10 +1,16 @@
 package k8sutil
 
 import (
+	"context"
+	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/coreos-inc/vault-operator/pkg/spec"
 
+	etcdCRClient "github.com/coreos/etcd-operator/pkg/client"
+	etcdCRAPI "github.com/coreos/etcd-operator/pkg/spec"
+	"github.com/coreos/etcd-operator/pkg/util/retryutil"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -17,6 +23,53 @@ var (
 	vaultConfigVolName = "vault-config"
 	vaultConfigPath    = "/run/vault-config/vault.hcl"
 )
+
+// DeployEtcdCluster creates an etcd cluster for the given vault's name via etcd operator and
+// waits for all of its members to be ready.
+func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) error {
+	size := 3
+	etcdCluster := &etcdCRAPI.EtcdCluster{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       etcdCRAPI.CRDResourceKind,
+			APIVersion: etcdCRAPI.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      etcdNameForVault(v.Name),
+			Namespace: v.Namespace,
+		},
+		Spec: etcdCRAPI.ClusterSpec{
+			Size: size,
+		},
+	}
+	_, err := etcdCRCli.Create(context.TODO(), etcdCluster)
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		return fmt.Errorf("deploy etcd cluster failed: %v", err)
+	}
+
+	err = retryutil.Retry(10*time.Second, 10, func() (bool, error) {
+		er, err := etcdCRCli.Get(context.TODO(), v.Namespace, etcdNameForVault(v.Name))
+		if err != nil {
+			return false, err
+		}
+		if len(er.Status.Members.Ready) < size {
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return fmt.Errorf("deploy etcd cluster failed: %v", err)
+	}
+	return nil
+}
+
+// DeleteEtcdCluster deletes the etcd cluster for the given vault
+func DeleteEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) error {
+	err := etcdCRCli.Delete(context.TODO(), v.Namespace, etcdNameForVault(v.Name))
+	if err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}
 
 // DeployVault deploys a vault service.
 // DeployVault is a multi-steps process. It creates the deployment, the service and
@@ -137,4 +190,9 @@ func DestroyVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	}
 
 	return nil
+}
+
+// etcdNameForVault returns the etcd cluster's name for the given vault's name
+func etcdNameForVault(name string) string {
+	return name + "-etcd"
 }

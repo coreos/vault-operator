@@ -1,7 +1,0 @@
-apiVersion: "etcd.database.coreos.com/v1beta2"
-kind: "EtcdCluster"
-metadata:
-  name: "example-vault-etcd"
-spec:
-  size: 1
-  version: "3.1.8"
