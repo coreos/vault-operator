@@ -18,9 +18,9 @@ type Vault struct {
 }
 
 type VaultSpec struct {
-	// Number of instances to deploy for a Vault deployment.
+	// Number of nodes to deploy for a Vault deployment.
 	// Default: 1.
-	Replicas int32 `json:"replicas,omitempty"`
+	Nodes int32 `json:"nodes,omitempty"`
 
 	// Base image to use for a Vault deployment.
 	BaseImage string `json:"baseImage"`
@@ -37,16 +37,22 @@ type VaultStatus struct {
 	// Initialized indicates if the Vault service is initialized.
 	Initialized bool `json:"initialized"`
 
-	// Endpoints of available replicas.
-	// Avaliable replica is a running Vault pod, but not necessarily unsealed and ready
+	// Endpoints of available nodes.
+	// Avaliable node is a running Vault pod, but not necessarily unsealed and ready
 	// to serve requests.
-	AvailableReplicas []string `json:"availableReplicas"`
+	AvailableNodes []string `json:"availableNodes"`
 
-	// Endpoints of ready Vault replicas. Ready replicas are unsealed and ready to serve
-	// requests.
-	ReadyReplicas []string `json:"readyReplicas"`
+	// Endpoint of the leader Vault node. Leader node is unsealed.
+	// Only leader node can serve requests.
+	// Vault service only points to the leader node.
+	LeaderNode string `json:"leaderNode"`
 
-	// Endpoints of Sealed Vault replicas. Sealed replicas MUST be manually unsealed to
-	// be ready to serve requests.
-	SealedReplicas []string `json:"sealedReplicas"`
+	// Endpoints of the standby Vault nodes. Standby nodes are unsealed.
+	// Standby nodes cannot serve requests directly. All requests will
+	// be directed to the leader node eventually through vault service.
+	StandbyNodes string `json:"standbyNodes"`
+
+	// Endpoints of Sealed Vault nodes. Sealed nodes MUST be manually unsealed to
+	// become standby or leader.
+	SealedNodes []string `json:"sealedNodes"`
 }
