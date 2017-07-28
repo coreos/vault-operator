@@ -39,7 +39,13 @@ func (v *Vaults) run(ctx context.Context) {
 
 func (v *Vaults) onAdd(obj interface{}) {
 	vr := obj.(*spec.Vault)
-	err := k8sutil.DeployVault(v.kubecli, vr)
+	err := k8sutil.DeployEtcdCluster(v.etcdCRCli, vr)
+	if err != nil {
+		// TODO: retry or report failure status in CR
+		panic(err)
+	}
+
+	err = k8sutil.DeployVault(v.kubecli, vr)
 	if err != nil {
 		// TODO: retry or report failure status in CR
 		panic(err)
@@ -56,6 +62,11 @@ func (v *Vaults) onUpdate(oldObj, newObj interface{}) {
 func (v *Vaults) onDelete(obj interface{}) {
 	vr := obj.(*spec.Vault)
 	err := k8sutil.DestroyVault(v.kubecli, vr)
+	if err != nil {
+		// TODO: retry or report failure status in CR
+		panic(err)
+	}
+	err = k8sutil.DeleteEtcdCluster(v.etcdCRCli, vr)
 	if err != nil {
 		// TODO: retry or report failure status in CR
 		panic(err)
