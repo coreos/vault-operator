@@ -54,5 +54,10 @@ func (v *Vaults) onUpdate(oldObj, newObj interface{}) {
 }
 
 func (v *Vaults) onDelete(obj interface{}) {
-	// nothing
+	vr := obj.(*spec.Vault)
+	err := k8sutil.DestroyVault(v.kubecli, vr)
+	if err != nil {
+		// TODO: retry or report failure status in CR
+		panic(err)
+	}
 }
