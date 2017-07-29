@@ -13,8 +13,8 @@ type VaultList struct {
 type Vault struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
-	Spec              VaultSpec    `json:"spec"`
-	Status            *VaultStatus `json:"status,omitempty"`
+	Spec              VaultSpec   `json:"spec"`
+	Status            VaultStatus `json:"status,omitempty"`
 }
 
 type VaultSpec struct {

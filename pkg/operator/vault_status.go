@@ -30,7 +30,7 @@ func monitorAndUpdateStaus(ctx context.Context, v *spec.Vault) {
 			logrus.Infof("stopped monitoring vault: %s (%v)", v.Name, err)
 		case <-time.After(10 * time.Second):
 		}
-		updateVaultStatus(ctx, vsc, v, s)
+		updateVaultStatus(ctx, vsc, v, &s)
 
 		// TODO: update status in the CR item.
 	}
