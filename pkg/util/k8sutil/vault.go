@@ -19,9 +19,11 @@ import (
 )
 
 var (
+	// VaultConfigPath is the path that vault pod uses to read config from
+	VaultConfigPath = "/run/vault-config/vault.hcl"
+
 	vaultImage         = "vault"
 	vaultConfigVolName = "vault-config"
-	vaultConfigPath    = "/run/vault-config/vault.hcl"
 )
 
 // DeployEtcdCluster creates an etcd cluster for the given vault's name via etcd operator and
@@ -94,11 +96,11 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 				Command: []string{
 					"/bin/vault",
 					"server",
-					"-config=" + vaultConfigPath,
+					"-config=" + VaultConfigPath,
 				},
 				VolumeMounts: []v1.VolumeMount{{
 					Name:      vaultConfigVolName,
-					MountPath: filepath.Dir(vaultConfigPath),
+					MountPath: filepath.Dir(VaultConfigPath),
 				}},
 				SecurityContext: &v1.SecurityContext{
 					Capabilities: &v1.Capabilities{
@@ -116,7 +118,7 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 				VolumeSource: v1.VolumeSource{
 					ConfigMap: &v1.ConfigMapVolumeSource{
 						LocalObjectReference: v1.LocalObjectReference{
-							Name: v.Spec.ConfigMapName,
+							Name: ConfigMapCopyName(v.Spec.ConfigMapName),
 						},
 					},
 				},
@@ -164,6 +166,12 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	return nil
 }
 
+// ConfigMapCopyName is the configmap name to use by vault pod.
+// It's a copy of user given configmap because we modify user config.
+func ConfigMapCopyName(n string) string {
+	return n + "-copy"
+}
+
 // VaultServiceAddr returns the DNS record of the vault service in the given namespace.
 func VaultServiceAddr(name, namespace string) string {
 	// TODO: change this to https
@@ -195,4 +203,9 @@ func DestroyVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 // etcdNameForVault returns the etcd cluster's name for the given vault's name
 func etcdNameForVault(name string) string {
 	return name + "-etcd"
+}
+
+// EtcdURLForVault returns the URL to talk to etcd cluster for the given vault's name
+func EtcdURLForVault(name string) string {
+	return fmt.Sprintf("http://%s-client:2379", etcdNameForVault(name))
 }
