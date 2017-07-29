@@ -50,9 +50,7 @@ func (v *Vaults) onAdd(obj interface{}) {
 		// TODO: retry or report failure status in CR
 		panic(err)
 	}
-	go monitorVaultStatus(context.TODO(), vr)
-	go monitorVaultReplicasStatus(context.TODO(), vr)
-	// nothing
+	go monitorAndUpdateStaus(context.TODO(), vr)
 }
 
 func (v *Vaults) onUpdate(oldObj, newObj interface{}) {
