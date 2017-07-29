@@ -11,33 +11,42 @@ import (
 	vaultapi "github.com/hashicorp/vault/api"
 )
 
-// monitorVaultStatus monitors the vault service status through the service DNS address.
-func monitorVaultStatus(ctx context.Context, v *spec.Vault) {
+// monitorAndUpdateStaus monitors the vault service and replicas statuses, and
+// updates the status resrouce in the vault CR item.
+func monitorAndUpdateStaus(ctx context.Context, v *spec.Vault) {
+	// create a long-live client for accssing vault service.
 	cfg := vaultapi.DefaultConfig()
 	cfg.Address = k8sutil.VaultServiceAddr(v.Name, v.Namespace)
-
-	vc, err := vaultapi.NewClient(cfg)
+	vsc, err := vaultapi.NewClient(cfg)
 	if err != nil {
 		logrus.Errorf("failed creating client for vault service: %s/%s", v.Name, v.Namespace)
 	}
 
+	s := v.Status
+
 	for {
 		select {
 		case err := <-ctx.Done():
-			logrus.Infof("stopped monitoring vault service: %s (%v)", v.Name, err)
+			logrus.Infof("stopped monitoring vault: %s (%v)", v.Name, err)
 		case <-time.After(10 * time.Second):
 		}
-		// TODO: change to update status
-		inited, err := vc.Sys().InitStatus()
-		if err != nil {
-			logrus.Errorf("failed getting the init status for vault service: %s (%v)", v.Name, err)
-		} else {
-			logrus.Infof("vault init: %v", inited)
-		}
+		updateVaultStatus(ctx, vsc, v, s)
+
+		// TODO: update status in the CR item.
 	}
 }
 
-// monitorVaultReplicasStatus monitors the status of every vault replicas in the vault deployment.
-func monitorVaultReplicasStatus(ctx context.Context, v *spec.Vault) {
+// updateVaultStatus updates the vault service status through the service DNS address.
+func updateVaultStatus(ctx context.Context, vc *vaultapi.Client, v *spec.Vault, s *spec.VaultStatus) {
+	inited, err := vc.Sys().InitStatus()
+	if err != nil {
+		logrus.Errorf("failed getting the init status for vault service: %s (%v)", v.Name, err)
+		return
+	}
+	s.Initialized = inited
+}
+
+// updateVaultReplicasStatus updates the status of every vault replicas in the vault deployment.
+func updateVaultReplicasStatus(ctx context.Context, v *spec.Vault, s *spec.VaultStatus) {
 	// nothing here.
 }
