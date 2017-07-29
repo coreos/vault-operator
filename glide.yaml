@@ -14,3 +14,5 @@ import:
   version: 7318f757a8847cbdb1a36e05dd55b085230ef75a
 - package: github.com/hashicorp/vault
   version: v0.7.3
+- package: github.com/hashicorp/hcl
+  version: 392dba7d905ed5d04a5794ba89f558b27e2ba1ca
