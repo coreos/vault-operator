@@ -42,10 +42,10 @@ type VaultStatus struct {
 	// to serve requests.
 	AvailableNodes []string `json:"availableNodes"`
 
-	// Endpoint of the leader Vault node. Leader node is unsealed.
-	// Only leader node can serve requests.
-	// Vault service only points to the leader node.
-	LeaderNode string `json:"leaderNode"`
+	// Endpoint of the active Vault node. Active node is unsealed.
+	// Only active node can serve requests.
+	// Vault service only points to the active node.
+	ActiveNode string `json:"activeNode"`
 
 	// Endpoints of the standby Vault nodes. Standby nodes are unsealed.
 	// Standby nodes cannot serve requests directly. All requests will
