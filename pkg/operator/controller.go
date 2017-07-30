@@ -17,7 +17,7 @@ import (
 
 func (v *Vaults) run(ctx context.Context) {
 	source := cache.NewListWatchFromClient(
-		v.restClient,
+		v.vaultsCRCli.RESTClient(),
 		spec.VaultResourcePlural,
 		v.namespace,
 		fields.Everything())
@@ -60,7 +60,7 @@ func (v *Vaults) onAdd(obj interface{}) {
 		// TODO: retry or report failure status in CR
 		panic(err)
 	}
-	go monitorAndUpdateStaus(context.TODO(), vr)
+	go v.monitorAndUpdateStaus(context.TODO(), vr.GetName(), vr.GetNamespace())
 }
 
 // prepareVaultConfig appends etcd storage section into user provided vault config
