@@ -82,7 +82,7 @@ func DeleteEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) erro
 func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	// TODO: set owner ref.
 
-	selector := map[string]string{"app": "vault", "name": v.GetName()}
+	selector := PodsLeablesForVault(v.GetName())
 
 	podTempl := v1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
@@ -208,4 +208,10 @@ func etcdNameForVault(name string) string {
 // EtcdURLForVault returns the URL to talk to etcd cluster for the given vault's name
 func EtcdURLForVault(name string) string {
 	return fmt.Sprintf("http://%s-client:2379", etcdNameForVault(name))
+}
+
+// PodsLabelsForVault returns the labels for selecting the pods belongs to the given vault
+// name.
+func PodsLeablesForVault(name string) map[string]string {
+	return map[string]string{"app": "vault", "name": name}
 }
