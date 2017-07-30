@@ -11,26 +11,23 @@ import (
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 type Vaults struct {
 	namespace string
 
 	kubecli       kubernetes.Interface
-	restClient    *rest.RESTClient
+	vaultsCRCli   client.Vaults
 	kubeExtClient apiextensionsclient.Interface
 	etcdCRCli     etcdCRClient.EtcdClusterCR
 }
 
 // New creates a vault operator.
 func New() *Vaults {
-	vc := client.MustNewInCluster()
-
 	return &Vaults{
 		namespace:     os.Getenv("MY_POD_NAMESPACE"),
 		kubecli:       k8sutil.MustNewKubeClient(),
-		restClient:    vc.RESTClient(),
+		vaultsCRCli:   client.MustNewInCluster(),
 		kubeExtClient: k8sutil.MustNewKubeExtClient(),
 		etcdCRCli:     etcdCRClient.MustNewCRInCluster(),
 	}
