@@ -1,6 +1,8 @@
 package client
 
 import (
+	"context"
+
 	"github.com/coreos-inc/vault-operator/pkg/spec"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 
@@ -11,6 +13,11 @@ import (
 
 type Vaults interface {
 	RESTClient() *rest.RESTClient
+
+	Get(ctx context.Context, namespace, name string) (*spec.Vault, error)
+	Create(ctx context.Context, vault *spec.Vault) (*spec.Vault, error)
+	Delete(ctx context.Context, namespace, name string) error
+	Update(ctx context.Context, vault *spec.Vault) (*spec.Vault, error)
 }
 
 type vaults struct {
@@ -57,4 +64,51 @@ func newClient(cfg *rest.Config) (*rest.RESTClient, *runtime.Scheme, error) {
 	}
 
 	return client, crScheme, nil
+}
+
+// Get returns a Vault resource for the given name in the given namespace.
+func (vs *vaults) Get(ctx context.Context, namespace, name string) (*spec.Vault, error) {
+	v := &spec.Vault{}
+	err := vs.restCli.Get().Context(ctx).
+		Namespace(namespace).
+		Resource(spec.VaultResourcePlural).
+		Name(name).
+		Do().
+		Into(v)
+	return v, err
+}
+
+// Create creates a Vault resource in the given namespace.
+func (vs *vaults) Create(ctx context.Context, vault *spec.Vault) (*spec.Vault, error) {
+	nv := &spec.Vault{}
+	err := vs.restCli.Post().Context(ctx).
+		Namespace(vault.Namespace).
+		Resource(spec.VaultResourcePlural).
+		Body(vault).
+		Do().
+		Into(nv)
+	return nv, err
+}
+
+// Delete deletes the Vault resource in the given namespace.
+func (vs *vaults) Delete(ctx context.Context, namespace, name string) error {
+	return vs.restCli.Delete().Context(ctx).
+		Namespace(namespace).
+		Resource(spec.VaultResourcePlural).
+		Name(name).
+		Do().
+		Error()
+}
+
+// Update updates the Vault resource in the given namespace.
+func (vs *vaults) Update(ctx context.Context, vault *spec.Vault) (*spec.Vault, error) {
+	nv := &spec.Vault{}
+	err := vs.restCli.Put().Context(ctx).
+		Namespace(vault.Namespace).
+		Resource(spec.VaultResourcePlural).
+		Name(vault.Name).
+		Body(vault).
+		Do().
+		Into(nv)
+	return nv, err
 }
