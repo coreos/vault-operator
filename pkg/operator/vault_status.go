@@ -59,7 +59,7 @@ func updateVaultStatus(ctx context.Context, vc *vaultapi.Client, s *spec.VaultSt
 
 // updateVaultReplicasStatus updates the status of every vault replicas in the vault deployment.
 func (vs *Vaults) updateVaultReplicasStatus(ctx context.Context, name, namespace string, s *spec.VaultStatus) {
-	sel := k8sutil.PodsLeablesForVault(name)
+	sel := k8sutil.PodsLabelsForVault(name)
 	// TODO: handle upgrades when pods from two replicaset can co-exist :(
 	opt := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(sel).String()}
 	pods, err := vs.kubecli.CoreV1().Pods(namespace).List(opt)
