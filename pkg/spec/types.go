@@ -48,8 +48,7 @@ type VaultStatus struct {
 	ActiveNode string `json:"activeNode"`
 
 	// Endpoints of the standby Vault nodes. Standby nodes are unsealed.
-	// Standby nodes cannot serve requests directly. All requests will
-	// be directed to the leader node eventually through vault service.
+	// Standby nodes do not process requests, and instead redirect to the active Vault.
 	StandbyNodes string `json:"standbyNodes"`
 
 	// Endpoints of Sealed Vault nodes. Sealed nodes MUST be manually unsealed to
