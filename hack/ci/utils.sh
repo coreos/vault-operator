@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 : ${TEST_NAMESPACE:?"Need to set TEST_NAMESPACE"}
-: ${PULL_SECRET_PATH:?"Need to set PULL_SECRET_PATH"}
 
 function cleanup_all {
     pull_secret_cleanup
@@ -10,6 +9,7 @@ function cleanup_all {
 }
 
 function pull_secret_cleanup {
+    : ${PULL_SECRET_PATH:?"Need to set PULL_SECRET_PATH"}
     kubectl -n ${TEST_NAMESPACE} delete -f ${PULL_SECRET_PATH}
 }
 
@@ -27,6 +27,7 @@ function setup_all {
 }
 
 function pull_secret_setup {
+    : ${PULL_SECRET_PATH:?"Need to set PULL_SECRET_PATH"}
     kubectl -n ${TEST_NAMESPACE} create -f ${PULL_SECRET_PATH}
 }
 
