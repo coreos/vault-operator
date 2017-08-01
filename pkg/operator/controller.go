@@ -10,6 +10,7 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
@@ -79,7 +80,7 @@ func (v *Vaults) prepareVaultConfig(vr *spec.Vault) error {
 	}
 
 	_, err = v.kubecli.CoreV1().ConfigMaps(vr.Namespace).Create(cm)
-	if err != nil {
+	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return fmt.Errorf("prepare vault config error: create new configmap (%s) failed: %v", cm.Name, err)
 	}
 
@@ -104,7 +105,7 @@ func (v *Vaults) onDelete(obj interface{}) {
 	}
 	err = v.kubecli.CoreV1().ConfigMaps(vr.Namespace).Delete(
 		k8sutil.ConfigMapCopyName(vr.Spec.ConfigMapName), nil)
-	if err != nil {
+	if err != nil && !apierrors.IsNotFound(err) {
 		// TODO: retry or report failure status in CR
 		panic(err)
 	}
