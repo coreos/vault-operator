@@ -4,6 +4,14 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+if [ -z "${PASSES-}" ]; then
+	PASSES="build e2e unit"
+fi
+
+function build_pass {
+	IMAGE=$OPERATOR_IMAGE hack/build
+	IMAGE=$OPERATOR_IMAGE hack/push
+}
 
 function unit_pass {
 	TEST_PKGS=`go list ./cmd/... ./pkg/...`
@@ -13,7 +21,23 @@ function unit_pass {
 	done
 }
 
-unit_pass
+function e2e_pass {
+	# Setup test namespace, RBAC rules and pull secret
+	source hack/ci/utils.sh
+	trap cleanup_all EXIT
+	if setup_all ; then
+		echo "Namespace, RBAC and pull secret setup success! ==="
+	else
+		echo "Namespace, RBAC and pull secret setup fail! ==="
+		exit 1
+	fi
+
+	go test "./test/e2e/" -timeout 30m --race --kubeconfig=${KUBECONFIG} --operator-image=${OPERATOR_IMAGE} --namespace=${TEST_NAMESPACE}
+}
+
+for p in $PASSES; do
+	${p}_pass
+done
 
 echo "=== success ==="
 
