@@ -15,6 +15,7 @@ import (
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -128,6 +129,18 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 					InitialDelaySeconds: 10,
 					TimeoutSeconds:      10,
 					PeriodSeconds:       60,
+					FailureThreshold:    3,
+				},
+				ReadinessProbe: &v1.Probe{
+					Handler: v1.Handler{
+						HTTPGet: &v1.HTTPGetAction{
+							Path: "/v1//sys/health",
+							Port: intstr.FromInt(vaultPort),
+						},
+					},
+					InitialDelaySeconds: 10,
+					TimeoutSeconds:      10,
+					PeriodSeconds:       10,
 					FailureThreshold:    3,
 				},
 			}},

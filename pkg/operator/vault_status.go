@@ -16,14 +16,6 @@ import (
 // monitorAndUpdateStaus monitors the vault service and replicas statuses, and
 // updates the status resrouce in the vault CR item.
 func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, name, namespace string) {
-	// create a long-live client for accssing vault service.
-	cfg := vaultapi.DefaultConfig()
-	cfg.Address = k8sutil.VaultServiceAddr(name, namespace)
-	vapi, err := vaultapi.NewClient(cfg)
-	if err != nil {
-		logrus.Errorf("failed creating client for the vault service (%s.%s): %v", name, namespace, err)
-	}
-
 	s := spec.VaultStatus{}
 
 	for {
@@ -32,33 +24,18 @@ func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, name, namespace str
 			logrus.Infof("stopped monitoring vault: %s (%v)", name, err)
 		case <-time.After(10 * time.Second):
 		}
-		err := updateVaultStatus(ctx, vapi, &s)
-		if err != nil {
-			logrus.Errorf("failed getting the init status for the vault service: %s (%v)", name, err)
-			continue
-		}
 
-		vs.updateVaultReplicasStatus(ctx, name, namespace, &s)
+		vs.updateLocalVaultCRStatus(ctx, name, namespace, &s)
 
-		err = vs.updateVaultCRStatus(ctx, name, namespace, s)
+		err := vs.updateVaultCRStatus(ctx, name, namespace, s)
 		if err != nil {
 			logrus.Errorf("failed updating the status for the vault service: %s (%v)", name, err)
 		}
 	}
 }
 
-// updateVaultStatus updates the vault service status through the service DNS address.
-func updateVaultStatus(ctx context.Context, vc *vaultapi.Client, s *spec.VaultStatus) error {
-	inited, err := vc.Sys().InitStatus()
-	if err != nil {
-		return err
-	}
-	s.Initialized = inited
-	return nil
-}
-
-// updateVaultReplicasStatus updates the status of every vault replicas in the vault deployment.
-func (vs *Vaults) updateVaultReplicasStatus(ctx context.Context, name, namespace string, s *spec.VaultStatus) {
+// updateLocalVaultCRStatus updates local vault CR status by querying each vault pod's API.
+func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace string, s *spec.VaultStatus) {
 	sel := k8sutil.PodsLabelsForVault(name)
 	// TODO: handle upgrades when pods from two replicaset can co-exist :(
 	opt := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(sel).String()}
@@ -68,7 +45,10 @@ func (vs *Vaults) updateVaultReplicasStatus(ctx context.Context, name, namespace
 		return
 	}
 
-	var sealNodes []string
+	// If it can't talk to any vault pod, we are not changing the state.
+	sealNodes := s.SealedNodes
+	inited := s.Initialized
+
 	for _, p := range pods.Items {
 		cfg := vaultapi.DefaultConfig()
 		// TODO: change to https.
@@ -94,8 +74,13 @@ func (vs *Vaults) updateVaultReplicasStatus(ctx context.Context, name, namespace
 		if hr.Sealed {
 			sealNodes = append(sealNodes, podURL)
 		}
+		if hr.Initialized {
+			inited = true
+		}
 	}
+
 	s.SealedNodes = sealNodes
+	s.Initialized = inited
 }
 
 // updateVaultCRStatus updates the status field of the Vault CR.
