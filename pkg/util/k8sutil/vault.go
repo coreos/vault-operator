@@ -22,7 +22,7 @@ var (
 	// VaultConfigPath is the path that vault pod uses to read config from
 	VaultConfigPath = "/run/vault-config/vault.hcl"
 
-	vaultImage         = "vault"
+	vaultImage         = "quay.io/coreos/vault"
 	vaultConfigVolName = "vault-config"
 )
 
@@ -83,6 +83,7 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	// TODO: set owner ref.
 
 	selector := PodsLabelsForVault(v.GetName())
+	vaultPort := 8200
 
 	podTempl := v1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
@@ -110,8 +111,25 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 					},
 				},
 				Ports: []v1.ContainerPort{{
-					ContainerPort: int32(8200),
+					ContainerPort: int32(vaultPort),
 				}},
+				LivenessProbe: &v1.Probe{
+					Handler: v1.Handler{
+						Exec: &v1.ExecAction{
+							Command: []string{
+								"curl",
+								"--connect-timeout", "5",
+								"--max-time", "10",
+								// TODO: use HTTPS
+								fmt.Sprintf("http://localhost:%d/v1/sys/health", vaultPort),
+							},
+						},
+					},
+					InitialDelaySeconds: 10,
+					TimeoutSeconds:      10,
+					PeriodSeconds:       60,
+					FailureThreshold:    3,
+				},
 			}},
 			Volumes: []v1.Volume{{
 				Name: vaultConfigVolName,
