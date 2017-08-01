@@ -68,6 +68,7 @@ func (vs *Vaults) updateVaultReplicasStatus(ctx context.Context, name, namespace
 		return
 	}
 
+	var sealNodes []string
 	for _, p := range pods.Items {
 		cfg := vaultapi.DefaultConfig()
 		// TODO: change to https.
@@ -90,7 +91,11 @@ func (vs *Vaults) updateVaultReplicasStatus(ctx context.Context, name, namespace
 		if hr.Initialized && !hr.Sealed && !hr.Standby {
 			s.ActiveNode = podURL
 		}
+		if hr.Sealed {
+			sealNodes = append(sealNodes, podURL)
+		}
 	}
+	s.SealedNodes = sealNodes
 }
 
 // updateVaultCRStatus updates the status field of the Vault CR.
