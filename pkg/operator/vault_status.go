@@ -21,7 +21,7 @@ func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, name, namespace str
 	cfg.Address = k8sutil.VaultServiceAddr(name, namespace)
 	vapi, err := vaultapi.NewClient(cfg)
 	if err != nil {
-		logrus.Errorf("failed creating client for the vault service: %s/%s", name, namespace)
+		logrus.Errorf("failed creating client for the vault service (%s.%s): %v", name, namespace, err)
 	}
 
 	s := spec.VaultStatus{}
@@ -64,7 +64,7 @@ func (vs *Vaults) updateVaultReplicasStatus(ctx context.Context, name, namespace
 	opt := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(sel).String()}
 	pods, err := vs.kubecli.CoreV1().Pods(namespace).List(opt)
 	if err != nil {
-		logrus.Errorf("failed to update vault replica status: failed listing pods for the vault service: %s/%s", name, namespace)
+		logrus.Errorf("failed to update vault replica status: failed listing pods for the vault service (%s.%s): %v", name, namespace, err)
 		return
 	}
 
@@ -72,22 +72,23 @@ func (vs *Vaults) updateVaultReplicasStatus(ctx context.Context, name, namespace
 		cfg := vaultapi.DefaultConfig()
 		// TODO: change to https.
 		// TODO: use FQDN?
-		cfg.Address = "http://" + p.Status.PodIP + ":8200"
+		podURL := "http://" + p.Status.PodIP + ":8200"
+		cfg.Address = podURL
 		vapi, err := vaultapi.NewClient(cfg)
 		if err != nil {
-			logrus.Errorf("failed to update vault replica status: failed creating client for the vault pod: %s/%s", p.GetName(), namespace)
-			continue
-		}
-		hr, err := vapi.Sys().Health()
-		if err != nil {
-			logrus.Errorf("failed to update vault replica status:  failed requesting health information for the vault pod: %s/%s", p.GetName(), namespace)
+			logrus.Errorf("failed to update vault replica status: failed creating client for the vault pod (%s/%s): %v", namespace, p.GetName(), err)
 			continue
 		}
 
+		hr, err := vapi.Sys().Health()
+		if err != nil {
+			logrus.Errorf("failed to update vault replica status: failed requesting health info for the vault pod (%s/%s): %v", namespace, p.GetName(), err)
+			continue
+		}
 		// is active node?
 		// TODO: add to vaultutil?
 		if hr.Initialized && !hr.Sealed && !hr.Standby {
-			s.ActiveNode = cfg.Address
+			s.ActiveNode = podURL
 		}
 	}
 }
