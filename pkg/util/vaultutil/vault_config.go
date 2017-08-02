@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// TODO: add TLS configs
 var etcdStorageFmt = `
 storage "etcd" {
   address = "%s"

@@ -36,7 +36,7 @@ func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, name, namespace str
 
 // updateLocalVaultCRStatus updates local vault CR status by querying each vault pod's API.
 func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace string, s *spec.VaultStatus) {
-	sel := k8sutil.PodsLabelsForVault(name)
+	sel := k8sutil.LabelsForVault(name)
 	// TODO: handle upgrades when pods from two replicaset can co-exist :(
 	opt := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(sel).String()}
 	pods, err := vs.kubecli.CoreV1().Pods(namespace).List(opt)

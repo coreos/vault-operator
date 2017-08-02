@@ -27,6 +27,21 @@ var (
 	vaultConfigVolName = "vault-config"
 )
 
+// EtcdClientTLSSecretName returns the name of etcd client TLS secret for the given vault name
+func EtcdClientTLSSecretName(vaultName string) string {
+	return vaultName + "-etcd-client-tls"
+}
+
+// EtcdServerTLSSecretName returns the name of etcd server TLS secret for the given vault name
+func EtcdServerTLSSecretName(vaultName string) string {
+	return vaultName + "-etcd-server-tls"
+}
+
+// EtcdPeerTLSSecretName returns the name of etcd peer TLS secret for the given vault name
+func EtcdPeerTLSSecretName(vaultName string) string {
+	return vaultName + "-etcd-peer-tls"
+}
+
 // DeployEtcdCluster creates an etcd cluster for the given vault's name via etcd operator and
 // waits for all of its members to be ready.
 func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) error {
@@ -37,7 +52,7 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) erro
 			APIVersion: etcdCRAPI.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      etcdNameForVault(v.Name),
+			Name:      EtcdNameForVault(v.Name),
 			Namespace: v.Namespace,
 		},
 		Spec: etcdCRAPI.ClusterSpec{
@@ -50,7 +65,7 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) erro
 	}
 
 	err = retryutil.Retry(10*time.Second, 10, func() (bool, error) {
-		er, err := etcdCRCli.Get(context.TODO(), v.Namespace, etcdNameForVault(v.Name))
+		er, err := etcdCRCli.Get(context.TODO(), v.Namespace, EtcdNameForVault(v.Name))
 		if err != nil {
 			return false, err
 		}
@@ -67,7 +82,7 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) erro
 
 // DeleteEtcdCluster deletes the etcd cluster for the given vault
 func DeleteEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) error {
-	err := etcdCRCli.Delete(context.TODO(), v.Namespace, etcdNameForVault(v.Name))
+	err := etcdCRCli.Delete(context.TODO(), v.Namespace, EtcdNameForVault(v.Name))
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
@@ -83,7 +98,7 @@ func DeleteEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) erro
 func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	// TODO: set owner ref.
 
-	selector := PodsLabelsForVault(v.GetName())
+	selector := LabelsForVault(v.GetName())
 	vaultPort := 8200
 
 	podTempl := v1.PodTemplateSpec{
@@ -231,18 +246,18 @@ func DestroyVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	return nil
 }
 
-// etcdNameForVault returns the etcd cluster's name for the given vault's name
-func etcdNameForVault(name string) string {
+// EtcdNameForVault returns the etcd cluster's name for the given vault's name
+func EtcdNameForVault(name string) string {
 	return name + "-etcd"
 }
 
 // EtcdURLForVault returns the URL to talk to etcd cluster for the given vault's name
 func EtcdURLForVault(name string) string {
-	return fmt.Sprintf("http://%s-client:2379", etcdNameForVault(name))
+	return fmt.Sprintf("http://%s-client:2379", EtcdNameForVault(name))
 }
 
-// PodsLabelsForVault returns the labels for selecting the pods belongs to the given vault
-// name.
-func PodsLabelsForVault(name string) map[string]string {
+// LabelsForVault returns the labels for selecting the resources
+// belonging to the given vault name.
+func LabelsForVault(name string) map[string]string {
 	return map[string]string{"app": "vault", "name": name}
 }
