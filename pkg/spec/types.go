@@ -31,6 +31,9 @@ type VaultSpec struct {
 	// Name of the config map that configurates Vault.
 	// The storage fields in the configuration will be ingored.
 	ConfigMapName string `json:"configMapName"`
+
+	// TLS policy of vault nodes
+	TLS *TLSPolicy `json:"TLS,omitempty"`
 }
 
 type VaultStatus struct {
