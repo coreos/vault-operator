@@ -1,5 +1,5 @@
 hash: 901865e4d21f471cb90efadcf79cad3911626bf217f8c824b8982aa15bcce1d6
-updated: 2017-07-28T16:10:48.383815026-07:00
+updated: 2017-08-01T22:20:51.341927311-07:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -128,6 +128,10 @@ imports:
   - api
   - helper/compressutil
   - helper/jsonutil
+- name: github.com/howeyc/gopass
+  version: bf9dde6d0d2c004a008c27aaee91170c786f6db8
+- name: github.com/imdario/mergo
+  version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/mailru/easyjson
@@ -176,6 +180,10 @@ imports:
   version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
   subpackages:
   - codec
+- name: golang.org/x/crypto
+  version: d172538b2cfce0c13cee31e647d0367aa8cd2486
+  subpackages:
+  - ssh/terminal
 - name: golang.org/x/net
   version: f2499483f923065a842d38eb4c7f1927e6fc6e6d
   subpackages:
@@ -350,12 +358,17 @@ imports:
   - rest
   - rest/watch
   - third_party/forked/golang/template
+  - tools/auth
   - tools/cache
+  - tools/clientcmd
   - tools/clientcmd/api
+  - tools/clientcmd/api/latest
+  - tools/clientcmd/api/v1
   - tools/metrics
   - transport
   - util/cert
   - util/flowcontrol
+  - util/homedir
   - util/integer
   - util/jsonpath
 testImports: []
