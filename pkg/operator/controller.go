@@ -116,4 +116,9 @@ func (v *Vaults) onDelete(obj interface{}) {
 		// TODO: retry or report failure status in CR
 		panic(err)
 	}
+	err = v.cleanupTLSSecrets(vr)
+	if err != nil {
+		// TODO: retry or report failure status in CR
+		panic(err)
+	}
 }
