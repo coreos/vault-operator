@@ -36,6 +36,14 @@ type VaultSpec struct {
 	TLS *TLSPolicy `json:"TLS,omitempty"`
 }
 
+// SetDefaults sets the default vaules for the vault spec.
+// TODO: remove this when CRD support defaulting directly.
+func (vs VaultSpec) SetDefaults() {
+	if vs.Nodes == 0 {
+		vs.Nodes = 1
+	}
+}
+
 type VaultStatus struct {
 	// Initialized indicates if the Vault service is initialized.
 	Initialized bool `json:"initialized"`
