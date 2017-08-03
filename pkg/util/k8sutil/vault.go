@@ -23,8 +23,9 @@ var (
 	// VaultConfigPath is the path that vault pod uses to read config from
 	VaultConfigPath = "/run/vault-config/vault.hcl"
 
-	vaultImage         = "quay.io/coreos/vault"
-	vaultConfigVolName = "vault-config"
+	vaultImage           = "quay.io/coreos/vault"
+	vaultConfigVolName   = "vault-config"
+	evnVaultRedirectAddr = "VAULT_REDIRECT_ADDR"
 )
 
 // EtcdClientTLSSecretName returns the name of etcd client TLS secret for the given vault name
@@ -114,6 +115,12 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 					"/bin/vault",
 					"server",
 					"-config=" + VaultConfigPath,
+				},
+				Env: []v1.EnvVar{
+					{
+						Name:  evnVaultRedirectAddr,
+						Value: VaultServiceAddr(v.GetName(), v.GetNamespace()),
+					},
 				},
 				VolumeMounts: []v1.VolumeMount{{
 					Name:      vaultConfigVolName,
