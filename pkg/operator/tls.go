@@ -42,7 +42,7 @@ func (v *Vaults) prepareTLSSecrets(vr *spec.Vault) (err error) {
 		return err
 	}
 
-	se, err = newEtcdServerTLSSecret(vr, caKey, caCrt, defaultClusterDomain)
+	se, err = newEtcdServerTLSSecret(vr, caKey, caCrt)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (v *Vaults) prepareTLSSecrets(vr *spec.Vault) (err error) {
 		return err
 	}
 
-	se, err = newEtcdPeerTLSSecret(vr, caKey, caCrt, defaultClusterDomain)
+	se, err = newEtcdPeerTLSSecret(vr, caKey, caCrt)
 	if err != nil {
 		return err
 	}
@@ -100,12 +100,17 @@ func newEtcdClientTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.C
 }
 
 // newEtcdServerTLSSecret returns a secret containg etcd server TLS assets
-func newEtcdServerTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.Certificate, clusterDomain string) (*v1.Secret, error) {
+func newEtcdServerTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.Certificate) (*v1.Secret, error) {
 	return newTLSSecret(vr, caKey, caCrt, "etcd server", k8sutil.EtcdServerTLSSecretName(vr.Name),
 		[]string{
 			"localhost",
-			fmt.Sprintf("*.%s.%s.svc.%s", k8sutil.EtcdNameForVault(vr.Name), vr.Namespace, clusterDomain),
-			fmt.Sprintf("%s-client.%s.svc.%s", k8sutil.EtcdNameForVault(vr.Name), vr.Namespace, clusterDomain),
+			fmt.Sprintf("*.%s.%s.svc", k8sutil.EtcdNameForVault(vr.Name), vr.Namespace),
+			fmt.Sprintf("%s-client", k8sutil.EtcdNameForVault(vr.Name)),
+			fmt.Sprintf("%s-client.%s", k8sutil.EtcdNameForVault(vr.Name), vr.Namespace),
+			fmt.Sprintf("%s-client.%s.svc", k8sutil.EtcdNameForVault(vr.Name), vr.Namespace),
+			// TODO: get rid of cluster domain
+			fmt.Sprintf("*.%s.%s.svc.%s", k8sutil.EtcdNameForVault(vr.Name), vr.Namespace, defaultClusterDomain),
+			fmt.Sprintf("%s-client.%s.svc.%s", k8sutil.EtcdNameForVault(vr.Name), vr.Namespace, defaultClusterDomain),
 		},
 		map[string]string{
 			"key":  "server.key",
@@ -115,10 +120,12 @@ func newEtcdServerTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.C
 }
 
 // newEtcdPeerTLSSecret returns a secret containg etcd peer TLS assets
-func newEtcdPeerTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.Certificate, clusterDomain string) (*v1.Secret, error) {
+func newEtcdPeerTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.Certificate) (*v1.Secret, error) {
 	return newTLSSecret(vr, caKey, caCrt, "etcd peer", k8sutil.EtcdPeerTLSSecretName(vr.Name),
 		[]string{
-			fmt.Sprintf("*.%s.%s.svc.%s", k8sutil.EtcdNameForVault(vr.Name), vr.Namespace, clusterDomain),
+			fmt.Sprintf("*.%s.%s.svc", k8sutil.EtcdNameForVault(vr.Name), vr.Namespace),
+			// TODO: get rid of cluster domain
+			fmt.Sprintf("*.%s.%s.svc.%s", k8sutil.EtcdNameForVault(vr.Name), vr.Namespace, defaultClusterDomain),
 		},
 		map[string]string{
 			"key":  "peer.key",
