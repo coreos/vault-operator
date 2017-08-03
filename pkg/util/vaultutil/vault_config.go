@@ -9,6 +9,7 @@ var etcdStorageFmt = `
 storage "etcd" {
   address = "%s"
   etcd_api = "v3"
+  ha_enabled = "true"
 }
 `
 
