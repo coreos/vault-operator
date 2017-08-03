@@ -2,6 +2,7 @@ package operator
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"path/filepath"
@@ -70,7 +71,7 @@ func (v *Vaults) onAdd(obj interface{}) {
 		// TODO: retry or report failure status in CR
 		panic(err)
 	}
-	go v.monitorAndUpdateStaus(context.TODO(), vr.GetName(), vr.GetNamespace())
+	go v.monitorAndUpdateStaus(context.TODO(), vr)
 }
 
 // prepareVaultConfig appends etcd storage section into user provided vault config
@@ -80,8 +81,13 @@ func (v *Vaults) prepareVaultConfig(vr *spec.Vault) error {
 	if err != nil {
 		return fmt.Errorf("prepare vault config error: get configmap (%s) failed: %v", vr.Spec.ConfigMapName, err)
 	}
+	if !spec.IsSecureServer(vr.Spec.TLS) {
+		// TODO: Auto generate TLS assets
+		return errors.New("prepare vault config error: TLS secrets for vault server and client must be specified")
+	}
 
 	cfgData := cm.Data[filepath.Base(k8sutil.VaultConfigPath)]
+	cfgData = vaultutil.NewConfigWithTLS(cfgData)
 	cm.Data[filepath.Base(k8sutil.VaultConfigPath)] =
 		vaultutil.NewConfigWithEtcd(cfgData, k8sutil.EtcdURLForVault(vr.Name))
 	cm.ObjectMeta = metav1.ObjectMeta{

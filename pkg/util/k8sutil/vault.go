@@ -155,8 +155,8 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 								"curl",
 								"--connect-timeout", "5",
 								"--max-time", "10",
-								// TODO: use HTTPS
-								fmt.Sprintf("http://localhost:%d/v1/sys/health", vaultPort),
+								"-k",
+								fmt.Sprintf("https://localhost:%d/v1/sys/health", vaultPort),
 							},
 						},
 					},
@@ -168,8 +168,9 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 				ReadinessProbe: &v1.Probe{
 					Handler: v1.Handler{
 						HTTPGet: &v1.HTTPGetAction{
-							Path: "/v1//sys/health",
-							Port: intstr.FromInt(vaultPort),
+							Path:   "/v1/sys/health",
+							Port:   intstr.FromInt(vaultPort),
+							Scheme: v1.URISchemeHTTPS,
 						},
 					},
 					InitialDelaySeconds: 10,
@@ -192,6 +193,7 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	}
 
 	configEtcdBackendTLS(&podTempl, v)
+	configVaultServerTLS(&podTempl, v)
 
 	d := &appsv1beta1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -306,4 +308,16 @@ func configEtcdBackendTLS(pt *v1.PodTemplateSpec, v *spec.Vault) {
 		ReadOnly:  true,
 		MountPath: VaultTLSAssetDir,
 	})
+}
+
+// configVaultServerTLS mounts the volume containing the vault server TLS assets for the vault pod
+func configVaultServerTLS(pt *v1.PodTemplateSpec, v *spec.Vault) {
+	serverTLSVolume := v1.VolumeProjection{
+		Secret: &v1.SecretProjection{
+			LocalObjectReference: v1.LocalObjectReference{
+				Name: v.Spec.TLS.Static.ServerSecret,
+			},
+		},
+	}
+	pt.Spec.Volumes[1].VolumeSource.Projected.Sources = append(pt.Spec.Volumes[1].VolumeSource.Projected.Sources, serverTLSVolume)
 }
