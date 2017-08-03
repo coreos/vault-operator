@@ -178,6 +178,7 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 			Labels: selector,
 		},
 		Spec: appsv1beta1.DeploymentSpec{
+			Replicas: &v.Spec.Nodes,
 			Selector: &metav1.LabelSelector{MatchLabels: selector},
 			Template: podTempl,
 			Strategy: appsv1beta1.DeploymentStrategy{

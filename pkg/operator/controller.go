@@ -45,6 +45,8 @@ func (v *Vaults) run(ctx context.Context) {
 func (v *Vaults) onAdd(obj interface{}) {
 	vr := obj.(*spec.Vault)
 
+	vr.Spec.SetDefaults()
+
 	err := v.prepareTLSSecrets(vr)
 	if err != nil {
 		// TODO: retry or report failure status in CR
