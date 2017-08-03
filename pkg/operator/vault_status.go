@@ -45,8 +45,8 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace 
 		return
 	}
 
+	var sealNodes []string
 	// If it can't talk to any vault pod, we are not changing the state.
-	sealNodes := s.SealedNodes
 	inited := s.Initialized
 
 	for _, p := range pods.Items {
