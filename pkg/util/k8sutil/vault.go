@@ -21,9 +21,12 @@ import (
 
 var (
 	// VaultConfigPath is the path that vault pod uses to read config from
-	VaultConfigPath = "/run/vault-config/vault.hcl"
+	VaultConfigPath = "/run/vault/config/vault.hcl"
+	// VaultTLSAssetDir is the dir where vault's server TLS and etcd TLS assets sits
+	VaultTLSAssetDir = "/run/vault/tls/"
 
 	vaultImage           = "quay.io/coreos/vault"
+	vaultTLSAssetVolume  = "vault-tls-secret"
 	vaultConfigVolName   = "vault-config"
 	evnVaultRedirectAddr = "VAULT_REDIRECT_ADDR"
 )
@@ -58,6 +61,15 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) erro
 		},
 		Spec: etcdCRAPI.ClusterSpec{
 			Size: size,
+			TLS: &etcdCRAPI.TLSPolicy{
+				Static: &etcdCRAPI.StaticTLS{
+					Member: &etcdCRAPI.MemberSecret{
+						PeerSecret:   EtcdPeerTLSSecretName(v.Name),
+						ServerSecret: EtcdServerTLSSecretName(v.Name),
+					},
+					OperatorSecret: EtcdClientTLSSecretName(v.Name),
+				},
+			},
 		},
 	}
 	_, err := etcdCRCli.Create(context.TODO(), etcdCluster)
@@ -179,6 +191,8 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 		},
 	}
 
+	configEtcdBackendTLS(&podTempl, v)
+
 	d := &appsv1beta1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   v.GetName(),
@@ -261,11 +275,36 @@ func EtcdNameForVault(name string) string {
 
 // EtcdURLForVault returns the URL to talk to etcd cluster for the given vault's name
 func EtcdURLForVault(name string) string {
-	return fmt.Sprintf("http://%s-client:2379", EtcdNameForVault(name))
+	return fmt.Sprintf("https://%s-client:2379", EtcdNameForVault(name))
 }
 
 // LabelsForVault returns the labels for selecting the resources
 // belonging to the given vault name.
 func LabelsForVault(name string) map[string]string {
 	return map[string]string{"app": "vault", "name": name}
+}
+
+// configEtcdBackendTLS configures the volume and mounts in vault pod to
+// set up etcd backend TLS assets
+func configEtcdBackendTLS(pt *v1.PodTemplateSpec, v *spec.Vault) {
+	sn := EtcdClientTLSSecretName(v.Name)
+	pt.Spec.Volumes = append(pt.Spec.Volumes, v1.Volume{
+		Name: vaultTLSAssetVolume,
+		VolumeSource: v1.VolumeSource{
+			Projected: &v1.ProjectedVolumeSource{
+				Sources: []v1.VolumeProjection{{
+					Secret: &v1.SecretProjection{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: sn,
+						},
+					},
+				}},
+			},
+		},
+	})
+	pt.Spec.Containers[0].VolumeMounts = append(pt.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
+		Name:      vaultTLSAssetVolume,
+		ReadOnly:  true,
+		MountPath: VaultTLSAssetDir,
+	})
 }
