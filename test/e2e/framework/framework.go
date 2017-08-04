@@ -82,6 +82,7 @@ func (f *Framework) createVaultOperatorPod() error {
 			Labels:    podLabelForOperator(operatorName),
 		},
 		Spec: v1.PodSpec{
+			RestartPolicy: v1.RestartPolicyNever,
 			Containers: []v1.Container{{
 				Name:            operatorName,
 				Image:           f.vopImage,
