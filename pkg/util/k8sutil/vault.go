@@ -226,10 +226,9 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 			}},
 		},
 	}
-
 	_, err = kubecli.CoreV1().Services(v.Namespace).Create(svc)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
-		return err
+		return fmt.Errorf("failed to create vault service: %v", err)
 	}
 	return nil
 }
@@ -246,7 +245,7 @@ func VaultServiceAddr(name, namespace string) string {
 	return "http://" + name + "." + namespace + ":8200"
 }
 
-// DestroVault destroys a vault service.
+// DestroyVault destroys a vault service.
 // TODO: remove this function when CRD GC is enabled.
 func DestroyVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	bg := metav1.DeletePropagationBackground
