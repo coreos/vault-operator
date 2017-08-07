@@ -2,6 +2,7 @@ package operator
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/coreos-inc/vault-operator/pkg/spec"
@@ -52,8 +53,7 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace 
 	for _, p := range pods.Items {
 		cfg := vaultapi.DefaultConfig()
 		// TODO: change to https.
-		// TODO: use FQDN?
-		podURL := "http://" + p.Status.PodIP + ":8200"
+		podURL := fmt.Sprintf("http://%s:8200", k8sutil.PodDNSName(p.Status.PodIP, namespace))
 		cfg.Address = podURL
 		vapi, err := vaultapi.NewClient(cfg)
 		if err != nil {
