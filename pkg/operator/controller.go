@@ -71,7 +71,9 @@ func (v *Vaults) onAdd(obj interface{}) {
 		// TODO: retry or report failure status in CR
 		panic(err)
 	}
-	go v.monitorAndUpdateStaus(context.TODO(), vr)
+	ctx, cancel := context.WithCancel(context.Background())
+	v.ctxCancels[vr.Name] = cancel
+	go v.monitorAndUpdateStaus(ctx, vr)
 }
 
 // prepareVaultConfig appends etcd storage section into user provided vault config
@@ -129,4 +131,7 @@ func (v *Vaults) onDelete(obj interface{}) {
 		// TODO: retry or report failure status in CR
 		panic(err)
 	}
+	cancel := v.ctxCancels[vr.Name]
+	cancel()
+	delete(v.ctxCancels, vr.Name)
 }

@@ -15,6 +15,9 @@ import (
 
 type Vaults struct {
 	namespace string
+	// ctxCancels stores vault clusters' contexts that are used to
+	// cancel their goroutines when they are deleted
+	ctxCancels map[string]context.CancelFunc
 
 	kubecli       kubernetes.Interface
 	vaultsCRCli   client.Vaults
@@ -26,6 +29,7 @@ type Vaults struct {
 func New() *Vaults {
 	return &Vaults{
 		namespace:     os.Getenv("MY_POD_NAMESPACE"),
+		ctxCancels:    map[string]context.CancelFunc{},
 		kubecli:       k8sutil.MustNewKubeClient(),
 		vaultsCRCli:   client.MustNewInCluster(),
 		kubeExtClient: k8sutil.MustNewKubeExtClient(),
