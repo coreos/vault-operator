@@ -31,6 +31,7 @@ func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, vr *spec.Vault) {
 		select {
 		case err := <-ctx.Done():
 			logrus.Infof("stopped monitoring vault: %s (%v)", vr.GetName(), err)
+			return
 		case <-time.After(10 * time.Second):
 		}
 
