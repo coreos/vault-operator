@@ -4,24 +4,25 @@ An Operator for managing Vault instances.
 
 ## Getting Started
 
-Export a shell env to current working namespace:
-
-```
-export KUBE_NS="current_namespace"
-```
-
-We will use this env in the following config templates.
-
 ### Setup RBAC
 
 In Tectonic cluster, "default" role has no access to any resource.
-We need to setup RBAC rules to grant access to operators:
+We need to setup RBAC rules to grant access to operators.
+
+Replace `<my-namespace>` below with your current working namespace to
+create a RBAC yaml:
+
+```
+sed 's/${KUBE_NS}/<my-namespace>/g' example/rbac-template.yaml > example/rbac.yaml
+```
+
+Then create the RBAC role:
 
 ```
 kubectl create -f example/rbac.yaml
 ```
 
-This will give "admin" role to default users in current working namespace.
+This will give "admin" role to default users in your current namespace.
 (We will provide more production-grade RBAC setup later.)
 
 ### Deploy etcd operator
@@ -61,7 +62,6 @@ Save above into `pull_secret.yaml` and create pull secret:
 kubectl create -f pull_secret.yaml
 ```
 
-
 Deploy vault operator:
 
 ```
@@ -94,13 +94,24 @@ example-vault-etcd-0001          1/1       Running   0          1m
 example-vault-etcd-0002          1/1       Running   0          1m
 vault-operator-146442885-gj98d   1/1       Running   0          1m
 ```
-To get vault pods only:
+
+To get Vault pods only:
 
 ```
 $ kubectl get pods -l app=vault,name=example-vault
 NAME                            READY     STATUS    RESTARTS   AGE
 example-vault-613074584-5lwbg   0/1       Running   0          8m
 ```
+
+It is also viable to see all Vault nodes in "vault" resource status:
+
+```
+$ kubectl get vault example-vault -o jsonpath='{.status.sealedNodes}'
+[https://10-2-1-16.hongchao-test.pod:8200]
+```
+
+Vault is unready since it is uninitialized and sealed.
+To learn how to access Vault and turn it into ready state, check out [vault.md](./doc/user/vault.md) .
 
 
 ### Cleanup
