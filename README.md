@@ -1,41 +1,122 @@
 # Vault Operator
 
-An Operator for creating Vault instances.
+An Operator for managing Vault instances.
 
 ## Getting Started
 
-Install the CAs, deployments, etcd Operator, and Vault in the `default` namespace. It must be installed into the `default` namespace to make the CA certs work. You must have `kubectl get pods` working when running this script.
+Export a shell env to current working namespace:
 
 ```
-./install.sh
+export KUBE_NS="current_namespace"
 ```
 
-Proxy the vault service to your local machine so you can use the command line tooling to localhost.
+We will use this env in the following config templates.
+
+### Setup RBAC
+
+In Tectonic cluster, "default" role has no access to any resource.
+We need to setup RBAC rules to grant access to operators:
 
 ```
-export ns='default' label='app=vault'; kubectl -n $ns get pod -l $label -o jsonpath='{.items[0].metadata.name}' | xargs -I{} kubectl -n $ns port-forward {} 8200
+kubectl create -f example/rbac.yaml
 ```
 
-Run `vault init` to get things going, this should print out the Vault unseal keys, unsealing Vault should get you a fully working setup!
+This will give "admin" role to default users in current working namespace.
+(We will provide more production-grade RBAC setup later.)
+
+### Deploy etcd operator
+
+Vault operator makes use of etcd operator to deploy etcd cluster as storage backend.
+So we also need to deploy etcd operator:
 
 ```
-export VAULT_ADDR='https://localhost:8200'
-vault init --ca-cert=example-certs/ca.pem
-vault unseal
+kubectl create -f https://raw.githubusercontent.com/coreos/etcd-operator/master/example/deployment.yaml
+```
+
+### Deploy vault operator
+
+Vault operator image is private. Using it requires "quay.io" pull secret.
+Download "pull secret" from "account.coreos.com" page.
+It looks like:
+```
+    "quay.io": {
+      "auth": "YOUR_PULL_SECRET",
+```
+
+Replace `.dockerconfigjson` field value below with `YOUR_PULL_SECRET` from `auth` field above :
+
+```yaml
+apiVersion: v1
+data:
+  .dockerconfigjson: ${YOUR_PULL_SECRET}
+kind: Secret
+metadata:
+  name: coreos-pull-secret
+type: kubernetes.io/dockerconfigjson
+```
+
+Save above into `pull_secret.yaml` and create pull secret:
+
+```
+kubectl create -f pull_secret.yaml
 ```
 
 
-### Debugging
+Deploy vault operator:
 
 ```
-export ns='kube-system' label='etcd_cluster=vault-etcd'; kubectl -n $ns get pods -l $label -o jsonpath='{.items[0].metadata.name}' | xargs -I{} kubectl -n $ns port-forward {} 2379
+kubectl create -f example/deployment.yaml
 ```
 
+Wait ~10s until vault operator is running.
+
+Create a Vault config:
+
 ```
-etcdctl get "" --prefix=true --keys-only
+kubectl create configmap example-vault-config --from-file=hack/playbook/vault.hcl
 ```
 
-## Resources
+Create a Vault custom resource:
 
-- Install vault tool https://www.vaultproject.io/intro/getting-started/install.html
-- Configure vault to use etcd https://www.vaultproject.io/docs/configuration/storage/etcd.html
+```
+kubectl create -f example/example_vault.yaml
+```
+
+Wait ~20s. Then you can see pods:
+
+```
+$ kubectl get pods
+NAME                             READY     STATUS    RESTARTS   AGE
+etcd-operator-809151189-1j7jl    1/1       Running   0          2d
+example-vault-613074584-5lwbg    0/1       Running   0          49s
+example-vault-etcd-0000          1/1       Running   0          1m
+example-vault-etcd-0001          1/1       Running   0          1m
+example-vault-etcd-0002          1/1       Running   0          1m
+vault-operator-146442885-gj98d   1/1       Running   0          1m
+```
+To get vault pods only:
+
+```
+$ kubectl get pods -l app=vault,name=example-vault
+NAME                            READY     STATUS    RESTARTS   AGE
+example-vault-613074584-5lwbg   0/1       Running   0          8m
+```
+
+
+### Cleanup
+
+Delete Vault resource and config:
+
+```
+kubectl delete -f example/example_vault.yaml
+kubectl delete configmap example-vault-config
+```
+
+Vault operator will clean up other resources (vault and etcd instances) for 
+the above vault custom resource. Wait ~20s until they are deleted.
+Then delete vault and etcd operator:
+
+```
+kubectl delete deploy --all
+kubectl delete -f example/rbac.yaml
+```
