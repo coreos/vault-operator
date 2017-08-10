@@ -1,5 +1,5 @@
-hash: 901865e4d21f471cb90efadcf79cad3911626bf217f8c824b8982aa15bcce1d6
-updated: 2017-08-01T22:20:51.341927311-07:00
+hash: 8808b2dcf647412529c6e5ac10365c2bef5984ef8710c1fbe5843735eb5b749b
+updated: 2017-08-10T16:27:04.84135546-07:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -83,6 +83,8 @@ imports:
   - ptypes/any
   - ptypes/duration
   - ptypes/timestamp
+- name: github.com/golang/snappy
+  version: 553a641470496b2327abcac10b36396bd98e45c9
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/googleapis/gnostic
@@ -123,11 +125,12 @@ imports:
   - json/scanner
   - json/token
 - name: github.com/hashicorp/vault
-  version: 0b20ae0b9b7a748d607082b1add3663a28e31b68
+  version: af63d879130d2ee292f09257571d371100a513eb
   subpackages:
   - api
   - helper/compressutil
   - helper/jsonutil
+  - helper/parseutil
 - name: github.com/howeyc/gopass
   version: bf9dde6d0d2c004a008c27aaee91170c786f6db8
 - name: github.com/imdario/mergo
@@ -206,7 +209,7 @@ imports:
   - jws
   - jwt
 - name: golang.org/x/sys
-  version: 0f826bdd13b500be0f1d4004938ad978fcc6031e
+  version: e42485b6e20ae7d2304ec72e535b103ed350cc02
   subpackages:
   - unix
 - name: golang.org/x/text
@@ -223,7 +226,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/appengine
-  version: ad2570cd3913654e00c5f0183b39d2f998e54046
+  version: c5a90ac045b779001847fec87403f5cba090deae
   subpackages:
   - internal
   - internal/app_identity
