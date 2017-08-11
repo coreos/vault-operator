@@ -25,7 +25,8 @@ var (
 	// VaultTLSAssetDir is the dir where vault's server TLS and etcd TLS assets sits
 	VaultTLSAssetDir = "/run/vault/tls/"
 
-	vaultImage           = "quay.io/coreos/vault"
+	// vault image format is "<upstream-version>-<our-version"
+	vaultImage           = "quay.io/coreos/vault:0.8.0-0"
 	vaultTLSAssetVolume  = "vault-tls-secret"
 	vaultConfigVolName   = "vault-config"
 	evnVaultRedirectAddr = "VAULT_REDIRECT_ADDR"
