@@ -36,7 +36,7 @@ So we also need to deploy etcd operator:
 kubectl create -f https://raw.githubusercontent.com/coreos/etcd-operator/master/example/deployment.yaml
 ```
 
-### Deploy vault operator
+### Deploy Vault operator
 
 Vault operator image is private. Using it requires "quay.io" pull secret.
 Download "pull secret" from "account.coreos.com" page and save it as `config.json` file.
