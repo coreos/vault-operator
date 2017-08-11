@@ -130,7 +130,7 @@ Create a Vault custom resource:
 kubectl create -f example/example_vault.yaml
 ```
 
-**Wait ~20s.** Then you can see pods:
+**Wait ~20s.** Then make sure you see `example-vault-...` pod:
 
 ```
 $ kubectl get pods
@@ -171,12 +171,12 @@ kubectl delete -f example/example_vault.yaml
 kubectl delete configmap example-vault-config
 ```
 
-Vault operator will clean up other resources (vault and etcd instances) for 
-the above vault custom resource. **Wait ~20s until they are deleted.**
+**Wait 20s** to make sure etcd and Vault pods are deleted.
+
 Then delete operators and rest resources:
 
 ```
 kubectl delete deploy vault-operator etcd-operator
-kubectl delete secret coreos-pull-secret
+kubectl delete secret coreos-pull-secret vault-client-tls vault-server-tls
 kubectl delete -f example/rbac.yaml
 ```
