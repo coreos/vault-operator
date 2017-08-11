@@ -6,7 +6,6 @@ An Operator for managing Vault instances.
 
 * [Tectonic 1.7+](https://coreos.com/tectonic) is installed
 * `kubectl` is installed
-* `vault` is installed: https://www.vaultproject.io/docs/install/index.html
 * `cfssl` tools are installed: https://github.com/cloudflare/cfssl#installation
 * `jq` tool is installed: https://stedolan.github.io/jq/download/
 
