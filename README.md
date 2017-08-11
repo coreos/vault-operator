@@ -4,16 +4,18 @@ An Operator for managing Vault instances.
 
 ## Getting Started
 
+`kubectl` needs to be installed and configured to use a 1.7+ Kubernetes cluster.
+
 ### Setup RBAC
 
 In Tectonic cluster, "default" role has no access to any resource.
 We need to setup RBAC rules to grant access to operators.
 
-Replace `<my-namespace>` below with your current working namespace to
+Replace `<my-kube-ns>` below with your current working namespace to
 create a RBAC yaml:
 
 ```
-sed 's/${KUBE_NS}/<my-namespace>/g' example/rbac-template.yaml > example/rbac.yaml
+sed 's/${KUBE_NS}/<my-kube-ns>/g' example/rbac-template.yaml > example/rbac.yaml
 ```
 
 Then create the RBAC role:
@@ -70,6 +72,28 @@ kubectl create -f example/deployment.yaml
 ```
 
 Wait ~10s until vault operator is running.
+
+### Deploy Vault
+
+#### Setup TLS secrets
+The vault-operator enables TLS on the vault server by default. To do this the following two secrets must be created:
+- `vault-server-tls`: This secret contains the server TLS assets in two files, `server.crt` and `server.key`
+- `vault-client-tls`: This secret contains the file `vault-client-ca.crt` which is the CA certificate that signed the above server certificate
+
+There is a helper script `hack/tls-gen.sh` to generate the necessary TLS assets and bundle them into the required secrets.
+Before running the script install the following tools:
+- `cfssl` and `cfssljson`: See https://github.com/cloudflare/cfssl#installation on how to set them up for your machine
+- `jq`: See https://stedolan.github.io/jq/download/
+
+Run the following command and replace `<my-kube-ns>` with your current working namespace:
+
+```bash
+KUBE_NS=<my-kube-ns> SERVER_SECRET=vault-server-tls CLIENT_SECRET=vault-client-tls hack/tls-gen.sh
+```
+
+This should create the two secrets needed to enable TLS on the vault server.
+
+#### Submit Vault Custom Resource
 
 Create a Vault config:
 
