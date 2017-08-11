@@ -12,7 +12,7 @@ Continuing the example setup, we can use the following command to create a port-
 between local machine and the Vault server running on Kubernetes:
 
 ```
-kubectl get po -l app=vault,name=example-vault -o jsonpath='{.items[*].metadata.name}' | xargs -0 -I {} kubectl port-forward {} 8200
+kubectl -n vault-services get po -l app=vault,name=example-vault -o jsonpath='{.items[*].metadata.name}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
 ```
 
 Open a new terminal. Use the following commands to check vault server's status:
