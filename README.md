@@ -28,7 +28,7 @@ Replace `<my-kube-ns>` below with your current working namespace to
 create a RBAC yaml:
 
 ```
-sed 's/${KUBE_NS}/<my-kube-ns>/g' example/rbac-template.yaml > example/rbac.yaml
+sed 's/{KUBE_NS}/<my-kube-ns>/g' example/rbac-template.yaml > example/rbac.yaml
 ```
 
 Then create the RBAC role:
@@ -53,31 +53,10 @@ kubectl create -f https://raw.githubusercontent.com/coreos/etcd-operator/master/
 
 Vault operator image is private. Using it requires "quay.io" pull secret.
 
-Download "pull secret" from "account.coreos.com" page and save it as `config.json` file.
-
-Encode it into base64 format (replace `<download_dir>` with the dir where config.json is downloaded):
+Create pull secret from existing "coreos-pull-secret":
 
 ```
-base64 <download_dir>/config.json
-```
-
-
-Create a `pull_secret.yaml` (replace `<base64_encoded_pull_secret>` field with above result):
-
-```yaml
-apiVersion: v1
-data:
-  .dockerconfigjson: <base64_encoded_pull_secret>
-kind: Secret
-metadata:
-  name: coreos-pull-secret
-type: kubernetes.io/dockerconfigjson
-```
-
-Run the following:
-
-```
-kubectl create -f pull_secret.yaml
+kubectl get secrets -n tectonic-system -o yaml coreos-pull-secret | sed 's/tectonic-system/<my-kube-ns>/g' | kubectl create -f -
 ```
 
 Deploy vault operator:
@@ -90,7 +69,9 @@ Wait ~10s until vault operator is running:
 
 ```
 $ kubectl get deploy
-vault-operator   1         1         1            1           21h
+NAME             DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+etcd-operator    1         1         1            1           1d
+vault-operator   1         1         1            0           6s
 ```
 
 Next we are going to deploy Vault server.
@@ -150,7 +131,7 @@ NAME                            READY     STATUS    RESTARTS   AGE
 example-vault-613074584-5lwbg   0/1       Running   0          8m
 ```
 
-It is also viable to see all Vault nodes in "vault" resource status:
+It is also possible to see all Vault nodes in "vault" resource status:
 
 ```
 $ kubectl get vault example-vault -o jsonpath='{.status.sealedNodes}'
