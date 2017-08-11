@@ -37,19 +37,20 @@ kubectl create -f https://raw.githubusercontent.com/coreos/etcd-operator/master/
 ### Deploy vault operator
 
 Vault operator image is private. Using it requires "quay.io" pull secret.
-Download "pull secret" from "account.coreos.com" page.
-It looks like:
+Download "pull secret" from "account.coreos.com" page and save it as `config.json` file.
+
+Encode it into base64 format:
+
 ```
-    "quay.io": {
-      "auth": "YOUR_PULL_SECRET",
+base64 config.json
 ```
 
-Replace `.dockerconfigjson` field value below with `YOUR_PULL_SECRET` from `auth` field above :
+Replace `<base64_encoded_pull_secret>` field with above result:
 
 ```yaml
 apiVersion: v1
 data:
-  .dockerconfigjson: ${YOUR_PULL_SECRET}
+  .dockerconfigjson: <base64_encoded_pull_secret>
 kind: Secret
 metadata:
   name: coreos-pull-secret
@@ -125,9 +126,10 @@ kubectl delete configmap example-vault-config
 
 Vault operator will clean up other resources (vault and etcd instances) for 
 the above vault custom resource. Wait ~20s until they are deleted.
-Then delete vault and etcd operator:
+Then delete operators and rest resources:
 
 ```
-kubectl delete deploy --all
+kubectl delete deploy vault-operator etcd-operator
+kubectl delete secret coreos-pull-secret
 kubectl delete -f example/rbac.yaml
 ```
