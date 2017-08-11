@@ -2,9 +2,23 @@
 
 An Operator for managing Vault instances.
 
+## Prerequisites
+
+* [Tectonic 1.7+](https://coreos.com/tectonic) is installed
+* `kubectl` is installed
+* `vault` is installed: https://www.vaultproject.io/docs/install/index.html
+* `cfssl` tools are installed: https://github.com/cloudflare/cfssl#installation
+* `jq` tool is installed: https://stedolan.github.io/jq/download/
+
+
 ## Getting Started
 
-`kubectl` needs to be installed and configured to use a 1.7+ Kubernetes cluster.
+Verify `kubectl` is configured to use a 1.7+ Kubernetes cluster:
+
+```
+$ kubectl version | grep "Server Version"
+Server Version: version.Info{Major:"1", Minor:"7", GitVersion:"v1.7.1+coreos.0", GitCommit:"fdd5383472eb43e60d2222503f03c76445e49899", GitTreeState:"clean", BuildDate:"2017-07-18T19:44:47Z", GoVersion:"go1.8.3", Compiler:"gc", Platform:"linux/amd64"}
+```
 
 ### Setup RBAC
 
@@ -39,15 +53,17 @@ kubectl create -f https://raw.githubusercontent.com/coreos/etcd-operator/master/
 ### Deploy Vault operator
 
 Vault operator image is private. Using it requires "quay.io" pull secret.
+
 Download "pull secret" from "account.coreos.com" page and save it as `config.json` file.
 
-Encode it into base64 format:
+Encode it into base64 format (replace `<download_dir>` with the dir where config.json is downloaded):
 
 ```
-base64 config.json
+base64 <download_dir>/config.json
 ```
 
-Replace `<base64_encoded_pull_secret>` field with above result:
+
+Create a `pull_secret.yaml` (replace `<base64_encoded_pull_secret>` field with above result):
 
 ```yaml
 apiVersion: v1
@@ -59,7 +75,7 @@ metadata:
 type: kubernetes.io/dockerconfigjson
 ```
 
-Save above into `pull_secret.yaml` and create pull secret:
+Run the following:
 
 ```
 kubectl create -f pull_secret.yaml
@@ -71,19 +87,20 @@ Deploy vault operator:
 kubectl create -f example/deployment.yaml
 ```
 
-Wait ~10s until vault operator is running.
+Wait ~10s until vault operator is running:
+
+```
+$ kubectl get deploy
+vault-operator   1         1         1            1           21h
+```
+
+Next we are going to deploy Vault server.
 
 ### Deploy Vault
 
 #### Setup TLS secrets
-The vault-operator enables TLS on the vault server by default. To do this the following two secrets must be created:
-- `vault-server-tls`: This secret contains the server TLS assets in two files, `server.crt` and `server.key`
-- `vault-client-tls`: This secret contains the file `vault-client-ca.crt` which is the CA certificate that signed the above server certificate
 
 There is a helper script `hack/tls-gen.sh` to generate the necessary TLS assets and bundle them into the required secrets.
-Before running the script install the following tools:
-- `cfssl` and `cfssljson`: See https://github.com/cloudflare/cfssl#installation on how to set them up for your machine
-- `jq`: See https://stedolan.github.io/jq/download/
 
 Run the following command and replace `<my-kube-ns>` with your current working namespace:
 
@@ -91,7 +108,13 @@ Run the following command and replace `<my-kube-ns>` with your current working n
 KUBE_NS=<my-kube-ns> SERVER_SECRET=vault-server-tls CLIENT_SECRET=vault-client-tls hack/tls-gen.sh
 ```
 
-This should create the two secrets needed to enable TLS on the vault server.
+This should create the two secrets needed for Vault server TLS:
+
+```
+$ kubectl get secrets
+vault-client-tls      Opaque                                1         21h
+vault-server-tls      Opaque                                2         21h
+```
 
 #### Submit Vault Custom Resource
 
@@ -107,7 +130,7 @@ Create a Vault custom resource:
 kubectl create -f example/example_vault.yaml
 ```
 
-Wait ~20s. Then you can see pods:
+**Wait ~20s.** Then you can see pods:
 
 ```
 $ kubectl get pods
@@ -149,7 +172,7 @@ kubectl delete configmap example-vault-config
 ```
 
 Vault operator will clean up other resources (vault and etcd instances) for 
-the above vault custom resource. Wait ~20s until they are deleted.
+the above vault custom resource. **Wait ~20s until they are deleted.**
 Then delete operators and rest resources:
 
 ```

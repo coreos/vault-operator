@@ -2,6 +2,10 @@
 
 This doc talks about how to access and use Vault after deployed by Vault operator.
 
+## Prerequisites
+
+* Vault is installed: https://www.vaultproject.io/docs/install/index.html
+
 ## Access Vault
 
 Continuing the example setup, we can use the following command to create a port-forwarding
