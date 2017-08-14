@@ -2,10 +2,9 @@
 
 # Run in project root dir
 
-# If you don't have etcd running, do:
+# If you don't have etcd operator running, do:
 #   kubectl create -f https://raw.githubusercontent.com/coreos/etcd-operator/master/example/deployment.yaml
 
-kubectl create configmap example-vault-config --from-file=$PWD/hack/playbook/vault.hcl
 # Assume vault operator is running
 kubectl create -f $PWD/example/example_vault.yaml
 
