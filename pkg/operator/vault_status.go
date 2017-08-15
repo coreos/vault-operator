@@ -57,6 +57,7 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace 
 
 	var sealNodes []string
 	var availableNodes []string
+	var standByNodes []string
 	// If it can't talk to any vault pod, we are not changing the state.
 	inited := s.Initialized
 
@@ -83,6 +84,9 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace 
 		if hr.Initialized && !hr.Sealed && !hr.Standby {
 			s.ActiveNode = p.GetName()
 		}
+		if hr.Initialized && !hr.Sealed && hr.Standby {
+			standByNodes = append(standByNodes, p.GetName())
+		}
 		if hr.Sealed {
 			sealNodes = append(sealNodes, p.GetName())
 		}
@@ -92,6 +96,7 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace 
 	}
 
 	s.AvailableNodes = availableNodes
+	s.StandbyNodes = standByNodes
 	s.SealedNodes = sealNodes
 	s.Initialized = inited
 }
