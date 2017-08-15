@@ -11,6 +11,7 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
+	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -46,6 +47,11 @@ func (v *Vaults) run(ctx context.Context) {
 func (v *Vaults) onAdd(obj interface{}) {
 	vr := obj.(*spec.Vault)
 
+	if !spec.IsSecureServer(vr.Spec.TLS) {
+		// TODO: Auto generate TLS assets
+		err := errors.New("prepare vault config error: TLS secrets for vault server and client must be specified")
+		panic(err)
+	}
 	vr.Spec.SetDefaults()
 
 	err := v.prepareTLSSecrets(vr)
@@ -79,24 +85,27 @@ func (v *Vaults) onAdd(obj interface{}) {
 // prepareVaultConfig appends etcd storage section into user provided vault config
 // and creates another (predefined-name) configmap for it.
 func (v *Vaults) prepareVaultConfig(vr *spec.Vault) error {
-	cm, err := v.kubecli.CoreV1().ConfigMaps(vr.Namespace).Get(vr.Spec.ConfigMapName, metav1.GetOptions{})
-	if err != nil {
-		return fmt.Errorf("prepare vault config error: get configmap (%s) failed: %v", vr.Spec.ConfigMapName, err)
+	var cfgData string
+	if len(vr.Spec.ConfigMapName) != 0 {
+		cm, err := v.kubecli.CoreV1().ConfigMaps(vr.Namespace).Get(vr.Spec.ConfigMapName, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("prepare vault config error: get configmap (%s) failed: %v", vr.Spec.ConfigMapName, err)
+		}
+		cfgData = cm.Data[filepath.Base(k8sutil.VaultConfigPath)]
 	}
-	if !spec.IsSecureServer(vr.Spec.TLS) {
-		// TODO: Auto generate TLS assets
-		return errors.New("prepare vault config error: TLS secrets for vault server and client must be specified")
+	cfgData = vaultutil.NewConfigWithListener(cfgData)
+	cfgData = vaultutil.NewConfigWithEtcd(cfgData, k8sutil.EtcdURLForVault(vr.Name))
+
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: k8sutil.ConfigMapNameForVault(vr),
+		},
+		Data: map[string]string{
+			filepath.Base(k8sutil.VaultConfigPath): cfgData,
+		},
 	}
 
-	cfgData := cm.Data[filepath.Base(k8sutil.VaultConfigPath)]
-	cfgData = vaultutil.NewConfigWithTLS(cfgData)
-	cm.Data[filepath.Base(k8sutil.VaultConfigPath)] =
-		vaultutil.NewConfigWithEtcd(cfgData, k8sutil.EtcdURLForVault(vr.Name))
-	cm.ObjectMeta = metav1.ObjectMeta{
-		Name: k8sutil.ConfigMapCopyName(vr.Spec.ConfigMapName),
-	}
-
-	_, err = v.kubecli.CoreV1().ConfigMaps(vr.Namespace).Create(cm)
+	_, err := v.kubecli.CoreV1().ConfigMaps(vr.Namespace).Create(cm)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return fmt.Errorf("prepare vault config error: create new configmap (%s) failed: %v", cm.Name, err)
 	}
@@ -121,7 +130,7 @@ func (v *Vaults) onDelete(obj interface{}) {
 		panic(err)
 	}
 	err = v.kubecli.CoreV1().ConfigMaps(vr.Namespace).Delete(
-		k8sutil.ConfigMapCopyName(vr.Spec.ConfigMapName), nil)
+		k8sutil.ConfigMapNameForVault(vr), nil)
 	if err != nil && !apierrors.IsNotFound(err) {
 		// TODO: retry or report failure status in CR
 		panic(err)

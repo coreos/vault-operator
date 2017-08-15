@@ -185,7 +185,7 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 				VolumeSource: v1.VolumeSource{
 					ConfigMap: &v1.ConfigMapVolumeSource{
 						LocalObjectReference: v1.LocalObjectReference{
-							Name: ConfigMapCopyName(v.Spec.ConfigMapName),
+							Name: ConfigMapNameForVault(v),
 						},
 					},
 				},
@@ -236,9 +236,14 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	return nil
 }
 
-// ConfigMapCopyName is the configmap name to use by vault pod.
-// It's a copy of user given configmap because we modify user config.
-func ConfigMapCopyName(n string) string {
+// ConfigMapNameForVault is the configmap name for the given vault.
+// If ConfigMapName is given is spec, it will make a new name based on that.
+// Otherwise, we will create a default configmap using the Vault's name.
+func ConfigMapNameForVault(v *spec.Vault) string {
+	n := v.Spec.ConfigMapName
+	if len(n) != 0 {
+		n = v.Name
+	}
 	return n + "-copy"
 }
 

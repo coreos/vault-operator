@@ -107,12 +107,6 @@ vault-server-tls      Opaque                                2         21h
 
 #### Submit Vault Custom Resource
 
-Create a Vault config:
-
-```
-kubectl -n vault-services create configmap example-vault-config --from-file=hack/playbook/vault.hcl
-```
-
 Create a Vault custom resource:
 
 ```
@@ -157,7 +151,6 @@ Delete Vault resource and config:
 
 ```
 kubectl -n vault-services delete -f example/example_vault.yaml
-kubectl -n vault-services delete configmap example-vault-config
 ```
 
 **Wait 20s** to make sure etcd and Vault pods are deleted.

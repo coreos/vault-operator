@@ -3,7 +3,6 @@ package vaultutil
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 )
@@ -15,9 +14,12 @@ const (
 	serverTLSKeyName  = "server.key"
 )
 
-var vaultServerTLSFmt = `
+var listenerFmt = `
+listener "tcp" {
+  address     = "0.0.0.0:8200"
   tls_cert_file = "%s"
   tls_key_file  = "%s"
+}
 `
 
 var etcdStorageFmt = `
@@ -40,14 +42,11 @@ func NewConfigWithEtcd(data, etcdURL string) string {
 	return data
 }
 
-// NewConfigWithTLS appends the TLS fields for vault
-// to the original config.
-func NewConfigWithTLS(data string) string {
-	// TODO: Sanitize the config data by stripping the existing TLS section fields.
-	// Or don't take in the vault.hcl file
-	clientServerTLSFields := fmt.Sprintf(vaultServerTLSFmt, filepath.Join(k8sutil.VaultTLSAssetDir, serverTLSCertName),
+// NewConfigWithListener appends the Listener to Vault config data.
+func NewConfigWithListener(data string) string {
+	listenerSection := fmt.Sprintf(listenerFmt,
+		filepath.Join(k8sutil.VaultTLSAssetDir, serverTLSCertName),
 		filepath.Join(k8sutil.VaultTLSAssetDir, serverTLSKeyName))
-	listenerHeader := `listener "tcp" {`
-	data = strings.Replace(data, listenerHeader, listenerHeader+clientServerTLSFields, 1)
+	data = fmt.Sprintf("%s\n%s\n", data, listenerSection)
 	return data
 }

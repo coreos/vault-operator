@@ -28,8 +28,10 @@ type VaultSpec struct {
 	// Version of Vault to be deployed.
 	Version string `json:"version"`
 
-	// Name of the config map that configurates Vault.
-	// The storage fields in the configuration will be ingored.
+	// Name of the ConfigMap for Vault's configuration
+	// If this is empty, operator will create a default config for Vault.
+	// If this is not empty, the storage, listener sections in the configuration
+	// will be overwritten by operator automatically.
 	ConfigMapName string `json:"configMapName"`
 
 	// TLS policy of vault nodes
