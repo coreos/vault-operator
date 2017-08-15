@@ -241,7 +241,7 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 // Otherwise, we will create a default configmap using the Vault's name.
 func ConfigMapNameForVault(v *spec.Vault) string {
 	n := v.Spec.ConfigMapName
-	if len(n) != 0 {
+	if len(n) == 0 {
 		n = v.Name
 	}
 	return n + "-copy"
