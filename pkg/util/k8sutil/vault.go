@@ -132,7 +132,7 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 				Env: []v1.EnvVar{
 					{
 						Name:  evnVaultRedirectAddr,
-						Value: VaultServiceAddr(v.GetName(), v.GetNamespace()),
+						Value: VaultServiceURL(v.GetName(), v.GetNamespace()),
 					},
 				},
 				VolumeMounts: []v1.VolumeMount{{
@@ -266,10 +266,10 @@ func ConfigMapNameForVault(v *spec.Vault) string {
 	return n + "-copy"
 }
 
-// VaultServiceAddr returns the DNS record of the vault service in the given namespace.
-func VaultServiceAddr(name, namespace string) string {
+// VaultServiceURL returns the DNS record of the vault service in the given namespace.
+func VaultServiceURL(name, namespace string) string {
 	// TODO: change this to https
-	return "http://" + name + "." + namespace + ":8200"
+	return "https://" + name + "." + namespace + ":8200"
 }
 
 // DestroyVault destroys a vault service.
