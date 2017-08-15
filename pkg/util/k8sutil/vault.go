@@ -32,6 +32,16 @@ var (
 	evnVaultRedirectAddr = "VAULT_REDIRECT_ADDR"
 )
 
+// DefaultVaultClientTLSSecretName returns the name of the default vault client TLS secret
+func DefaultVaultClientTLSSecretName(vaultName string) string {
+	return vaultName + "-default-vault-client-tls"
+}
+
+// DefaultVaultServerTLSSecretName returns the name of the default vault server TLS secret
+func DefaultVaultServerTLSSecretName(vaultName string) string {
+	return vaultName + "-default-vault-server-tls"
+}
+
 // EtcdClientTLSSecretName returns the name of etcd client TLS secret for the given vault name
 func EtcdClientTLSSecretName(vaultName string) string {
 	return vaultName + "-etcd-client-tls"
@@ -337,10 +347,15 @@ func configEtcdBackendTLS(pt *v1.PodTemplateSpec, v *spec.Vault) {
 
 // configVaultServerTLS mounts the volume containing the vault server TLS assets for the vault pod
 func configVaultServerTLS(pt *v1.PodTemplateSpec, v *spec.Vault) {
+	secretName := DefaultVaultServerTLSSecretName(v.Name)
+	if spec.IsTLSConfigured(v.Spec.TLS) {
+		secretName = v.Spec.TLS.Static.ServerSecret
+	}
+
 	serverTLSVolume := v1.VolumeProjection{
 		Secret: &v1.SecretProjection{
 			LocalObjectReference: v1.LocalObjectReference{
-				Name: v.Spec.TLS.Static.ServerSecret,
+				Name: secretName,
 			},
 		},
 	}

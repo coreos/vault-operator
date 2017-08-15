@@ -7,11 +7,11 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 )
 
-// TODO: add TLS configs
-
 const (
-	serverTLSCertName = "server.crt"
-	serverTLSKeyName  = "server.key"
+	// ServerTLSCertName is the filename of the vault server cert
+	ServerTLSCertName = "server.crt"
+	// ServerTLSKeyName is the filename of the vault server key
+	ServerTLSKeyName = "server.key"
 )
 
 var listenerFmt = `
@@ -45,8 +45,8 @@ func NewConfigWithEtcd(data, etcdURL string) string {
 // NewConfigWithListener appends the Listener to Vault config data.
 func NewConfigWithListener(data string) string {
 	listenerSection := fmt.Sprintf(listenerFmt,
-		filepath.Join(k8sutil.VaultTLSAssetDir, serverTLSCertName),
-		filepath.Join(k8sutil.VaultTLSAssetDir, serverTLSKeyName))
+		filepath.Join(k8sutil.VaultTLSAssetDir, ServerTLSCertName),
+		filepath.Join(k8sutil.VaultTLSAssetDir, ServerTLSKeyName))
 	data = fmt.Sprintf("%s\n%s\n", data, listenerSection)
 	return data
 }
