@@ -6,19 +6,23 @@ import (
 	"time"
 
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
+	"github.com/coreos-inc/vault-operator/test/e2e/e2eutil"
 
 	"github.com/Sirupsen/logrus"
 	eopK8sutil "github.com/coreos/etcd-operator/pkg/util/k8sutil"
+	"github.com/coreos/etcd-operator/pkg/util/probe"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 var (
 	// The global framework variable used by all e2e tests
-	Global       *Framework
-	operatorName = "vault-operator"
+	Global            *Framework
+	vaultOperatorName = "vault-operator"
+	etcdOperatorName  = "etcd-operator"
 )
 
 // Framework struct contains the various clients and other information needed to run the e2e tests
@@ -26,12 +30,14 @@ type Framework struct {
 	KubeClient kubernetes.Interface
 	Namespace  string
 	vopImage   string
+	eopImage   string
 }
 
 // Setup initializes the Global framework by initializing necessary clients and creating the vault operator
 func Setup() error {
 	kubeconfig := flag.String("kubeconfig", "", "kube config path, e.g. $HOME/.kube/config")
 	vopImage := flag.String("operator-image", "", "operator image, e.g. quay.io/coreos/vault-operator-dev:latest")
+	eopImage := flag.String("etcd-operator-image", "quay.io/coreos/etcd-operator:latest", "etcd operator image, e.g. quay.io/coreos/etcd-operator:latest")
 	ns := flag.String("namespace", "", "e2e test namespace")
 	flag.Parse()
 
@@ -50,6 +56,7 @@ func Setup() error {
 		KubeClient: cli,
 		Namespace:  *ns,
 		vopImage:   *vopImage,
+		eopImage:   *eopImage,
 	}
 
 	return Global.setup()
@@ -57,7 +64,11 @@ func Setup() error {
 
 // Teardown removes the vault-operator deployment and waits for its termination
 func Teardown() error {
-	err := Global.KubeClient.CoreV1().Pods(Global.Namespace).Delete(operatorName, k8sutil.CascadeDeleteBackground())
+	err := Global.KubeClient.CoreV1().Pods(Global.Namespace).Delete(vaultOperatorName, k8sutil.CascadeDeleteBackground())
+	if err != nil {
+		return fmt.Errorf("failed to delete pod: %v", err)
+	}
+	err = Global.KubeClient.CoreV1().Pods(Global.Namespace).Delete(etcdOperatorName, k8sutil.CascadeDeleteBackground())
 	if err != nil {
 		return fmt.Errorf("failed to delete pod: %v", err)
 	}
@@ -67,24 +78,27 @@ func Teardown() error {
 }
 
 func (f *Framework) setup() error {
-	if err := f.createVaultOperatorPod(); err != nil {
+	if err := f.deployEtcdOperatorPod(); err != nil {
+		return fmt.Errorf("failed to setup etcd operator: %v", err)
+	}
+	if err := f.deployVaultOperatorPod(); err != nil {
 		return fmt.Errorf("failed to setup vault operator: %v", err)
 	}
 	logrus.Info("e2e setup successfully")
 	return nil
 }
 
-func (f *Framework) createVaultOperatorPod() error {
+func (f *Framework) deployVaultOperatorPod() error {
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      operatorName,
+			Name:      vaultOperatorName,
 			Namespace: f.Namespace,
-			Labels:    podLabelForOperator(operatorName),
+			Labels:    e2eutil.PodLabelForOperator(vaultOperatorName),
 		},
 		Spec: v1.PodSpec{
 			RestartPolicy: v1.RestartPolicyNever,
 			Containers: []v1.Container{{
-				Name:            operatorName,
+				Name:            vaultOperatorName,
 				Image:           f.vopImage,
 				ImagePullPolicy: v1.PullAlways,
 				Env: []v1.EnvVar{
@@ -116,6 +130,48 @@ func (f *Framework) createVaultOperatorPod() error {
 	return nil
 }
 
-func podLabelForOperator(name string) map[string]string {
-	return map[string]string{"name": name}
+func (f *Framework) deployEtcdOperatorPod() error {
+	pod := &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   etcdOperatorName,
+			Labels: e2eutil.PodLabelForOperator(etcdOperatorName),
+		},
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Name:            etcdOperatorName,
+					Image:           f.eopImage,
+					ImagePullPolicy: v1.PullAlways,
+					Env: []v1.EnvVar{
+						{
+							Name:      "MY_POD_NAMESPACE",
+							ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"}},
+						},
+						{
+							Name:      "MY_POD_NAME",
+							ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"}},
+						},
+					},
+					ReadinessProbe: &v1.Probe{
+						Handler: v1.Handler{
+							HTTPGet: &v1.HTTPGetAction{
+								Path: probe.HTTPReadyzEndpoint,
+								Port: intstr.IntOrString{Type: intstr.Int, IntVal: 8080},
+							},
+						},
+						InitialDelaySeconds: 3,
+						PeriodSeconds:       3,
+						FailureThreshold:    3,
+					},
+				},
+			},
+			RestartPolicy: v1.RestartPolicyNever,
+		},
+	}
+
+	_, err := f.KubeClient.CoreV1().Pods(f.Namespace).Create(pod)
+	if err != nil {
+		return fmt.Errorf("failed to create pod: %v", err)
+	}
+	return e2eutil.WaitUntilOperatorReady(f.KubeClient, f.Namespace, etcdOperatorName)
 }
