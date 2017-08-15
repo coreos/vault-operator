@@ -56,10 +56,13 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace 
 	}
 
 	var sealNodes []string
+	var availableNodes []string
 	// If it can't talk to any vault pod, we are not changing the state.
 	inited := s.Initialized
 
 	for _, p := range pods.Items {
+		availableNodes = append(availableNodes, p.GetName())
+
 		cfg := vaultapi.DefaultConfig()
 		podURL := fmt.Sprintf("https://%s:8200", k8sutil.PodDNSName(p.Status.PodIP, namespace))
 		cfg.Address = podURL
@@ -78,16 +81,17 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace 
 		// is active node?
 		// TODO: add to vaultutil?
 		if hr.Initialized && !hr.Sealed && !hr.Standby {
-			s.ActiveNode = podURL
+			s.ActiveNode = p.GetName()
 		}
 		if hr.Sealed {
-			sealNodes = append(sealNodes, podURL)
+			sealNodes = append(sealNodes, p.GetName())
 		}
 		if hr.Initialized {
 			inited = true
 		}
 	}
 
+	s.AvailableNodes = availableNodes
 	s.SealedNodes = sealNodes
 	s.Initialized = inited
 }
