@@ -3,7 +3,7 @@ kind: "Vault"
 metadata:
   name: "example-vault"
 spec:
-  replicas: 1
+  nodes: 1
   TLS:
     static:
       serverSecret: vault-server-tls
