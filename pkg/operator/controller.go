@@ -114,7 +114,15 @@ func (v *Vaults) prepareVaultConfig(vr *spec.Vault) error {
 }
 
 func (v *Vaults) onUpdate(oldObj, newObj interface{}) {
-	// nothing
+	nvr := newObj.(*spec.Vault)
+	nvr.Spec.SetDefaults()
+	ovr := oldObj.(*spec.Vault)
+	ovr.Spec.SetDefaults()
+
+	err := k8sutil.UpdateVault(v.kubecli, ovr, nvr)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (v *Vaults) onDelete(obj interface{}) {

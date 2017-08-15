@@ -236,6 +236,25 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	return nil
 }
 
+// UpdateVault updates a vault service.
+func UpdateVault(kubecli kubernetes.Interface, oldV *spec.Vault, newV *spec.Vault) error {
+	ns, name := oldV.GetNamespace(), oldV.GetName()
+	d, err := kubecli.AppsV1beta1().Deployments(ns).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	if oldV.Spec.Nodes != newV.Spec.Nodes {
+		d.Spec.Replicas = &(newV.Spec.Nodes)
+		_, err = kubecli.AppsV1beta1().Deployments(ns).Update(d)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ConfigMapNameForVault is the configmap name for the given vault.
 // If ConfigMapName is given is spec, it will make a new name based on that.
 // Otherwise, we will create a default configmap using the Vault's name.
