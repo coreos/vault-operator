@@ -126,7 +126,7 @@ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.activeNo
 Previous standby node will become active. Run the following command to check:
 
 ```
-$ kubectl get vault example-vault -o jsonpath='{.status.activeNode}'
+$ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.activeNode}'
 example-vault-994933690-5v7c1
 ```
 
