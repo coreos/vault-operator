@@ -138,7 +138,7 @@ It is also possible to see all Vault nodes in "vault" resource status:
 
 ```
 $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.sealedNodes}'
-[https://10-2-1-16.hongchao-test.pod:8200]
+[example-vault-994933690-5v7c1]
 ```
 
 Vault is unready since it is uninitialized and sealed.
