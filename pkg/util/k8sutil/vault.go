@@ -268,8 +268,7 @@ func ConfigMapNameForVault(v *spec.Vault) string {
 
 // VaultServiceURL returns the DNS record of the vault service in the given namespace.
 func VaultServiceURL(name, namespace string) string {
-	// TODO: change this to https
-	return "https://" + name + "." + namespace + ":8200"
+	return fmt.Sprintf("https://%s.%s.svc:8200", name, namespace)
 }
 
 // DestroyVault destroys a vault service.
