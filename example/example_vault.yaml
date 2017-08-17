@@ -4,3 +4,4 @@ metadata:
   name: "example-vault"
 spec:
   nodes: 1
+  version: "0.8.0-0"
