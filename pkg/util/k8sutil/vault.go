@@ -133,7 +133,7 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{{
 				Name:  "vault",
-				Image: vaultImage,
+				Image: fmt.Sprintf("%s:%s", v.Spec.BaseImage, v.Spec.Version),
 				Command: []string{
 					"/bin/vault",
 					"server",
