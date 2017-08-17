@@ -166,7 +166,7 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 								"curl",
 								"--connect-timeout", "5",
 								"--max-time", "10",
-								"-k",
+								"-k", "-s",
 								fmt.Sprintf("https://localhost:%d/v1/sys/health", vaultPort),
 							},
 						},
@@ -216,7 +216,11 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 			Selector: &metav1.LabelSelector{MatchLabels: selector},
 			Template: podTempl,
 			Strategy: appsv1beta1.DeploymentStrategy{
-				Type: appsv1beta1.RecreateDeploymentStrategyType,
+				Type: appsv1beta1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &appsv1beta1.RollingUpdateDeployment{
+					MaxUnavailable: func(a intstr.IntOrString) *intstr.IntOrString { return &a }(intstr.FromInt(1)),
+					MaxSurge:       func(a intstr.IntOrString) *intstr.IntOrString { return &a }(intstr.FromInt(1)),
+				},
 			},
 		},
 	}
