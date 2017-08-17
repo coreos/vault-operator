@@ -4,7 +4,3 @@ metadata:
   name: "example-vault"
 spec:
   nodes: 1
-  TLS:
-    static:
-      serverSecret: vault-server-tls
-      clientSecret: vault-client-tls

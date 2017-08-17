@@ -6,9 +6,6 @@ An Operator for managing Vault instances.
 
 * [Tectonic 1.7+](https://coreos.com/tectonic) is installed
 * `kubectl` is installed
-* `cfssl` tools are installed: https://github.com/cloudflare/cfssl#installation
-* `jq` tool is installed: https://stedolan.github.io/jq/download/
-
 
 ## Getting Started
 
@@ -89,21 +86,7 @@ Next we are going to deploy Vault server.
 
 #### Setup TLS secrets
 
-There is a helper script `hack/tls-gen.sh` to generate the necessary TLS assets and bundle them into the required secrets.
-
-Run the following command:
-
-```bash
-KUBE_NS=vault-services SERVER_SECRET=vault-server-tls CLIENT_SECRET=vault-client-tls hack/tls-gen.sh
-```
-
-This should create the two secrets needed for Vault server TLS:
-
-```
-$ kubectl -n vault-services get secrets
-vault-client-tls      Opaque                                1         21h
-vault-server-tls      Opaque                                2         21h
-```
+For this example cluster the operator configures a default TLS setup for all the vault pods in the cluster by default. For an overview of the default TLS configuration or how to specify your own TLS assets see the [TLS setup guide](doc/user/tls_setup.md).
 
 #### Submit Vault Custom Resource
 
@@ -159,6 +142,6 @@ Then delete operators and rest resources:
 
 ```
 kubectl -n vault-services delete deploy vault-operator etcd-operator
-kubectl -n vault-services delete secret coreos-pull-secret vault-client-tls vault-server-tls
+kubectl -n vault-services delete secret coreos-pull-secret
 kubectl -n vault-services delete -f example/rbac.yaml
 ```
