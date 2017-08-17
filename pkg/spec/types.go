@@ -4,6 +4,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	defaultBaseImage = "quay.io/coreos/vault"
+	defaultVersion   = "0.8.0-0"
+)
+
 type VaultList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
@@ -43,6 +48,12 @@ type VaultSpec struct {
 func (vs *VaultSpec) SetDefaults() {
 	if vs.Nodes == 0 {
 		vs.Nodes = 1
+	}
+	if len(vs.BaseImage) == 0 {
+		vs.BaseImage = defaultBaseImage
+	}
+	if len(vs.Version) == 0 {
+		vs.Version = defaultVersion
 	}
 }
 
