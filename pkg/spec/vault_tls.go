@@ -29,8 +29,8 @@ type StaticTLS struct {
 	ClientSecret string `json:"clientSecret,omitempty"`
 }
 
-// IsSecure checks if the TLS secrets for the server and client are specified
-func IsSecureServer(tp *TLSPolicy) bool {
+// IsTLSConfigured checks if the vault TLS secrets have been specified by the user
+func IsTLSConfigured(tp *TLSPolicy) bool {
 	if tp == nil || tp.Static == nil {
 		return false
 	}

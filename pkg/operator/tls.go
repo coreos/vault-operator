@@ -8,6 +8,7 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/spec"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 	"github.com/coreos-inc/vault-operator/pkg/util/tlsutil"
+	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -18,6 +19,37 @@ var (
 	orgForTLSCert        = []string{"coreos.com"}
 	defaultClusterDomain = "cluster.local"
 )
+
+// prepareDefaultVaultTLSSecrets creates the default secrets for the vault server's TLS assets.
+// Currently we self-generate the CA, and use the self generated CA to sign all the TLS certs.
+func (v *Vaults) prepareDefaultVaultTLSSecrets(vr *spec.Vault) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("prepare default vault TLS secrets failed: %v", err)
+		}
+	}()
+	// TODO: optional user pass-in CA.
+	caKey, caCrt, err := newCACert()
+	if err != nil {
+		return err
+	}
+
+	se, err := newVaultServerTLSSecret(vr, caKey, caCrt)
+	if err != nil {
+		return err
+	}
+	_, err = v.kubecli.CoreV1().Secrets(vr.Namespace).Create(se)
+	if err != nil {
+		return err
+	}
+
+	se = newVaultClientTLSSecret(vr, caCrt)
+	_, err = v.kubecli.CoreV1().Secrets(vr.Namespace).Create(se)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 // prepareTLSSecrets creates three etcd TLS secrets (client, server, peer) containing TLS assets.
 // Currently we self-generate the CA, and use the self generated CA to sign all the TLS certs.
@@ -89,7 +121,7 @@ func (v *Vaults) cleanupTLSSecrets(vr *spec.Vault) (err error) {
 	return nil
 }
 
-// newEtcdClientTLSSecret returns a secret containg etcd client TLS assets
+// newEtcdClientTLSSecret returns a secret containing etcd client TLS assets
 func newEtcdClientTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.Certificate) (*v1.Secret, error) {
 	return newTLSSecret(vr, caKey, caCrt, "etcd client", k8sutil.EtcdClientTLSSecretName(vr.Name), nil,
 		map[string]string{
@@ -99,7 +131,7 @@ func newEtcdClientTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.C
 		})
 }
 
-// newEtcdServerTLSSecret returns a secret containg etcd server TLS assets
+// newEtcdServerTLSSecret returns a secret containing etcd server TLS assets
 func newEtcdServerTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.Certificate) (*v1.Secret, error) {
 	return newTLSSecret(vr, caKey, caCrt, "etcd server", k8sutil.EtcdServerTLSSecretName(vr.Name),
 		[]string{
@@ -119,7 +151,7 @@ func newEtcdServerTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.C
 		})
 }
 
-// newEtcdPeerTLSSecret returns a secret containg etcd peer TLS assets
+// newEtcdPeerTLSSecret returns a secret containing etcd peer TLS assets
 func newEtcdPeerTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.Certificate) (*v1.Secret, error) {
 	return newTLSSecret(vr, caKey, caCrt, "etcd peer", k8sutil.EtcdPeerTLSSecretName(vr.Name),
 		[]string{
@@ -132,6 +164,57 @@ func newEtcdPeerTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.Cer
 			"cert": "peer.crt",
 			"ca":   "peer-ca.crt",
 		})
+}
+
+// cleanupDefaultVaultTLSSecrets cleans up any auto generated vault TLS secrets for the given vault cluster
+func (v *Vaults) cleanupDefaultVaultTLSSecrets(vr *spec.Vault) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("cleanup vault TLS secrets failed: %v", err)
+		}
+	}()
+	name := k8sutil.DefaultVaultServerTLSSecretName(vr.Name)
+	err = v.kubecli.CoreV1().Secrets(vr.Namespace).Delete(name, nil)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete secret (%s) failed: %v", name, err)
+	}
+
+	name = k8sutil.DefaultVaultClientTLSSecretName(vr.Name)
+	err = v.kubecli.CoreV1().Secrets(vr.Namespace).Delete(name, nil)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete secret (%s) failed: %v", name, err)
+	}
+	return nil
+}
+
+// newVaultServerTLSSecret returns a secret containing vault server TLS assets
+func newVaultServerTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.Certificate) (*v1.Secret, error) {
+	return newTLSSecret(vr, caKey, caCrt, "vault server", k8sutil.DefaultVaultServerTLSSecretName(vr.Name),
+		[]string{
+			"localhost",
+			fmt.Sprintf("*.%s.pod", vr.Namespace),
+			fmt.Sprintf("%s.%s.svc", vr.Name, vr.Namespace),
+		},
+		map[string]string{
+			"key":  vaultutil.ServerTLSKeyName,
+			"cert": vaultutil.ServerTLSCertName,
+			// The CA is not used by the server
+			"ca": "server-ca.crt",
+		})
+}
+
+// newVaultClientTLSSecret returns a secret containing vault client TLS assets.
+// The client key and certificate are not generated since clients are not authenticated at the server
+func newVaultClientTLSSecret(vr *spec.Vault, caCrt *x509.Certificate) *v1.Secret {
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   k8sutil.DefaultVaultClientTLSSecretName(vr.Name),
+			Labels: k8sutil.LabelsForVault(vr.Name),
+		},
+		Data: map[string][]byte{
+			spec.CATLSCertName: tlsutil.EncodeCertificatePEM(caCrt),
+		},
+	}
 }
 
 // newTLSSecret is a common utility for creating a secret containing TLS assets.

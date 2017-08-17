@@ -2,7 +2,6 @@ package operator
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"path/filepath"
@@ -47,12 +46,15 @@ func (v *Vaults) run(ctx context.Context) {
 func (v *Vaults) onAdd(obj interface{}) {
 	vr := obj.(*spec.Vault)
 
-	if !spec.IsSecureServer(vr.Spec.TLS) {
-		// TODO: Auto generate TLS assets
-		err := errors.New("prepare vault config error: TLS secrets for vault server and client must be specified")
-		panic(err)
-	}
 	vr.Spec.SetDefaults()
+
+	if !spec.IsTLSConfigured(vr.Spec.TLS) {
+		err := v.prepareDefaultVaultTLSSecrets(vr)
+		if err != nil {
+			// TODO: retry or report failure status in CR
+			panic(err)
+		}
+	}
 
 	err := v.prepareTLSSecrets(vr)
 	if err != nil {
@@ -148,6 +150,13 @@ func (v *Vaults) onDelete(obj interface{}) {
 		// TODO: retry or report failure status in CR
 		panic(err)
 	}
+
+	err = v.cleanupDefaultVaultTLSSecrets(vr)
+	if err != nil {
+		// TODO: retry or report failure status in CR
+		panic(err)
+	}
+
 	cancel := v.ctxCancels[vr.Name]
 	cancel()
 	delete(v.ctxCancels, vr.Name)

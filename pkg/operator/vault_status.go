@@ -113,9 +113,14 @@ func (vs *Vaults) updateVaultCRStatus(ctx context.Context, name, namespace strin
 }
 
 func (vs *Vaults) readClientTLSFromSecret(vr *spec.Vault) (*vaultapi.TLSConfig, error) {
-	secret, err := vs.kubecli.CoreV1().Secrets(vr.GetNamespace()).Get(vr.Spec.TLS.Static.ClientSecret, metav1.GetOptions{})
+	secretName := k8sutil.DefaultVaultClientTLSSecretName(vr.Name)
+	if spec.IsTLSConfigured(vr.Spec.TLS) {
+		secretName = vr.Spec.TLS.Static.ClientSecret
+	}
+
+	secret, err := vs.kubecli.CoreV1().Secrets(vr.GetNamespace()).Get(secretName, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("read client tls failed: failed to get secret (%s): %v", vr.Spec.TLS.Static.ClientSecret, err)
+		return nil, fmt.Errorf("read client tls failed: failed to get secret (%s): %v", secretName, err)
 	}
 
 	// Read the secret and write ca.crt to a temporary file
