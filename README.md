@@ -1,6 +1,8 @@
 # Vault Operator
 
-An Operator for managing Vault instances.
+An operator to create and manage Vault instances for Kubernetes clusters on Tectonic. Vault instances created by the Vault operator are highly available and support automatic failover and upgrade.
+
+An example namespace, `vault-services`, is used in this document.
 
 ## Prerequisites
 
@@ -11,137 +13,138 @@ An Operator for managing Vault instances.
 
 Verify `kubectl` is configured to use a 1.7+ Kubernetes cluster:
 
-```
+```sh
 $ kubectl version | grep "Server Version"
 Server Version: version.Info{Major:"1", Minor:"7", GitVersion:"v1.7.1+coreos.0", GitCommit:"fdd5383472eb43e60d2222503f03c76445e49899", GitTreeState:"clean", BuildDate:"2017-07-18T19:44:47Z", GoVersion:"go1.8.3", Compiler:"gc", Platform:"linux/amd64"}
 ```
 
-### Setup Namespace
+### Creating a namespace
 
-In this example setup, we are going to use namespace "vault-services".
-
-Create namespace:
+Create the namespace `vault-services`:
 
 ```
 kubectl create namespace vault-services
 ```
 
-### Setup RBAC
+### Configuring RBAC
 
-In Tectonic cluster, "default" role has no access to any resource.
-We need to setup RBAC rules to grant access to operators.
+By default, the Vault operator has no privilege to access any resources in Tectonic. Configure RBAC rules to grant access to the Vault operator.
 
-Generate a RBAC yaml from template:
+1. Generate a RBAC yaml file from the template given in the repository:
 
-```
-sed 's/{KUBE_NS}/vault-services/g' example/rbac-template.yaml > example/rbac.yaml
-```
+    ```sh
+    sed 's/{KUBE_NS}/vault-services/g' example/rbac-template.yaml > example/rbac.yaml
+    ```
 
-Then create the RBAC role:
+2. Create the RBAC role:
 
-```
-kubectl -n vault-services create -f example/rbac.yaml
-```
+    ```sh
+    kubectl -n vault-services create -f example/rbac.yaml
+    ```
 
-This will give "admin" role to default users in "vault-services" namespace.
-(We will provide more production-grade RBAC setup later.)
+    The RBAC rule grants `admin` role to the service account in the `vault-services` namespace.
 
-### Deploy etcd operator
 
-Vault operator makes use of etcd operator to deploy etcd cluster as storage backend.
-So we also need to deploy etcd operator:
+### Deploying the etcd operator
 
-```
+The Vault operator employs etcd operator to deploy an etcd cluster as the storage backend. There is no etcd operator installed by default.
+Deploy one into the `vault-services` namespace:
+
+```sh
 kubectl -n vault-services create -f https://raw.githubusercontent.com/coreos/etcd-operator/master/example/deployment.yaml
 ```
 
-### Deploy Vault operator
+### Deploying the Vault operator
 
-Vault operator image is private. Using it requires "quay.io" pull secret.
+Vault operator image is private. Use "quay.io" pull secret to get the image.
 
-Create pull secret from existing "coreos-pull-secret":
+1. Create pull secret from the existing `coreos-pull-secret`:
 
-```
-kubectl get secrets -n tectonic-system -o yaml coreos-pull-secret | sed 's/tectonic-system/vault-services/g' | kubectl create -f -
-```
+    ```
+    kubectl get secrets -n tectonic-system -o yaml coreos-pull-secret | sed 's/tectonic-system/vault-services/g' | kubectl create -f -
+    ```
 
-Deploy vault operator:
+2. Deploy the Vault operator:
 
-```
-kubectl -n vault-services create -f example/deployment.yaml
-```
+    ```
+    kubectl -n vault-services create -f example/deployment.yaml
+    ```
 
-Wait ~10s until vault operator is running:
+    Wait for 10s until the Vault operator is up and running.
 
-```
-$ kubectl -n vault-services get deploy
-NAME             DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-etcd-operator    1         1         1            1           1d
-vault-operator   1         1         1            0           6s
-```
+3. Verify that the operators are running:    
 
-Next we are going to deploy Vault server.
-
-### Deploy Vault
-
-#### Setup TLS secrets
-
-For this example cluster the operator configures a default TLS setup for all the vault pods in the cluster by default. For an overview of the default TLS configuration or how to specify your own TLS assets see the [TLS setup guide](doc/user/tls_setup.md).
-
-#### Submit Vault Custom Resource
-
-Create a Vault custom resource:
-
-```
-kubectl -n vault-services create -f example/example_vault.yaml
-```
-
-**Wait ~20s.** Then make sure you see `example-vault-...` pod:
-
-```
-$ kubectl -n vault-services get pods
-NAME                             READY     STATUS    RESTARTS   AGE
-etcd-operator-809151189-1j7jl    1/1       Running   0          2d
-example-vault-613074584-5lwbg    0/1       Running   0          49s
-example-vault-etcd-0000          1/1       Running   0          1m
-example-vault-etcd-0001          1/1       Running   0          1m
-example-vault-etcd-0002          1/1       Running   0          1m
-vault-operator-146442885-gj98d   1/1       Running   0          1m
-```
-
-To get Vault pods only:
-
-```
-$ kubectl -n vault-services get pods -l app=vault,name=example-vault
-NAME                            READY     STATUS    RESTARTS   AGE
-example-vault-613074584-5lwbg   0/1       Running   0          8m
-```
-
-It is also possible to see all Vault nodes in "vault" resource status:
-
-```
-$ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.sealedNodes}'
-[example-vault-994933690-5v7c1]
-```
-
-Vault is unready since it is uninitialized and sealed.
-To learn how to access Vault and turn it into ready state, check out [vault.md](./doc/user/vault.md) .
+      ```
+      $ kubectl -n vault-services get deploy
+      NAME             DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+      etcd-operator    1         1         1            1           1d
+      vault-operator   1         1         1            0           6s
+      ```
 
 
-### Cleanup
+### Deploying Vault
 
-Delete Vault resource and config:
+#### Configuring TLS secrets
 
-```
-kubectl -n vault-services delete -f example/example_vault.yaml
-```
+In this example, the Vault operator configures a default TLS setup for all the Vault pods in the cluster. For an overview of the default TLS configuration or how to specify specify custom TLS assets see the [TLS setup guide](doc/user/tls_setup.md).
 
-**Wait 20s** to make sure etcd and Vault pods are deleted.
+#### Submitting Vault Custom Resource
 
-Then delete operators and rest resources:
+1. Create a Vault custom resource:
 
-```
-kubectl -n vault-services delete deploy vault-operator etcd-operator
-kubectl -n vault-services delete secret coreos-pull-secret
-kubectl -n vault-services delete -f example/rbac.yaml
-```
+    ```
+    kubectl -n vault-services create -f example/example_vault.yaml
+    ```
+
+    Wait for around 20s.
+
+2. Ensure that `example-vault-...` pod is up:
+
+    ```
+    $ kubectl -n vault-services get pods
+    NAME                             READY     STATUS    RESTARTS   AGE
+    etcd-operator-809151189-1j7jl    1/1       Running   0          2d
+    example-vault-613074584-5lwbg    0/1       Running   0          49s
+    example-vault-etcd-0000          1/1       Running   0          1m
+    example-vault-etcd-0001          1/1       Running   0          1m
+    example-vault-etcd-0002          1/1       Running   0          1m
+    vault-operator-146442885-gj98d   1/1       Running   0          1m
+    ```
+
+3. Print the Vault pods:
+
+    ```
+    $ kubectl -n vault-services get pods -l app=vault,name=example-vault
+    NAME                            READY     STATUS    RESTARTS   AGE
+    example-vault-613074584-5lwbg   0/1       Running   0          8m
+    ```
+
+4. Verify that the Vault nodes can be viewed in the "vault" resource status:
+
+      ```
+      $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.sealedNodes}'
+      [example-vault-994933690-5v7c1]
+      ```
+
+      Vault is unready because it is uninitialized and sealed.
+
+For information on initiating Vault, see [vault.md](./doc/user/vault.md) .
+
+
+### Uninstalling Vault operator
+
+1. Delete the Vault resource and configuration:
+
+    ```
+    kubectl -n vault-services delete -f example/example_vault.yaml
+    ```
+
+2. Wait for around 20s to make sure etcd and Vault pods are deleted.
+
+3. Delete operators and other resources:
+
+    ```
+    kubectl -n vault-services delete deploy vault-operator etcd-operator
+    kubectl -n vault-services delete secret coreos-pull-secret
+    kubectl -n vault-services delete -f example/rbac.yaml
+    ```
