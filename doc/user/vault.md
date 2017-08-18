@@ -1,155 +1,170 @@
-# Vault
+# Configuring Vault nodes
 
-This doc talks about how to access Vault node deployed by Vault operator, and HA setup.
-This doc is based on [example setup](../../README.md#getting-started).
+This document describes how to access a Vault node deployed by the Vault operator and configure an high availability (HA) Vault setup.
+See [Vault operator][getting-started] for information on managing Vault instances by using the Vault Operator.
 
-Prerequisites:
+## Prerequisites
 
-* Vault CLI is installed: https://www.vaultproject.io/docs/install/index.html
+* [Vault Commands (CLI)][vault-cli] is installed
+* [Vault operator][getting-started] is configured
 
-## Access The Sealed Node
+## Initiating a sealed node
 
-Create port-forwarding between local machine and the first sealed Vault node:
+1. Configure port forwarding between the local machine and the first sealed Vault node:
 
-```
-kubectl -n vault-services get vault example-vault -o jsonpath='{.status.sealedNodes[0]}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
-```
+    ```sh
+    kubectl -n vault-services get vault example-vault -o jsonpath='{.status.sealedNodes[0]}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+    ```
 
-Open a new terminal.
-Export the following env for [Vault CLI env](https://www.vaultproject.io/docs/commands/environment.html):
+2. Open a new terminal.
+3. Export the following environment for [Vault CLI environment][vault-cli-env]:
 
-```
-export VAULT_ADDR='https://localhost:8200'
-export VAULT_SKIP_VERIFY="true"
-```
+    ```sh
+    export VAULT_ADDR='https://localhost:8200'
+    export VAULT_SKIP_VERIFY="true"
+    ```
 
-Verify Vault server is up using Vault CLI:
+4. Verify that the Vault server is up using the Vault CLI:
 
-```
-$ vault status
+    ```sh
+    $ vault status
 
-* server is not yet initialized
-```
+    * server is initialized
+    ```
 
-Now it is possible to use Vault CLI to interact with Vault server.
-Check out [the docs on how to initialize and unseal Vault](https://www.vaultproject.io/intro/getting-started/deploy.html#initializing-the-vault).
+    The Vault CLI is ready to interact with the Vault server.
+    For information on initializing and unsealing, see [Initializing the Vault][initialize-vault].
 
 
-## Access The Active Node
+## Writing secret to the active node
 
-Once the node is unsealed, there should be one active node.
-An active Vault node is initialized, unsealed and holding the leader-election lock.
+When a node is unsealed, it becomes active and initialized. The active Vault holds the leader election lock.
 
-Check the active Vault node:
 
-```
-kubectl -n vault-services get vault example-vault -o jsonpath='{.status.activeNode}'
-```
+1. Check the active Vault node:
 
-Create port-forwarding between local machine and the active Vault node:
+    ```sh
+    kubectl -n vault-services get vault example-vault -o jsonpath='{.status.activeNode}'
+    ```
 
-```
-kubectl -n vault-services get vault example-vault -o jsonpath='{.status.activeNode}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
-```
+2. Configure port forwarding between the local machine and the active Vault node:
 
-Open a new terminal.
-Export the following env for [Vault CLI env](https://www.vaultproject.io/docs/commands/environment.html):
+    ```sh
+    kubectl -n vault-services get vault example-vault -o jsonpath='{.status.activeNode}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+    ```
 
-```
-export VAULT_ADDR='https://localhost:8200'
-export VAULT_SKIP_VERIFY="true"
-```
+3. Open a new terminal.
+4. Export the following environment for [Vault CLI environment][vault-cli-env]:
 
-Try to write and read secret:
+    ```sh
+    export VAULT_ADDR='https://localhost:8200'
+    export VAULT_SKIP_VERIFY="true"
+    ```
 
-```
-$ vault write secret/foo value=bar
+5. Write and read an example secret:
 
-$ vault read secret/foo
+    ```sh
+    $ vault write secret/foo value=bar
 
-Key             	Value
----             	-----
-refresh_interval	768h0m0s
-value           	bar
-```
+    $ vault read secret/foo
 
-If it succeeds, it means the active Vault node is serving requests.
+    Key             	Value
+    ---             	-----
+    refresh_interval	768h0m0s
+    value           	bar
+    ```
 
-## High Availability
+    Successful operations indicate that the active Vault node is serving requests.
 
-Vault support [HA setup](https://www.vaultproject.io/docs/concepts/ha.html) for production usage.
+## Enabling high availability
 
-To enable a HA setup, scale Vault nodes from 1 to 2 (or more) by modifying customer resource:
+Vault supports [HA mode][ha] for production usage. To enable HA mode, scale Vault nodes from one to two or more by modifying the custom resource:
 
-```
+```sh
 kubectl -n vault-services get vault example-vault -o json | sed 's/"nodes": 1/"nodes": 2/g' | kubectl apply -f -
 ```
 
-Wait until all two Vault nodes show up:
+Wait until all the Vault nodes are up:
 
-```
+```sh
 $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.availableNodes}'
 [example-vault-994933690-37ts8 example-vault-994933690-5v7c1]
 ```
 
-If a Vault node has been unsealed before, there should be one active node.
-In a HA Vault setup, only one active node could exist, and only the active node can serve user requests.
-The other unsealed nodes become standby.
+The first Vault node that is unsealed becomes the active node. In an HA Vault setup, only one active node is allowed to exist and serve user requests. The other unsealed nodes become standby.
 
-### Start a standby Vault node
+### Starting a standby Vault node
 
-A standby Vault node is initialized, unsealed, and not holding leader-election lock.
-The standby node cannot serve user requests, and will forward user requests to the active node.
-If the active node dies, standby node will try to become the active node.
+A standby Vault node is initialized and unsealed, but does not hold the leader election lock. The standby node cannot serve user requests. It forwards user requests to the active node. If the active node goes down, a standby node becomes the active node.
 
-Unseal the other sealed node based on [Access The Sealed Node](#access-the-sealed-node) section.
 
-Verify it becomes standby:
+1. Unseal a sealed node by using the instructions given in [Initiating a sealed node](#initiating-a-sealed-node).
 
-```
-$ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.standbyNodes}'
-[example-vault-994933690-5v7c1]
-```
+2. Verify that the node becomes standby:
 
-Now we have one active and one standby Vault nodes.
+    ```sh
+    $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.standbyNodes}'
+    [example-vault-994933690-5v7c1]
+    ```
+
+    The setup now contains an active and a standby Vault nodes.
 
 ### Automated failover
 
-In HA Vault setup, if the active node is down, the standby node will take over the active role and server client requests.
+In an HA Vault setup, when the active node goes down the standby node takes over the active role and starts serving client requests.
 
-To see how it works, first kill the active Vault node:
+To see how it works, perform the following:
 
-```
-kubectl -n vault-services get vault example-vault -o jsonpath='{.status.activeNode}' | xargs -0 -I {} kubectl -n vault-services delete po {}
-```
+1. Terminate the active Vault node:
 
-Previous standby node will become active. Run the following command to check:
+    ```
+    kubectl -n vault-services get vault example-vault -o jsonpath='{.status.activeNode}' | xargs -0 -I {} kubectl -n vault-services delete po {}
+    ```
 
-```
-$ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.activeNode}'
-example-vault-994933690-5v7c1
-```
+    The standby node becomes active.
 
-Previous port-forward session should have been broken.
-Redo [Access The Active Node](#access-the-active-node) to port-forward to the new active node.
-If succeeded, we have verified automated failover would work.
+2. Verify that the node is active:
+
+    ```
+    $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.activeNode}'
+    example-vault-994933690-5v7c1
+    ```
+
+    The previous port forward session should be terminated.
+
+3. Create a new port forward session between the local machine and the new active node.
+
+   See [Initiating a sealed node](#initiating-a-sealed-node) for more information.
+   Successful operations indicate that automated failover works as expected.
 
 ### Failure recovery
 
-Vault operator will recover any dead Vault pod to maintain the size of cluster.
+Vault operator recovers any inactive or terminated Vault pods to maintain the size of cluster.
 
-Verify there are two Vault nodes even if we killed one before:
+To see how it works, perform the following:
 
-```
-$ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.availableNodes}'
-[example-vault-994933690-5v7c1 example-vault-994933690-h066h]
-```
+1. Ensure that a Vault node is terminated.
 
-Check that a new sealed node was created:
+   A Vault node has already been terminated in the [Automated failover](#automated-failover) section.
 
-```
-$ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.sealedNodes}'
-[example-vault-994933690-h066h]
-```
+2. Verify that a new Vault node is created:
 
-This is the newly created Vault node to replaced our previous killed one. Unseal it and enjoy HA.
+    ```
+    $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.availableNodes}'
+    [example-vault-994933690-5v7c1 example-vault-994933690-h066h]
+    ```
+
+3. Verify that the newly created Vault node is sealed:
+
+    ```
+    $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.sealedNodes}'
+    [example-vault-994933690-h066h]
+    ```
+
+    A new Vault node is created to replace the terminated one. Unseal the node and continue using HA.
+
+[getting-started]: ../../README.md#getting-started
+[ha]: https://www.vaultproject.io/docs/concepts/ha.html
+[initialize-vault]: https://www.vaultproject.io/intro/getting-started/deploy.html#initializing-the-vault
+[vault-cli]: https://www.vaultproject.io/docs/install/index.html
+[vault-cli-env]: https://www.vaultproject.io/docs/commands/environment.html
