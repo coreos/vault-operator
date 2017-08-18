@@ -262,8 +262,20 @@ func UpdateVault(kubecli kubernetes.Interface, oldV *spec.Vault, newV *spec.Vaul
 		d.Spec.Replicas = &(newV.Spec.Nodes)
 		_, err = kubecli.AppsV1beta1().Deployments(ns).Update(d)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to update size of deployment (%s): %v", d.Name, err)
 		}
+	}
+
+	if oldV.Spec.Version != newV.Spec.Version {
+		mu := intstr.FromInt(int(newV.Spec.Nodes - 1))
+		d.Spec.Strategy.RollingUpdate.MaxUnavailable = &mu
+		image := fmt.Sprintf("%s:%s", newV.Spec.BaseImage, newV.Spec.Version)
+		d.Spec.Template.Spec.Containers[0].Image = image
+		_, err = kubecli.AppsV1beta1().Deployments(ns).Update(d)
+		if err != nil {
+			return fmt.Errorf("failed to upgrade deployment (%s) to %s: %v", d.Name, image, err)
+		}
+		// TODO: wait until upgraded Vault nodes become standby. Then trigger step-down.
 	}
 
 	return nil
