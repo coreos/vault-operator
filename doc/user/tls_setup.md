@@ -4,7 +4,7 @@ This document describes the two methods to configure TLS on the Vault servers fo
 
 ### Using the default TLS assets
 
-If the TLS assets for a cluster is not specified using the custom resource (CR) specification field, `spec.TLS`, the operator  creates a new CA and uses it to generate self-signed certificates for the Vault servers in the cluster.
+If the TLS assets for a cluster is not specified using the custom resource (CR) specification field, `spec.TLS`, the operator creates a default CA and uses it to generate self-signed certificates for the Vault servers in the cluster.
 
 These default TLS assets are stored in the following secrets:
 
