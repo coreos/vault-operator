@@ -271,10 +271,13 @@ func UpdateVault(kubecli kubernetes.Interface, oldV, newV *spec.Vault) error {
 	}
 
 	if oldV.Spec.Version != newV.Spec.Version {
-		err := upgrade(kubecli, oldV, newV, d)
-		if err != nil {
-			return fmt.Errorf("failed to upgrade deployment (%s): %v", d.Name, err)
-		}
+		// upgrade() will wait for user input. We need to make it non-blocking.
+		go func() {
+			err := upgrade(kubecli, oldV, newV, d)
+			if err != nil {
+				logrus.Errorf("failed to upgrade to (%s): %v", newV.Spec.Version, err)
+			}
+		}()
 	}
 
 	return nil
@@ -290,18 +293,46 @@ func upgrade(kubecli kubernetes.Interface, oldV, newV *spec.Vault, d *appsv1beta
 		return fmt.Errorf("update image to (%s) failed: %v", vaultImage(newV.Spec), err)
 	}
 
-	go func() {
-		err := waitUpgradeNodeUnsealed(kubecli, newV)
-		if err != nil {
-			logrus.Errorf("failed to wait any upgraded Vault node unsealed: %v", err)
-			return
-		}
-		// TODO: step down
-	}()
+	err = waitUpgradedNodesUnsealed(kubecli, newV)
+	if err != nil {
+		return fmt.Errorf("failed to wait upgraded Vault nodes unsealed: %v", err)
+	}
+	active, err := getActiveVaultPod(kubecli, newV)
+	if err != nil {
+		return fmt.Errorf("failed to get active Vault pod: %v", err)
+	}
+	if active == nil {
+		// The active Vault node might have been deleted by external user. So it has done the work for us.
+		return nil
+	}
+	// This will send SIGTERM to the Vault container. Vault should release HA lock and exit properly.
+	// If it failed for some reason, kubelet will send SIGKILL after default grace period (30s) eventually.
+	// This will take longer but the the lock will get released eventually.
+	err = kubecli.CoreV1().Pods(active.Namespace).Delete(active.Name, nil)
+	if err != nil {
+		return fmt.Errorf("step down: failed to delete active Vault pod (%s): %v", active.Name, err)
+	}
 	return nil
 }
 
-func waitUpgradeNodeUnsealed(kubecli kubernetes.Interface, vr *spec.Vault) error {
+func getActiveVaultPod(kubecli kubernetes.Interface, vr *spec.Vault) (*v1.Pod, error) {
+	selector := labels.SelectorFromSet(LabelsForVault(vr.Name))
+	listOpt := metav1.ListOptions{
+		LabelSelector: selector.String(),
+	}
+	podList, err := kubecli.CoreV1().Pods(vr.Namespace).List(listOpt)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range podList.Items {
+		if p.Status.Phase == v1.PodRunning && IsPodReady(p) {
+			return &p, nil
+		}
+	}
+	return nil, nil
+}
+
+func waitUpgradedNodesUnsealed(kubecli kubernetes.Interface, vr *spec.Vault) error {
 	tlsConfig, err := VaultTLSFromSecret(kubecli, vr)
 	if err != nil {
 		return err
@@ -372,6 +403,16 @@ func VaultTLSFromSecret(kubecli kubernetes.Interface, vr *spec.Vault) (*vaultapi
 		return nil, fmt.Errorf("read client tls failed: write ca cert file failed: %v", err)
 	}
 	return &vaultapi.TLSConfig{CACert: caCertFile}, nil
+}
+
+// IsPodReady checks the status of the pod for the Ready condition
+func IsPodReady(p v1.Pod) bool {
+	for _, c := range p.Status.Conditions {
+		if c.Type == v1.PodReady {
+			return c.Status == v1.ConditionTrue
+		}
+	}
+	return false
 }
 
 // ConfigMapNameForVault is the configmap name for the given vault.
