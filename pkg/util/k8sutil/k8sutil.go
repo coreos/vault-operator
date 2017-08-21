@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -18,7 +19,7 @@ func CascadeDeleteBackground() *metav1.DeleteOptions {
 }
 
 // PodDNSName constructs the dns name on which a pod can be addressed
-func PodDNSName(podIP, namespace string) string {
-	podIP = strings.Replace(podIP, ".", "-", -1)
-	return fmt.Sprintf("%s.%s.pod", podIP, namespace)
+func PodDNSName(p v1.Pod) string {
+	podIP := strings.Replace(p.Status.PodIP, ".", "-", -1)
+	return fmt.Sprintf("%s.%s.pod", podIP, p.Namespace)
 }

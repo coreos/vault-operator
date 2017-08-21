@@ -6,7 +6,8 @@ import (
 
 const (
 	defaultBaseImage = "quay.io/coreos/vault"
-	defaultVersion   = "0.8.0-0"
+	// version format is "<upstream-version>-<our-version>"
+	defaultVersion = "0.8.0-0"
 )
 
 type VaultList struct {
