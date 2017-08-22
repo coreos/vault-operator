@@ -3,18 +3,26 @@ package k8sutil
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"math"
+	"os"
+	"path"
 	"path/filepath"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/coreos-inc/vault-operator/pkg/spec"
+	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
 	etcdCRClient "github.com/coreos/etcd-operator/pkg/client"
 	etcdCRAPI "github.com/coreos/etcd-operator/pkg/spec"
 	"github.com/coreos/etcd-operator/pkg/util/retryutil"
+	vaultapi "github.com/hashicorp/vault/api"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 )
@@ -22,11 +30,7 @@ import (
 var (
 	// VaultConfigPath is the path that vault pod uses to read config from
 	VaultConfigPath = "/run/vault/config/vault.hcl"
-	// VaultTLSAssetDir is the dir where vault's server TLS and etcd TLS assets sits
-	VaultTLSAssetDir = "/run/vault/tls/"
 
-	// vault image format is "<upstream-version>-<our-version"
-	vaultImage           = "quay.io/coreos/vault:0.8.0-0"
 	vaultTLSAssetVolume  = "vault-tls-secret"
 	vaultConfigVolName   = "vault-config"
 	evnVaultRedirectAddr = "VAULT_REDIRECT_ADDR"
@@ -251,7 +255,7 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 }
 
 // UpdateVault updates a vault service.
-func UpdateVault(kubecli kubernetes.Interface, oldV *spec.Vault, newV *spec.Vault) error {
+func UpdateVault(kubecli kubernetes.Interface, oldV, newV *spec.Vault) error {
 	ns, name := oldV.GetNamespace(), oldV.GetName()
 	d, err := kubecli.AppsV1beta1().Deployments(ns).Get(name, metav1.GetOptions{})
 	if err != nil {
@@ -267,18 +271,107 @@ func UpdateVault(kubecli kubernetes.Interface, oldV *spec.Vault, newV *spec.Vaul
 	}
 
 	if oldV.Spec.Version != newV.Spec.Version {
-		mu := intstr.FromInt(int(newV.Spec.Nodes - 1))
-		d.Spec.Strategy.RollingUpdate.MaxUnavailable = &mu
-		image := fmt.Sprintf("%s:%s", newV.Spec.BaseImage, newV.Spec.Version)
-		d.Spec.Template.Spec.Containers[0].Image = image
-		_, err = kubecli.AppsV1beta1().Deployments(ns).Update(d)
+		err := upgrade(kubecli, oldV, newV, d)
 		if err != nil {
-			return fmt.Errorf("failed to upgrade deployment (%s) to %s: %v", d.Name, image, err)
+			return fmt.Errorf("failed to upgrade deployment (%s): %v", d.Name, err)
 		}
-		// TODO: wait until upgraded Vault nodes become standby. Then trigger step-down.
 	}
 
 	return nil
+}
+
+// see (doc/design/upgrade.md)
+func upgrade(kubecli kubernetes.Interface, oldV, newV *spec.Vault, d *appsv1beta1.Deployment) error {
+	mu := intstr.FromInt(int(newV.Spec.Nodes - 1))
+	d.Spec.Strategy.RollingUpdate.MaxUnavailable = &mu
+	d.Spec.Template.Spec.Containers[0].Image = vaultImage(newV.Spec)
+	_, err := kubecli.AppsV1beta1().Deployments(d.Namespace).Update(d)
+	if err != nil {
+		return fmt.Errorf("update image to (%s) failed: %v", vaultImage(newV.Spec), err)
+	}
+
+	go func() {
+		err := waitUpgradeNodeUnsealed(kubecli, newV)
+		if err != nil {
+			logrus.Errorf("failed to wait any upgraded Vault node unsealed: %v", err)
+			return
+		}
+		// TODO: step down
+	}()
+	return nil
+}
+
+func waitUpgradeNodeUnsealed(kubecli kubernetes.Interface, vr *spec.Vault) error {
+	tlsConfig, err := VaultTLSFromSecret(kubecli, vr)
+	if err != nil {
+		return err
+	}
+	selector := labels.SelectorFromSet(LabelsForVault(vr.Name))
+	listOpt := metav1.ListOptions{
+		LabelSelector: selector.String(),
+	}
+	// TODO: How to handle dangling upgrade?
+	return retryutil.Retry(5*time.Second, math.MaxInt64, func() (bool, error) {
+		podList, err := kubecli.CoreV1().Pods(vr.Namespace).List(listOpt)
+		if err != nil {
+			return false, err
+		}
+		count := int32(0)
+		for _, p := range podList.Items {
+			if p.Status.Phase != v1.PodRunning {
+				continue
+			}
+			if p.Spec.Containers[0].Image != vaultImage(vr.Spec) { // current version of Vault?
+				continue
+			}
+
+			vapi, err := vaultutil.NewClient(PodDNSName(p), tlsConfig)
+			if err != nil {
+				logrus.Errorf("failed to create Vault client: %v", err)
+				continue
+			}
+			hr, err := vapi.Sys().Health()
+			if err != nil {
+				logrus.Errorf("failed to request Vault's health info: %v", err)
+				continue
+			}
+			if hr.Initialized && !hr.Sealed && hr.Standby {
+				count++
+			}
+		}
+		// Wait until all upgraded nodes become standby as recommended by:
+		//   https://www.vaultproject.io/guides/upgrading/index.html#ha-installations
+		return count >= vr.Spec.Nodes-1, nil
+	})
+}
+
+func vaultImage(vs spec.VaultSpec) string {
+	return fmt.Sprintf("%s:%s", vs.BaseImage, vs.Version)
+}
+
+// VaultTLSFromSecret reads Vault CR's TLS secret and converts it into a vault client's TLS config struct.
+func VaultTLSFromSecret(kubecli kubernetes.Interface, vr *spec.Vault) (*vaultapi.TLSConfig, error) {
+	secretName := DefaultVaultClientTLSSecretName(vr.Name)
+	if spec.IsTLSConfigured(vr.Spec.TLS) {
+		secretName = vr.Spec.TLS.Static.ClientSecret
+	}
+
+	secret, err := kubecli.CoreV1().Secrets(vr.GetNamespace()).Get(secretName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("read client tls failed: failed to get secret (%s): %v", secretName, err)
+	}
+
+	// Read the secret and write ca.crt to a temporary file
+	caCertData := secret.Data[spec.CATLSCertName]
+	if err := os.MkdirAll(vaultutil.VaultTLSAssetDir, 0700); err != nil {
+		return nil, fmt.Errorf("read client tls failed: failed to make dir: %v", err)
+	}
+	caCertFile := path.Join(vaultutil.VaultTLSAssetDir, spec.CATLSCertName)
+	err = ioutil.WriteFile(caCertFile, caCertData, 0600)
+	if err != nil {
+		return nil, fmt.Errorf("read client tls failed: write ca cert file failed: %v", err)
+	}
+	return &vaultapi.TLSConfig{CACert: caCertFile}, nil
 }
 
 // ConfigMapNameForVault is the configmap name for the given vault.
@@ -356,7 +449,7 @@ func configEtcdBackendTLS(pt *v1.PodTemplateSpec, v *spec.Vault) {
 	pt.Spec.Containers[0].VolumeMounts = append(pt.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
 		Name:      vaultTLSAssetVolume,
 		ReadOnly:  true,
-		MountPath: VaultTLSAssetDir,
+		MountPath: vaultutil.VaultTLSAssetDir,
 	})
 }
 

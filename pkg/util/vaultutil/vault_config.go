@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
+	vaultapi "github.com/hashicorp/vault/api"
 )
 
 const (
+	// VaultTLSAssetDir is the dir where vault's server TLS and etcd TLS assets sits
+	VaultTLSAssetDir = "/run/vault/tls/"
 	// ServerTLSCertName is the filename of the vault server cert
 	ServerTLSCertName = "server.crt"
 	// ServerTLSKeyName is the filename of the vault server key
@@ -36,8 +38,8 @@ storage "etcd" {
 // NewConfigWithEtcd returns the new config data combining
 // original config and new etcd storage section.
 func NewConfigWithEtcd(data, etcdURL string) string {
-	storageSection := fmt.Sprintf(etcdStorageFmt, etcdURL, filepath.Join(k8sutil.VaultTLSAssetDir, "etcd-client-ca.crt"),
-		filepath.Join(k8sutil.VaultTLSAssetDir, "etcd-client.crt"), filepath.Join(k8sutil.VaultTLSAssetDir, "etcd-client.key"))
+	storageSection := fmt.Sprintf(etcdStorageFmt, etcdURL, filepath.Join(VaultTLSAssetDir, "etcd-client-ca.crt"),
+		filepath.Join(VaultTLSAssetDir, "etcd-client.crt"), filepath.Join(VaultTLSAssetDir, "etcd-client.key"))
 	data = fmt.Sprintf("%s\n%s\n", data, storageSection)
 	return data
 }
@@ -45,8 +47,16 @@ func NewConfigWithEtcd(data, etcdURL string) string {
 // NewConfigWithListener appends the Listener to Vault config data.
 func NewConfigWithListener(data string) string {
 	listenerSection := fmt.Sprintf(listenerFmt,
-		filepath.Join(k8sutil.VaultTLSAssetDir, ServerTLSCertName),
-		filepath.Join(k8sutil.VaultTLSAssetDir, ServerTLSKeyName))
+		filepath.Join(VaultTLSAssetDir, ServerTLSCertName),
+		filepath.Join(VaultTLSAssetDir, ServerTLSKeyName))
 	data = fmt.Sprintf("%s\n%s\n", data, listenerSection)
 	return data
+}
+
+func NewClient(addr string, tlsConfig *vaultapi.TLSConfig) (*vaultapi.Client, error) {
+	cfg := vaultapi.DefaultConfig()
+	podURL := fmt.Sprintf("https://%s:8200", addr)
+	cfg.Address = podURL
+	cfg.ConfigureTLS(tlsConfig)
+	return vaultapi.NewClient(cfg)
 }

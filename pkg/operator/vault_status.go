@@ -3,16 +3,15 @@ package operator
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path"
 	"time"
 
 	"github.com/coreos-inc/vault-operator/pkg/spec"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
+	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
 	"github.com/Sirupsen/logrus"
 	vaultapi "github.com/hashicorp/vault/api"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -20,7 +19,7 @@ import (
 // monitorAndUpdateStaus monitors the vault service and replicas statuses, and
 // updates the status resrouce in the vault CR item.
 func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, vr *spec.Vault) {
-	tlsConfig, err := vs.readClientTLSFromSecret(vr)
+	tlsConfig, err := k8sutil.VaultTLSFromSecret(vs.kubecli, vr)
 	if err != nil {
 		panic(fmt.Errorf("failed to read TLS config for vault client: %v", err))
 	}
@@ -30,7 +29,7 @@ func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, vr *spec.Vault) {
 	for {
 		select {
 		case err := <-ctx.Done():
-			logrus.Infof("stopped monitoring vault: %s (%v)", vr.GetName(), err)
+			logrus.Infof("stop monitoring vault (%s), reason: %v", vr.GetName(), err)
 			return
 		case <-time.After(10 * time.Second):
 		}
@@ -62,13 +61,12 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace 
 	inited := s.Initialized
 
 	for _, p := range pods.Items {
+		if p.Status.Phase != v1.PodRunning {
+			continue
+		}
 		availableNodes = append(availableNodes, p.GetName())
 
-		cfg := vaultapi.DefaultConfig()
-		podURL := fmt.Sprintf("https://%s:8200", k8sutil.PodDNSName(p.Status.PodIP, namespace))
-		cfg.Address = podURL
-		cfg.ConfigureTLS(tlsConfig)
-		vapi, err := vaultapi.NewClient(cfg)
+		vapi, err := vaultutil.NewClient(k8sutil.PodDNSName(p), tlsConfig)
 		if err != nil {
 			logrus.Errorf("failed to update vault replica status: failed creating client for the vault pod (%s/%s): %v", namespace, p.GetName(), err)
 			continue
@@ -110,28 +108,4 @@ func (vs *Vaults) updateVaultCRStatus(ctx context.Context, name, namespace strin
 	vault.Status = status
 	_, err = vs.vaultsCRCli.Update(ctx, vault)
 	return err
-}
-
-func (vs *Vaults) readClientTLSFromSecret(vr *spec.Vault) (*vaultapi.TLSConfig, error) {
-	secretName := k8sutil.DefaultVaultClientTLSSecretName(vr.Name)
-	if spec.IsTLSConfigured(vr.Spec.TLS) {
-		secretName = vr.Spec.TLS.Static.ClientSecret
-	}
-
-	secret, err := vs.kubecli.CoreV1().Secrets(vr.GetNamespace()).Get(secretName, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("read client tls failed: failed to get secret (%s): %v", secretName, err)
-	}
-
-	// Read the secret and write ca.crt to a temporary file
-	caCertData := secret.Data[spec.CATLSCertName]
-	if err := os.MkdirAll(k8sutil.VaultTLSAssetDir, 0700); err != nil {
-		return nil, fmt.Errorf("read client tls failed: failed to make dir: %v", err)
-	}
-	caCertFile := path.Join(k8sutil.VaultTLSAssetDir, spec.CATLSCertName)
-	err = ioutil.WriteFile(caCertFile, caCertData, 0600)
-	if err != nil {
-		return nil, fmt.Errorf("read client tls failed: write ca cert file failed: %v", err)
-	}
-	return &vaultapi.TLSConfig{CACert: caCertFile}, nil
 }
