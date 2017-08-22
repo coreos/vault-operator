@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/coreos/etcd-operator/pkg/util/k8sutil"
 	"github.com/coreos/etcd-operator/pkg/util/retryutil"
-	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
@@ -24,7 +24,7 @@ func WaitUntilOperatorReady(kubecli kubernetes.Interface, namespace, name string
 		}
 		if len(podList.Items) > 0 {
 			podName = podList.Items[0].Name
-			if isPodReady(&podList.Items[0]) {
+			if k8sutil.IsPodReady(&podList.Items[0]) {
 				return true, nil
 			}
 		}
@@ -32,21 +32,6 @@ func WaitUntilOperatorReady(kubecli kubernetes.Interface, namespace, name string
 	})
 	if err != nil {
 		return fmt.Errorf("failed to wait for pod (%v) to become ready: %v", podName, err)
-	}
-	return nil
-}
-
-// isPodReady checks the status of the pod for the Ready condition
-func isPodReady(pod *v1.Pod) bool {
-	condition := getPodReadyCondition(&pod.Status)
-	return condition != nil && condition.Status == v1.ConditionTrue
-}
-
-func getPodReadyCondition(status *v1.PodStatus) *v1.PodCondition {
-	for i := range status.Conditions {
-		if status.Conditions[i].Type == v1.PodReady {
-			return &status.Conditions[i]
-		}
 	}
 	return nil
 }
