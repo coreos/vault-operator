@@ -46,8 +46,6 @@ func (v *Vaults) run(ctx context.Context) {
 func (v *Vaults) onAdd(obj interface{}) {
 	vr := obj.(*spec.Vault)
 
-	vr.Spec.SetDefaults()
-
 	if !spec.IsTLSConfigured(vr.Spec.TLS) {
 		err := v.prepareDefaultVaultTLSSecrets(vr)
 		if err != nil {
@@ -56,7 +54,9 @@ func (v *Vaults) onAdd(obj interface{}) {
 		}
 	}
 
-	err := v.prepareTLSSecrets(vr)
+	vr.SetDefaults()
+
+	err := v.prepareEtcdTLSSecrets(vr)
 	if err != nil {
 		// TODO: retry or report failure status in CR
 		panic(err)
@@ -117,9 +117,9 @@ func (v *Vaults) prepareVaultConfig(vr *spec.Vault) error {
 
 func (v *Vaults) onUpdate(oldObj, newObj interface{}) {
 	nvr := newObj.(*spec.Vault)
-	nvr.Spec.SetDefaults()
+	nvr.SetDefaults()
 	ovr := oldObj.(*spec.Vault)
-	ovr.Spec.SetDefaults()
+	ovr.SetDefaults()
 
 	err := k8sutil.UpdateVault(v.kubecli, ovr, nvr)
 	if err != nil {

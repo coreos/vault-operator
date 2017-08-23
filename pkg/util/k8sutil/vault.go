@@ -36,16 +36,6 @@ var (
 	evnVaultRedirectAddr = "VAULT_REDIRECT_ADDR"
 )
 
-// DefaultVaultClientTLSSecretName returns the name of the default vault client TLS secret
-func DefaultVaultClientTLSSecretName(vaultName string) string {
-	return vaultName + "-default-vault-client-tls"
-}
-
-// DefaultVaultServerTLSSecretName returns the name of the default vault server TLS secret
-func DefaultVaultServerTLSSecretName(vaultName string) string {
-	return vaultName + "-default-vault-server-tls"
-}
-
 // EtcdClientTLSSecretName returns the name of etcd client TLS secret for the given vault name
 func EtcdClientTLSSecretName(vaultName string) string {
 	return vaultName + "-etcd-client-tls"
@@ -382,7 +372,7 @@ func vaultImage(vs spec.VaultSpec) string {
 
 // VaultTLSFromSecret reads Vault CR's TLS secret and converts it into a vault client's TLS config struct.
 func VaultTLSFromSecret(kubecli kubernetes.Interface, vr *spec.Vault) (*vaultapi.TLSConfig, error) {
-	secretName := DefaultVaultClientTLSSecretName(vr.Name)
+	secretName := spec.DefaultVaultClientTLSSecretName(vr.Name)
 	if spec.IsTLSConfigured(vr.Spec.TLS) {
 		secretName = vr.Spec.TLS.Static.ClientSecret
 	}
@@ -496,7 +486,7 @@ func configEtcdBackendTLS(pt *v1.PodTemplateSpec, v *spec.Vault) {
 
 // configVaultServerTLS mounts the volume containing the vault server TLS assets for the vault pod
 func configVaultServerTLS(pt *v1.PodTemplateSpec, v *spec.Vault) {
-	secretName := DefaultVaultServerTLSSecretName(v.Name)
+	secretName := spec.DefaultVaultServerTLSSecretName(v.Name)
 	if spec.IsTLSConfigured(v.Spec.TLS) {
 		secretName = v.Spec.TLS.Static.ServerSecret
 	}
