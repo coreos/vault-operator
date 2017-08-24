@@ -35,15 +35,24 @@ func MustNewInCluster() Vaults {
 	if err != nil {
 		panic(err)
 	}
-	cli, crScheme, err := newClient(cfg)
+	cli, err := NewCRClient(cfg)
 	if err != nil {
 		panic(err)
+	}
+	return cli
+}
+
+// NewCRClient create a new vault client based on the Kubernetes client configuration passed in
+func NewCRClient(cfg *rest.Config) (Vaults, error) {
+	cli, crScheme, err := newClient(cfg)
+	if err != nil {
+		return nil, err
 	}
 	return &vaults{
 		restCli:    cli,
 		crScheme:   crScheme,
 		paramCodec: runtime.NewParameterCodec(crScheme),
-	}
+	}, nil
 }
 
 func newClient(cfg *rest.Config) (*rest.RESTClient, *runtime.Scheme, error) {
