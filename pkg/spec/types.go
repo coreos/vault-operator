@@ -46,7 +46,8 @@ type VaultSpec struct {
 
 // SetDefaults sets the default vaules for the vault spec.
 // TODO: remove this when CRD support defaulting directly.
-func (vs *VaultSpec) SetDefaults() {
+func (v *Vault) SetDefaults() {
+	vs := v.Spec
 	if vs.Nodes == 0 {
 		vs.Nodes = 1
 	}
@@ -55,6 +56,12 @@ func (vs *VaultSpec) SetDefaults() {
 	}
 	if len(vs.Version) == 0 {
 		vs.Version = defaultVersion
+	}
+	if vs.TLS == nil {
+		vs.TLS = &TLSPolicy{Static: &StaticTLS{
+			ServerSecret: DefaultVaultServerTLSSecretName(v.Name),
+			ClientSecret: DefaultVaultClientTLSSecretName(v.Name),
+		}}
 	}
 }
 
@@ -79,4 +86,14 @@ type VaultStatus struct {
 	// Endpoints of Sealed Vault nodes. Sealed nodes MUST be manually unsealed to
 	// become standby or leader.
 	SealedNodes []string `json:"sealedNodes"`
+}
+
+// DefaultVaultClientTLSSecretName returns the name of the default vault client TLS secret
+func DefaultVaultClientTLSSecretName(vaultName string) string {
+	return vaultName + "-default-vault-client-tls"
+}
+
+// DefaultVaultServerTLSSecretName returns the name of the default vault server TLS secret
+func DefaultVaultServerTLSSecretName(vaultName string) string {
+	return vaultName + "-default-vault-server-tls"
 }

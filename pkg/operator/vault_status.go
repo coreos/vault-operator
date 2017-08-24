@@ -105,6 +105,8 @@ func (vs *Vaults) updateVaultCRStatus(ctx context.Context, name, namespace strin
 	if err != nil {
 		return err
 	}
+	// Propagate default values back to API. TODO: It should be handled only once.
+	vault.SetDefaults()
 	vault.Status = status
 	_, err = vs.vaultsCRCli.Update(ctx, vault)
 	return err

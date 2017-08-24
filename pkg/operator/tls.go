@@ -51,9 +51,9 @@ func (v *Vaults) prepareDefaultVaultTLSSecrets(vr *spec.Vault) (err error) {
 	return nil
 }
 
-// prepareTLSSecrets creates three etcd TLS secrets (client, server, peer) containing TLS assets.
+// prepareEtcdTLSSecrets creates three etcd TLS secrets (client, server, peer) containing TLS assets.
 // Currently we self-generate the CA, and use the self generated CA to sign all the TLS certs.
-func (v *Vaults) prepareTLSSecrets(vr *spec.Vault) (err error) {
+func (v *Vaults) prepareEtcdTLSSecrets(vr *spec.Vault) (err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("prepare TLS secrets failed: %v", err)
@@ -79,7 +79,7 @@ func (v *Vaults) prepareTLSSecrets(vr *spec.Vault) (err error) {
 		return err
 	}
 	_, err = v.kubecli.CoreV1().Secrets(vr.Namespace).Create(se)
-	if err != nil {
+	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
 	}
 
@@ -173,13 +173,13 @@ func (v *Vaults) cleanupDefaultVaultTLSSecrets(vr *spec.Vault) (err error) {
 			err = fmt.Errorf("cleanup vault TLS secrets failed: %v", err)
 		}
 	}()
-	name := k8sutil.DefaultVaultServerTLSSecretName(vr.Name)
+	name := spec.DefaultVaultServerTLSSecretName(vr.Name)
 	err = v.kubecli.CoreV1().Secrets(vr.Namespace).Delete(name, nil)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("delete secret (%s) failed: %v", name, err)
 	}
 
-	name = k8sutil.DefaultVaultClientTLSSecretName(vr.Name)
+	name = spec.DefaultVaultClientTLSSecretName(vr.Name)
 	err = v.kubecli.CoreV1().Secrets(vr.Namespace).Delete(name, nil)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("delete secret (%s) failed: %v", name, err)
@@ -189,7 +189,7 @@ func (v *Vaults) cleanupDefaultVaultTLSSecrets(vr *spec.Vault) (err error) {
 
 // newVaultServerTLSSecret returns a secret containing vault server TLS assets
 func newVaultServerTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.Certificate) (*v1.Secret, error) {
-	return newTLSSecret(vr, caKey, caCrt, "vault server", k8sutil.DefaultVaultServerTLSSecretName(vr.Name),
+	return newTLSSecret(vr, caKey, caCrt, "vault server", spec.DefaultVaultServerTLSSecretName(vr.Name),
 		[]string{
 			"localhost",
 			fmt.Sprintf("*.%s.pod", vr.Namespace),
@@ -208,7 +208,7 @@ func newVaultServerTLSSecret(vr *spec.Vault, caKey *rsa.PrivateKey, caCrt *x509.
 func newVaultClientTLSSecret(vr *spec.Vault, caCrt *x509.Certificate) *v1.Secret {
 	return &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   k8sutil.DefaultVaultClientTLSSecretName(vr.Name),
+			Name:   spec.DefaultVaultClientTLSSecretName(vr.Name),
 			Labels: k8sutil.LabelsForVault(vr.Name),
 		},
 		Data: map[string][]byte{
