@@ -39,13 +39,13 @@ func (v *Vaults) prepareDefaultVaultTLSSecrets(vr *spec.Vault) (err error) {
 		return err
 	}
 	_, err = v.kubecli.CoreV1().Secrets(vr.Namespace).Create(se)
-	if err != nil {
+	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
 	}
 
 	se = newVaultClientTLSSecret(vr, caCrt)
 	_, err = v.kubecli.CoreV1().Secrets(vr.Namespace).Create(se)
-	if err != nil {
+	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
 	}
 	return nil
@@ -54,6 +54,10 @@ func (v *Vaults) prepareDefaultVaultTLSSecrets(vr *spec.Vault) (err error) {
 // prepareEtcdTLSSecrets creates three etcd TLS secrets (client, server, peer) containing TLS assets.
 // Currently we self-generate the CA, and use the self generated CA to sign all the TLS certs.
 func (v *Vaults) prepareEtcdTLSSecrets(vr *spec.Vault) (err error) {
+	// TODO: Add etcd TLS secrets into status or spec so that:
+	//       - users can track it
+	//       - operator can use it for state checking
+
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("prepare TLS secrets failed: %v", err)
@@ -70,7 +74,7 @@ func (v *Vaults) prepareEtcdTLSSecrets(vr *spec.Vault) (err error) {
 		return err
 	}
 	_, err = v.kubecli.CoreV1().Secrets(vr.Namespace).Create(se)
-	if err != nil {
+	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
 	}
 
@@ -88,7 +92,7 @@ func (v *Vaults) prepareEtcdTLSSecrets(vr *spec.Vault) (err error) {
 		return err
 	}
 	_, err = v.kubecli.CoreV1().Secrets(vr.Namespace).Create(se)
-	if err != nil {
+	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
 	}
 	return nil
