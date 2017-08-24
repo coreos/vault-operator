@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/coreos-inc/vault-operator/pkg/client"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 	"github.com/coreos-inc/vault-operator/test/e2e/e2eutil"
 
@@ -27,10 +28,11 @@ var (
 
 // Framework struct contains the various clients and other information needed to run the e2e tests
 type Framework struct {
-	KubeClient kubernetes.Interface
-	Namespace  string
-	vopImage   string
-	eopImage   string
+	KubeClient     kubernetes.Interface
+	VaultsCRClient client.Vaults
+	Namespace      string
+	vopImage       string
+	eopImage       string
 }
 
 // Setup initializes the Global framework by initializing necessary clients and creating the vault operator
@@ -43,20 +45,23 @@ func Setup() error {
 
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to build config from kubeconfig: %v", err)
 	}
-	cli, err := kubernetes.NewForConfig(config)
+	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return err
+		return fmt.Errorf("faild to create kube client: %v", err)
 	}
-
-	// TODO: need a CR client to CRUD the vault CR later
+	vaultsCRClient, err := client.NewCRClient(config)
+	if err != nil {
+		return fmt.Errorf("failed to create CR client: %v", err)
+	}
 
 	Global = &Framework{
-		KubeClient: cli,
-		Namespace:  *ns,
-		vopImage:   *vopImage,
-		eopImage:   *eopImage,
+		KubeClient:     kubeClient,
+		VaultsCRClient: vaultsCRClient,
+		Namespace:      *ns,
+		vopImage:       *vopImage,
+		eopImage:       *eopImage,
 	}
 
 	return Global.setup()
