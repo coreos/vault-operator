@@ -47,7 +47,7 @@ type VaultSpec struct {
 // SetDefaults sets the default vaules for the vault spec.
 // TODO: remove this when CRD support defaulting directly.
 func (v *Vault) SetDefaults() {
-	vs := v.Spec
+	vs := &v.Spec
 	if vs.Nodes == 0 {
 		vs.Nodes = 1
 	}
