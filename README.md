@@ -128,7 +128,7 @@ In this example, the Vault operator configures a default TLS setup for all the V
 
       Vault is unready because it is uninitialized and sealed.
 
-For information on initiating Vault, see [vault.md](./doc/user/vault.md) .
+For information on using the deployed Vault, see [vault.md](./doc/user/vault.md) .
 
 
 ### Uninstalling Vault operator
