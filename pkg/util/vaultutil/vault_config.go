@@ -29,6 +29,7 @@ storage "etcd" {
   address = "%s"
   etcd_api = "v3"
   ha_enabled = "true"
+  disable_clustering = "true"
   tls_ca_file = "%s"
   tls_cert_file = "%s"
   tls_key_file = "%s"
