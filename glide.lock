@@ -1,5 +1,5 @@
 hash: 0130087c7f5a37a4ef361280f7f6467e984d3fa93523740910477cfbeab6db8a
-updated: 2017-09-01T09:18:31.341635498-07:00
+updated: 2017-09-01T15:39:15.244458915-07:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -50,6 +50,10 @@ imports:
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
   subpackages:
   - spew
+- name: github.com/docker/spdystream
+  version: 449fdfce4d962303d702fec724ef0ad181c92528
+  subpackages:
+  - spdy
 - name: github.com/emicklei/go-restful
   version: ff4f55a206334ef123e4f79bbf348980da81ca46
   subpackages:
@@ -319,6 +323,8 @@ imports:
   - pkg/util/diff
   - pkg/util/errors
   - pkg/util/framer
+  - pkg/util/httpstream
+  - pkg/util/httpstream/spdy
   - pkg/util/intstr
   - pkg/util/json
   - pkg/util/mergepatch
@@ -333,6 +339,7 @@ imports:
   - pkg/version
   - pkg/watch
   - third_party/forked/golang/json
+  - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
   version: 1850dd66e4213a26bd70d0b85fee4176d324b845
@@ -373,7 +380,9 @@ imports:
   - tools/clientcmd/api/latest
   - tools/clientcmd/api/v1
   - tools/metrics
+  - tools/portforward
   - transport
+  - transport/spdy
   - util/cert
   - util/flowcontrol
   - util/homedir
