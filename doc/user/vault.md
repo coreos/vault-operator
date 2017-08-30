@@ -76,6 +76,16 @@ When a node is unsealed, it becomes active and initialized. The active Vault hol
 
     Successful operations indicate that the active Vault node is serving requests.
 
+## Accessing Vault on Kubernetes
+
+Vault operator creates [Kubernetes services][k8s-services] for accessing Valut deployments.
+
+The service always exposes the active Vault node. It hides failures by switching the service pointer to the current active node when failover occurs.
+
+The name and namespace of the service are the same as the Vault resource. For example, if the Vault resource's name is `example-vault`  and the namespace is `vault-services`, the service's name and namespace will also be `example-vault` and `vault-services` respectively.
+
+Applications in the Kubernetes pod network can access the service through `https://example-vault.vault-services.svc:8200`.
+
 ## Enabling high availability
 
 Vault supports [HA mode][ha] for production usage. To enable HA mode, scale Vault nodes from one to two or more by modifying the custom resource:
@@ -168,3 +178,4 @@ To see how it works, perform the following:
 [initialize-vault]: https://www.vaultproject.io/intro/getting-started/deploy.html#initializing-the-vault
 [vault-cli]: https://www.vaultproject.io/docs/install/index.html
 [vault-cli-env]: https://www.vaultproject.io/docs/commands/environment.html
+[k8s-services]: https://kubernetes.io/docs/concepts/services-networking/service/
