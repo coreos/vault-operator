@@ -3,18 +3,15 @@ package operator
 import (
 	"context"
 	"fmt"
-	"log"
-	"path/filepath"
+	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/coreos-inc/vault-operator/pkg/spec"
-	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
-	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
-	"k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/workqueue"
 )
 
 func (v *Vaults) run(ctx context.Context) {
@@ -24,140 +21,71 @@ func (v *Vaults) run(ctx context.Context) {
 		v.namespace,
 		fields.Everything())
 
-	_, controller := cache.NewInformer(
-		source,
-		// The object type.
-		&spec.Vault{},
-		// resyncPeriod
-		// Every resyncPeriod, all resources in the cache will retrigger events.
-		// Set to 0 to disable the resync.
-		0,
-		// Your custom resource event handlers.
-		cache.ResourceEventHandlerFuncs{
-			AddFunc:    v.onAdd,
-			UpdateFunc: v.onUpdate,
-			DeleteFunc: v.onDelete,
-		})
+	v.queue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "vault-operator")
+	v.indexer, v.informer = cache.NewIndexerInformer(source, &spec.Vault{}, 0, cache.ResourceEventHandlerFuncs{
+		AddFunc:    v.onAddVault,
+		UpdateFunc: v.onUpdateVault,
+		DeleteFunc: v.onDeleteVault,
+	}, cache.Indexers{})
 
-	go controller.Run(ctx.Done())
-	log.Println("start processing Vaults changes...")
+	defer v.queue.ShutDown()
+
+	logrus.Info("starting Vaults controller")
+	go v.informer.Run(ctx.Done())
+
+	if !cache.WaitForCacheSync(ctx.Done(), v.informer.HasSynced) {
+		logrus.Error("Timed out waiting for caches to sync")
+		return
+	}
+
+	const numWorkers = 1
+	for i := 0; i < numWorkers; i++ {
+		go wait.Until(v.runWorker, time.Second, ctx.Done())
+	}
+
+	<-ctx.Done()
+	logrus.Info("stopping Vaults controller")
 }
 
-func (v *Vaults) onAdd(obj interface{}) {
-	vr := obj.(*spec.Vault)
+func (v *Vaults) onAddVault(obj interface{}) {
+	key, err := cache.MetaNamespaceKeyFunc(obj)
+	if err != nil {
+		panic(err)
+	}
+	v.queue.Add(key)
+}
 
-	if !spec.IsTLSConfigured(vr.Spec.TLS) {
-		err := v.prepareDefaultVaultTLSSecrets(vr)
-		if err != nil {
-			// TODO: retry or report failure status in CR
-			panic(err)
+func (v *Vaults) onUpdateVault(oldObj, newObj interface{}) {
+	key, err := cache.MetaNamespaceKeyFunc(newObj)
+	if err != nil {
+		panic(err)
+	}
+	v.queue.Add(key)
+}
+
+func (v *Vaults) onDeleteVault(obj interface{}) {
+	vr, ok := obj.(*spec.Vault)
+	if !ok {
+		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
+		if !ok {
+			panic(fmt.Sprintf("unknown object from Vault delete event: %#v", obj))
 		}
-	}
-
-	vr.SetDefaults()
-
-	err := v.prepareEtcdTLSSecrets(vr)
-	if err != nil {
-		// TODO: retry or report failure status in CR
-		panic(err)
-	}
-
-	err = v.prepareVaultConfig(vr)
-	if err != nil {
-		// TODO: retry or report failure status in CR
-		panic(err)
-	}
-
-	err = k8sutil.DeployEtcdCluster(v.etcdCRCli, vr)
-	if err != nil {
-		// TODO: retry or report failure status in CR
-		panic(err)
-	}
-
-	err = k8sutil.DeployVault(v.kubecli, vr)
-	if err != nil {
-		// TODO: retry or report failure status in CR
-		panic(err)
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	v.ctxCancels[vr.Name] = cancel
-	go v.monitorAndUpdateStaus(ctx, vr)
-}
-
-// prepareVaultConfig appends etcd storage section into user provided vault config
-// and creates another (predefined-name) configmap for it.
-func (v *Vaults) prepareVaultConfig(vr *spec.Vault) error {
-	var cfgData string
-	if len(vr.Spec.ConfigMapName) != 0 {
-		cm, err := v.kubecli.CoreV1().ConfigMaps(vr.Namespace).Get(vr.Spec.ConfigMapName, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("prepare vault config error: get configmap (%s) failed: %v", vr.Spec.ConfigMapName, err)
+		vr, ok = tombstone.Obj.(*spec.Vault)
+		if !ok {
+			panic(fmt.Sprintf("Tombstone contained object that is not a Vault: %#v", obj))
 		}
-		cfgData = cm.Data[filepath.Base(k8sutil.VaultConfigPath)]
-	}
-	cfgData = vaultutil.NewConfigWithListener(cfgData)
-	cfgData = vaultutil.NewConfigWithEtcd(cfgData, k8sutil.EtcdURLForVault(vr.Name))
-
-	cm := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: k8sutil.ConfigMapNameForVault(vr),
-		},
-		Data: map[string]string{
-			filepath.Base(k8sutil.VaultConfigPath): cfgData,
-		},
-	}
-
-	_, err := v.kubecli.CoreV1().ConfigMaps(vr.Namespace).Create(cm)
-	if err != nil && !apierrors.IsAlreadyExists(err) {
-		return fmt.Errorf("prepare vault config error: create new configmap (%s) failed: %v", cm.Name, err)
-	}
-
-	return nil
-}
-
-func (v *Vaults) onUpdate(oldObj, newObj interface{}) {
-	nvr := newObj.(*spec.Vault)
-	nvr.SetDefaults()
-	ovr := oldObj.(*spec.Vault)
-	ovr.SetDefaults()
-
-	err := k8sutil.UpdateVault(v.kubecli, ovr, nvr)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (v *Vaults) onDelete(obj interface{}) {
-	vr := obj.(*spec.Vault)
-	err := k8sutil.DestroyVault(v.kubecli, vr)
-	if err != nil {
-		// TODO: retry or report failure status in CR
-		panic(err)
-	}
-	err = k8sutil.DeleteEtcdCluster(v.etcdCRCli, vr)
-	if err != nil {
-		// TODO: retry or report failure status in CR
-		panic(err)
-	}
-	err = v.kubecli.CoreV1().ConfigMaps(vr.Namespace).Delete(
-		k8sutil.ConfigMapNameForVault(vr), nil)
-	if err != nil && !apierrors.IsNotFound(err) {
-		// TODO: retry or report failure status in CR
-		panic(err)
-	}
-	err = v.cleanupTLSSecrets(vr)
-	if err != nil {
-		// TODO: retry or report failure status in CR
-		panic(err)
-	}
-
-	err = v.cleanupDefaultVaultTLSSecrets(vr)
-	if err != nil {
-		// TODO: retry or report failure status in CR
-		panic(err)
 	}
 
 	cancel := v.ctxCancels[vr.Name]
 	cancel()
 	delete(v.ctxCancels, vr.Name)
+
+	// IndexerInformer uses a delta queue, therefore for deletes we have to use this
+	// key function.
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+	if err != nil {
+		panic(err)
+	}
+	v.toDelete[key] = vr
+	v.queue.Add(key)
 }
