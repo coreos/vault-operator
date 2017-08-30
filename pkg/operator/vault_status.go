@@ -2,7 +2,6 @@ package operator
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/coreos-inc/vault-operator/pkg/spec"
@@ -19,13 +18,7 @@ import (
 // monitorAndUpdateStaus monitors the vault service and replicas statuses, and
 // updates the status resrouce in the vault CR item.
 func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, vr *spec.Vault) {
-	tlsConfig, err := k8sutil.VaultTLSFromSecret(vs.kubecli, vr)
-	if err != nil {
-		panic(fmt.Errorf("failed to read TLS config for vault client: %v", err))
-	}
-
-	s := spec.VaultStatus{}
-
+	var tlsConfig *vaultapi.TLSConfig
 	for {
 		select {
 		case err := <-ctx.Done():
@@ -34,6 +27,16 @@ func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, vr *spec.Vault) {
 		case <-time.After(10 * time.Second):
 		}
 
+		if tlsConfig == nil {
+			var err error
+			tlsConfig, err = k8sutil.VaultTLSFromSecret(vs.kubecli, vr)
+			if err != nil {
+				logrus.Errorf("failed to read TLS config for vault client: %v", err)
+				continue
+			}
+		}
+
+		s := spec.VaultStatus{}
 		vs.updateLocalVaultCRStatus(ctx, vr.GetName(), vr.GetNamespace(), &s, tlsConfig)
 
 		err := vs.updateVaultCRStatus(ctx, vr.GetName(), vr.GetNamespace(), s)
@@ -105,8 +108,6 @@ func (vs *Vaults) updateVaultCRStatus(ctx context.Context, name, namespace strin
 	if err != nil {
 		return err
 	}
-	// Propagate default values back to API. TODO: It should be handled only once.
-	vault.SetDefaults()
 	vault.Status = status
 	_, err = vs.vaultsCRCli.Update(ctx, vault)
 	return err
