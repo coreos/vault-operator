@@ -11,6 +11,8 @@ import (
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/workqueue"
 )
 
 type Vaults struct {
@@ -18,6 +20,11 @@ type Vaults struct {
 	// ctxCancels stores vault clusters' contexts that are used to
 	// cancel their goroutines when they are deleted
 	ctxCancels map[string]context.CancelFunc
+
+	// k8s workqueue pattern
+	indexer  cache.Indexer
+	informer cache.Controller
+	queue    workqueue.RateLimitingInterface
 
 	kubecli       kubernetes.Interface
 	vaultsCRCli   client.Vaults
@@ -43,7 +50,7 @@ func (v *Vaults) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	v.run(ctx)
+	go v.run(ctx)
 	<-ctx.Done()
 	return ctx.Err()
 }
