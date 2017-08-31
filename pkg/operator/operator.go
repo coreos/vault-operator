@@ -5,12 +5,15 @@ import (
 	"os"
 
 	"github.com/coreos-inc/vault-operator/pkg/client"
+	"github.com/coreos-inc/vault-operator/pkg/spec"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 
 	etcdCRClient "github.com/coreos/etcd-operator/pkg/client"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/workqueue"
 )
 
 type Vaults struct {
@@ -18,6 +21,15 @@ type Vaults struct {
 	// ctxCancels stores vault clusters' contexts that are used to
 	// cancel their goroutines when they are deleted
 	ctxCancels map[string]context.CancelFunc
+
+	// vault objects that need to be Garbage Collected during sync
+	// saved here since deleted objects are removed from the cache
+	toDelete map[string]*spec.Vault
+
+	// k8s workqueue pattern
+	indexer  cache.Indexer
+	informer cache.Controller
+	queue    workqueue.RateLimitingInterface
 
 	kubecli       kubernetes.Interface
 	vaultsCRCli   client.Vaults
@@ -30,6 +42,7 @@ func New() *Vaults {
 	return &Vaults{
 		namespace:     os.Getenv("MY_POD_NAMESPACE"),
 		ctxCancels:    map[string]context.CancelFunc{},
+		toDelete:      map[string]*spec.Vault{},
 		kubecli:       k8sutil.MustNewKubeClient(),
 		vaultsCRCli:   client.MustNewInCluster(),
 		kubeExtClient: k8sutil.MustNewKubeExtClient(),
@@ -43,7 +56,7 @@ func (v *Vaults) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	v.run(ctx)
+	go v.run(ctx)
 	<-ctx.Done()
 	return ctx.Err()
 }

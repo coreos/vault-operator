@@ -78,7 +78,10 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) erro
 		},
 	}
 	_, err := etcdCRCli.Create(context.TODO(), etcdCluster)
-	if err != nil && !apierrors.IsAlreadyExists(err) {
+	if err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			return nil
+		}
 		return fmt.Errorf("deploy etcd cluster failed: %v", err)
 	}
 
@@ -245,27 +248,29 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 }
 
 // UpdateVault updates a vault service.
-func UpdateVault(kubecli kubernetes.Interface, oldV, newV *spec.Vault) error {
-	ns, name := oldV.GetNamespace(), oldV.GetName()
+func UpdateVault(kubecli kubernetes.Interface, vr *spec.Vault) error {
+	ns, name := vr.Namespace, vr.Name
+
+	// TODO: make use of deployment informer
 	d, err := kubecli.AppsV1beta1().Deployments(ns).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	if oldV.Spec.Nodes != newV.Spec.Nodes {
-		d.Spec.Replicas = &(newV.Spec.Nodes)
+	if *d.Spec.Replicas != vr.Spec.Nodes {
+		d.Spec.Replicas = &(vr.Spec.Nodes)
 		_, err = kubecli.AppsV1beta1().Deployments(ns).Update(d)
 		if err != nil {
 			return fmt.Errorf("failed to update size of deployment (%s): %v", d.Name, err)
 		}
 	}
 
-	if oldV.Spec.Version != newV.Spec.Version {
+	if d.Spec.Template.Spec.Containers[0].Image != vaultImage(vr.Spec) {
 		// upgrade() will wait for user input. We need to make it non-blocking.
 		go func() {
-			err := upgrade(kubecli, oldV, newV, d)
+			err := upgrade(kubecli, vr, d)
 			if err != nil {
-				logrus.Errorf("failed to upgrade to (%s): %v", newV.Spec.Version, err)
+				logrus.Errorf("failed to upgrade to (%s): %v", vaultImage(vr.Spec), err)
 			}
 		}()
 	}
@@ -274,20 +279,20 @@ func UpdateVault(kubecli kubernetes.Interface, oldV, newV *spec.Vault) error {
 }
 
 // see (doc/design/upgrade.md)
-func upgrade(kubecli kubernetes.Interface, oldV, newV *spec.Vault, d *appsv1beta1.Deployment) error {
-	mu := intstr.FromInt(int(newV.Spec.Nodes - 1))
+func upgrade(kubecli kubernetes.Interface, vr *spec.Vault, d *appsv1beta1.Deployment) error {
+	mu := intstr.FromInt(int(vr.Spec.Nodes - 1))
 	d.Spec.Strategy.RollingUpdate.MaxUnavailable = &mu
-	d.Spec.Template.Spec.Containers[0].Image = vaultImage(newV.Spec)
+	d.Spec.Template.Spec.Containers[0].Image = vaultImage(vr.Spec)
 	_, err := kubecli.AppsV1beta1().Deployments(d.Namespace).Update(d)
 	if err != nil {
-		return fmt.Errorf("update image to (%s) failed: %v", vaultImage(newV.Spec), err)
+		return fmt.Errorf("update image to (%s) failed: %v", vaultImage(vr.Spec), err)
 	}
 
-	err = waitUpgradedNodesUnsealed(kubecli, newV)
+	err = waitUpgradedNodesUnsealed(kubecli, vr)
 	if err != nil {
 		return fmt.Errorf("failed to wait upgraded Vault nodes unsealed: %v", err)
 	}
-	active, err := getActiveVaultPod(kubecli, newV)
+	active, err := getActiveVaultPod(kubecli, vr)
 	if err != nil {
 		return fmt.Errorf("failed to get active Vault pod: %v", err)
 	}
@@ -372,10 +377,7 @@ func vaultImage(vs spec.VaultSpec) string {
 
 // VaultTLSFromSecret reads Vault CR's TLS secret and converts it into a vault client's TLS config struct.
 func VaultTLSFromSecret(kubecli kubernetes.Interface, vr *spec.Vault) (*vaultapi.TLSConfig, error) {
-	secretName := spec.DefaultVaultClientTLSSecretName(vr.Name)
-	if spec.IsTLSConfigured(vr.Spec.TLS) {
-		secretName = vr.Spec.TLS.Static.ClientSecret
-	}
+	secretName := vr.Spec.TLS.Static.ClientSecret
 
 	secret, err := kubecli.CoreV1().Secrets(vr.GetNamespace()).Get(secretName, metav1.GetOptions{})
 	if err != nil {
@@ -486,10 +488,7 @@ func configEtcdBackendTLS(pt *v1.PodTemplateSpec, v *spec.Vault) {
 
 // configVaultServerTLS mounts the volume containing the vault server TLS assets for the vault pod
 func configVaultServerTLS(pt *v1.PodTemplateSpec, v *spec.Vault) {
-	secretName := spec.DefaultVaultServerTLSSecretName(v.Name)
-	if spec.IsTLSConfigured(v.Spec.TLS) {
-		secretName = v.Spec.TLS.Static.ServerSecret
-	}
+	secretName := v.Spec.TLS.Static.ServerSecret
 
 	serverTLSVolume := v1.VolumeProjection{
 		Secret: &v1.SecretProjection{

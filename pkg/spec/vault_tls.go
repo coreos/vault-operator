@@ -9,6 +9,7 @@ const (
 type TLSPolicy struct {
 	// StaticTLS enables user to use static x509 certificates and keys,
 	// by putting them into Kubernetes secrets, and specifying them here.
+	// If this is not set, operator will auto-gen TLS assets and secrets.
 	Static *StaticTLS `json:"static,omitempty"`
 }
 

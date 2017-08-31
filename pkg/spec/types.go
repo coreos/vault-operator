@@ -44,25 +44,30 @@ type VaultSpec struct {
 	TLS *TLSPolicy `json:"TLS,omitempty"`
 }
 
-// SetDefaults sets the default vaules for the vault spec.
-// TODO: remove this when CRD support defaulting directly.
-func (v *Vault) SetDefaults() {
+// SetDefaults sets the default vaules for the vault spec and returns true if the spec was changed
+func (v *Vault) SetDefaults() bool {
+	changed := false
 	vs := &v.Spec
 	if vs.Nodes == 0 {
 		vs.Nodes = 1
+		changed = true
 	}
 	if len(vs.BaseImage) == 0 {
 		vs.BaseImage = defaultBaseImage
+		changed = true
 	}
 	if len(vs.Version) == 0 {
 		vs.Version = defaultVersion
+		changed = true
 	}
 	if vs.TLS == nil {
 		vs.TLS = &TLSPolicy{Static: &StaticTLS{
 			ServerSecret: DefaultVaultServerTLSSecretName(v.Name),
 			ClientSecret: DefaultVaultClientTLSSecretName(v.Name),
 		}}
+		changed = true
 	}
+	return changed
 }
 
 type VaultStatus struct {
