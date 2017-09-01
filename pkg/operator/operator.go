@@ -9,6 +9,7 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 
 	etcdCRClient "github.com/coreos/etcd-operator/pkg/client"
+	"golang.org/x/sync/syncmap"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
@@ -25,6 +26,8 @@ type Vaults struct {
 	// vault objects that need to be Garbage Collected during sync
 	// saved here since deleted objects are removed from the cache
 	toDelete map[string]*spec.Vault
+	// Local knowledge to track if a Vault cluster is upgrading.
+	upgrading syncmap.Map
 
 	// k8s workqueue pattern
 	indexer  cache.Indexer

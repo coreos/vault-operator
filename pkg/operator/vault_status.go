@@ -65,7 +65,8 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace 
 	inited := s.Initialized
 
 	for _, p := range pods.Items {
-		if p.Status.Phase != v1.PodRunning {
+		// If a pod is Terminating, it is still Running but has no IP.
+		if p.Status.Phase != v1.PodRunning || p.DeletionTimestamp != nil {
 			continue
 		}
 		availableNodes = append(availableNodes, p.GetName())

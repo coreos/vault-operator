@@ -10,9 +10,11 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
 	"github.com/Sirupsen/logrus"
+	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -113,7 +115,9 @@ func (v *Vaults) syncVault(key string) (err error) {
 	changed := vr.SetDefaults()
 	if changed {
 		vr, err = v.vaultsCRCli.Update(context.TODO(), vr)
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	return v.reconcileVault(vr)
@@ -152,7 +156,21 @@ func (v *Vaults) reconcileVault(vr *spec.Vault) (err error) {
 		return err
 	}
 
-	err = k8sutil.UpdateVault(v.kubecli, vr)
+	// TODO: make use of deployment informer
+	d, err := v.kubecli.AppsV1beta1().Deployments(vr.Namespace).Get(vr.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	if *d.Spec.Replicas != vr.Spec.Nodes {
+		d.Spec.Replicas = &(vr.Spec.Nodes)
+		_, err = v.kubecli.AppsV1beta1().Deployments(vr.Namespace).Update(d)
+		if err != nil {
+			return fmt.Errorf("failed to update size of deployment (%s): %v", d.Name, err)
+		}
+	}
+
+	err = v.syncUpgrade(vr, d)
 	if err != nil {
 		return err
 	}
@@ -224,4 +242,36 @@ func (v *Vaults) deleteVault(vr *spec.Vault) error {
 
 	err = v.cleanupDefaultVaultTLSSecrets(vr)
 	return err
+}
+
+func (v *Vaults) syncUpgrade(vr *spec.Vault, d *appsv1beta1.Deployment) error {
+	if _, ok := v.upgrading.Load(vr.Name); ok {
+		return nil
+	}
+
+	sel := k8sutil.LabelsForVault(vr.Name)
+	opt := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(sel).String()}
+	podList, err := v.kubecli.CoreV1().Pods(vr.Namespace).List(opt)
+	if err != nil {
+		return err
+	}
+
+	for _, p := range podList.Items {
+		if p.Status.Phase != v1.PodRunning || p.DeletionTimestamp != nil {
+			continue
+		}
+		if !k8sutil.IsVaultVersionMatch(p.Spec, vr.Spec) {
+			// upgrade() will wait for user input. We need to make it non-blocking.
+			go func() {
+				defer v.upgrading.Delete(vr.Name)
+				err := k8sutil.Upgrade(v.kubecli, vr, d)
+				if err != nil {
+					logrus.Error(err)
+				}
+			}()
+			v.upgrading.Store(vr.Name, struct{}{})
+			return nil
+		}
+	}
+	return nil
 }
