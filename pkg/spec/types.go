@@ -74,21 +74,21 @@ type VaultStatus struct {
 	// Initialized indicates if the Vault service is initialized.
 	Initialized bool `json:"initialized"`
 
-	// Endpoints of available nodes.
+	// PodNames of available nodes.
 	// Avaliable node is a running Vault pod, but not necessarily unsealed and ready
 	// to serve requests.
 	AvailableNodes []string `json:"availableNodes"`
 
-	// Endpoint of the active Vault node. Active node is unsealed.
+	// PodNames of the active Vault node. Active node is unsealed.
 	// Only active node can serve requests.
 	// Vault service only points to the active node.
 	ActiveNode string `json:"activeNode"`
 
-	// Endpoints of the standby Vault nodes. Standby nodes are unsealed.
+	// PodNames of the standby Vault nodes. Standby nodes are unsealed.
 	// Standby nodes do not process requests, and instead redirect to the active Vault.
 	StandbyNodes []string `json:"standbyNodes"`
 
-	// Endpoints of Sealed Vault nodes. Sealed nodes MUST be manually unsealed to
+	// PodNames of Sealed Vault nodes. Sealed nodes MUST be manually unsealed to
 	// become standby or leader.
 	SealedNodes []string `json:"sealedNodes"`
 }
