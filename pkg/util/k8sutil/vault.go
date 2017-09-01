@@ -247,45 +247,24 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	return nil
 }
 
-// UpdateVault updates a vault service.
-func UpdateVault(kubecli kubernetes.Interface, vr *spec.Vault) error {
-	ns, name := vr.Namespace, vr.Name
-
-	// TODO: make use of deployment informer
-	d, err := kubecli.AppsV1beta1().Deployments(ns).Get(name, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	if *d.Spec.Replicas != vr.Spec.Nodes {
-		d.Spec.Replicas = &(vr.Spec.Nodes)
-		_, err = kubecli.AppsV1beta1().Deployments(ns).Update(d)
+// Upgrade implement the idempotent upgrade process:
+// - Set deployment spec to make sure rolling update will roll forward without taking down active
+// - Wait until upgraded Vault nodes unsealed
+// - Terminate the active old node to transfer active-ship and finish upgrade
+// TODO: Sets a "Progressing" status
+func Upgrade(kubecli kubernetes.Interface, vr *spec.Vault, d *appsv1beta1.Deployment) (err error) {
+	defer func() {
 		if err != nil {
-			return fmt.Errorf("failed to update size of deployment (%s): %v", d.Name, err)
+			err = fmt.Errorf("failed to upgrade to (%s): %v", vaultImage(vr.Spec), err)
 		}
-	}
+	}()
 
-	if d.Spec.Template.Spec.Containers[0].Image != vaultImage(vr.Spec) {
-		// upgrade() will wait for user input. We need to make it non-blocking.
-		go func() {
-			err := upgrade(kubecli, vr, d)
-			if err != nil {
-				logrus.Errorf("failed to upgrade to (%s): %v", vaultImage(vr.Spec), err)
-			}
-		}()
-	}
-
-	return nil
-}
-
-// see (doc/design/upgrade.md)
-func upgrade(kubecli kubernetes.Interface, vr *spec.Vault, d *appsv1beta1.Deployment) error {
 	mu := intstr.FromInt(int(vr.Spec.Nodes - 1))
 	d.Spec.Strategy.RollingUpdate.MaxUnavailable = &mu
 	d.Spec.Template.Spec.Containers[0].Image = vaultImage(vr.Spec)
-	_, err := kubecli.AppsV1beta1().Deployments(d.Namespace).Update(d)
+	_, err = kubecli.AppsV1beta1().Deployments(d.Namespace).Update(d)
 	if err != nil {
-		return fmt.Errorf("update image to (%s) failed: %v", vaultImage(vr.Spec), err)
+		return fmt.Errorf("update deployment failed: %v", err)
 	}
 
 	err = waitUpgradedNodesUnsealed(kubecli, vr)
@@ -367,12 +346,17 @@ func waitUpgradedNodesUnsealed(kubecli kubernetes.Interface, vr *spec.Vault) err
 		}
 		// Wait until all upgraded nodes become standby as recommended by:
 		//   https://www.vaultproject.io/guides/upgrading/index.html#ha-installations
-		return count >= vr.Spec.Nodes-1, nil
+		// There are N standby because maxSurge=1 and there are N+1 ndoes.
+		return count >= vr.Spec.Nodes, nil
 	})
 }
 
 func vaultImage(vs spec.VaultSpec) string {
 	return fmt.Sprintf("%s:%s", vs.BaseImage, vs.Version)
+}
+
+func IsVaultVersionMatch(ps v1.PodSpec, vs spec.VaultSpec) bool {
+	return ps.Containers[0].Image == vaultImage(vs)
 }
 
 // VaultTLSFromSecret reads Vault CR's TLS secret and converts it into a vault client's TLS config struct.

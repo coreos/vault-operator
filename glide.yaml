@@ -14,3 +14,4 @@ import:
   version: 7318f757a8847cbdb1a36e05dd55b085230ef75a
 - package: github.com/hashicorp/vault
   version: v0.8.0
+- package: golang.org/x/sync/syncmap # changed to sync.Map in Go 1.9

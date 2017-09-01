@@ -1,5 +1,5 @@
-hash: 8808b2dcf647412529c6e5ac10365c2bef5984ef8710c1fbe5843735eb5b749b
-updated: 2017-08-10T16:27:04.84135546-07:00
+hash: 0130087c7f5a37a4ef361280f7f6467e984d3fa93523740910477cfbeab6db8a
+updated: 2017-09-01T09:18:31.341635498-07:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -32,6 +32,7 @@ imports:
   - pkg/util/constants
   - pkg/util/etcdutil
   - pkg/util/k8sutil
+  - pkg/util/probe
   - pkg/util/retryutil
 - name: github.com/coreos/go-systemd
   version: 48702e0da86bd25e76cfef347e2adeb434a0d0a6
@@ -114,7 +115,7 @@ imports:
   subpackages:
   - simplelru
 - name: github.com/hashicorp/hcl
-  version: 392dba7d905ed5d04a5794ba89f558b27e2ba1ca
+  version: 8f6b1344a92ff8877cf24a5de9177bf7d0a2a187
   subpackages:
   - hcl/ast
   - hcl/parser
@@ -174,7 +175,7 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/sethgrid/pester
-  version: 99271bb5a99e5769f688c483eabb3c22d71ebf93
+  version: a86a2d88f4dc3c7dbf3a6a6bbbfb095690b834b6
 - name: github.com/Sirupsen/logrus
   version: 202f25545ea4cf9b191ff7f846df5d87c9382c2b
 - name: github.com/spf13/pflag
@@ -208,8 +209,12 @@ imports:
   - internal
   - jws
   - jwt
+- name: golang.org/x/sync
+  version: f52d1811a62927559de87708c8913c1650ce4f26
+  subpackages:
+  - syncmap
 - name: golang.org/x/sys
-  version: e42485b6e20ae7d2304ec72e535b103ed350cc02
+  version: a07a691ac871746ae690ccf3ab217363b2144531
   subpackages:
   - unix
 - name: golang.org/x/text
@@ -226,7 +231,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/appengine
-  version: c5a90ac045b779001847fec87403f5cba090deae
+  version: d9a072cfa7b9736e44311ef77b3e09d804bfa599
   subpackages:
   - internal
   - internal/app_identity
@@ -374,4 +379,5 @@ imports:
   - util/homedir
   - util/integer
   - util/jsonpath
+  - util/workqueue
 testImports: []
