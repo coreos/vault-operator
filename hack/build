@@ -8,9 +8,9 @@ function go_build {
 	echo "building "${1}"..."
 	if [ ! -z ${GOINSTALL+x} ] && [ "${GOINSTALL}" = "y" ]
 	then
-  		GOBIN=${bin_dir} GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go install ./cmd/${1}/
+  		GOBIN=${bin_dir} GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go install -ldflags "$go_ldflags" ./cmd/${1}/
 	else
-  		GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ${bin_dir}/${1} ./cmd/${1}/
+  		GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ${bin_dir}/${1} -ldflags "$go_ldflags" ./cmd/${1}/
 	fi
 }
 
@@ -18,6 +18,12 @@ if ! which go > /dev/null; then
 	echo "golang needs to be installed"
 	exit 1
 fi
+
+GIT_SHA=`git rev-parse --short HEAD || echo "GitNotFound"`
+
+gitHash="github.com/coreos/etcd-operator/version.GitSHA=${GIT_SHA}"
+
+go_ldflags="-X ${gitHash}"
 
 bin_dir="$(pwd)/_output/bin"
 mkdir -p ${bin_dir} || true
