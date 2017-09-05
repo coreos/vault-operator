@@ -5,22 +5,28 @@ N = Number of replicas
 Vault node status:
 - One node is active (ready pod), and the other `N-1` are standby (unready pods).
 
-Upgrade steps:
-- Change Deployment spec: `maxUnavailable` to `N - 1`, `maxSurge` to 1, image to desired version.
-  - `maxUnavailable=N-1` make sure the number of available/ready pods is at least 1.
-    With this guarantee, it will upgrade and only upgrade all standby nodes.
-- Wait until upgraded nodes unsealed and become standby.
-- `/sys/step-down` call to active node.
-  - This will transfer the leader lock to one of the standby nodes that should have been upgraded.
-  - After stepping down, the active node will exit-program. Deployment will create a new pod with
-    new image and finish the upgrade.
+We will add following fields to Vault status:
 
-Failure recovery:
-- If there are two replica sets, RS1 and RS2:
-  RS1 version is desired version, but RS2's current size is non-zero,
-  it means upgrade has encountered error.
-- Just repeat above upgrade steps from scratch.
+```
+// PodNames of the up-to-date Vault Pods
+UpdatedNodes []string
+```
+
+The status update goroutine will take care of it.
+
+Upgrade steps:
+
+- If Vault spec version is different from the deployment version:
+  - Change Deployment spec: `maxUnavailable` to `N - 1`, `maxSurge` to 1, image to desired version.
+    - `maxUnavailable=N-1` make sure the number of available/ready pods is at least 1.
+      With this guarantee, it will upgrade and only upgrade all standby nodes.
+- If there are `N` up-to-date standby Vault nodes and
+  only one not up-to-date but active Vault node:
+  - Kill the active node to trigger step-down
+    - This will transfer the leader lock to one of the standby nodes that should have been upgraded.
+    - After stepping down, the active node will exit-program.
+
+The above steps should be reconcile-able.
 
 Limitation:
 - No rollback.
-- Assuming no other updates on spec while upgrading.
