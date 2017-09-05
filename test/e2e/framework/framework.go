@@ -16,6 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -29,6 +30,8 @@ var (
 // Framework struct contains the various clients and other information needed to run the e2e tests
 type Framework struct {
 	KubeClient     kubernetes.Interface
+	Config         *restclient.Config
+	RESTClient     *restclient.RESTClient
 	VaultsCRClient client.Vaults
 	Namespace      string
 	vopImage       string
@@ -58,6 +61,7 @@ func Setup() error {
 
 	Global = &Framework{
 		KubeClient:     kubeClient,
+		Config:         config,
 		VaultsCRClient: vaultsCRClient,
 		Namespace:      *ns,
 		vopImage:       *vopImage,
