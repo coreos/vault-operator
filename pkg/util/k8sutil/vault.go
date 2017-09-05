@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
-	"os"
-	"path"
 	"path/filepath"
 	"time"
 
@@ -370,15 +368,20 @@ func VaultTLSFromSecret(kubecli kubernetes.Interface, vr *spec.Vault) (*vaultapi
 
 	// Read the secret and write ca.crt to a temporary file
 	caCertData := secret.Data[spec.CATLSCertName]
-	if err := os.MkdirAll(vaultutil.VaultTLSAssetDir, 0700); err != nil {
-		return nil, fmt.Errorf("read client tls failed: failed to make dir: %v", err)
+	f, err := ioutil.TempFile("", spec.CATLSCertName)
+	if err != nil {
+		return nil, fmt.Errorf("read client tls failed: create temp file failed: %v", err)
 	}
-	caCertFile := path.Join(vaultutil.VaultTLSAssetDir, spec.CATLSCertName)
-	err = ioutil.WriteFile(caCertFile, caCertData, 0600)
+	defer f.Close()
+
+	_, err = f.Write(caCertData)
 	if err != nil {
 		return nil, fmt.Errorf("read client tls failed: write ca cert file failed: %v", err)
 	}
-	return &vaultapi.TLSConfig{CACert: caCertFile}, nil
+	if err = f.Sync(); err != nil {
+		return nil, fmt.Errorf("read client tls failed: sync ca cert file failed: %v", err)
+	}
+	return &vaultapi.TLSConfig{CACert: f.Name()}, nil
 }
 
 // IsPodReady checks the status of the pod for the Ready condition
