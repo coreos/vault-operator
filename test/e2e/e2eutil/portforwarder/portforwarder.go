@@ -17,13 +17,23 @@ type PortForwarder interface {
 	StartForwarding(podName, namespace string, ports []string) error
 	// StopForwarding stops the client-go portforwarder from forwarding ports to the specified pod
 	StopForwarding(podName, namespace string) error
+	// StopForwardingAll stops portforwarding to all active pods
+	StopForwardingAll()
+}
+
+// connection is used to keep track the info for an active portforwarding connection
+type connection struct {
+	podName   string
+	namespace string
+	ports     []string
+	stopChan  chan struct{}
 }
 
 type portForwarder struct {
-	activePods map[string]chan struct{}
-	kubeClient kubernetes.Interface
-	transport  http.RoundTripper
-	upgrader   spdy.Upgrader
+	activeConnections map[string]connection
+	kubeClient        kubernetes.Interface
+	transport         http.RoundTripper
+	upgrader          spdy.Upgrader
 }
 
 // New returns a PortForwarder that uses client-go's implementation of the httpstream.Dialer interface
@@ -34,17 +44,17 @@ func New(kubeClient kubernetes.Interface, config *restclient.Config) (PortForwar
 		return nil, fmt.Errorf("failed to get roundtripper: %v", err)
 	}
 	return &portForwarder{
-		activePods: map[string]chan struct{}{},
-		kubeClient: kubeClient,
-		transport:  transport,
-		upgrader:   upgrader,
+		activeConnections: map[string]connection{},
+		kubeClient:        kubeClient,
+		transport:         transport,
+		upgrader:          upgrader,
 	}, nil
 }
 
 func (pf *portForwarder) StartForwarding(podName, namespace string, ports []string) error {
-	_, ok := pf.activePods[getNamespacedName(podName, namespace)]
-	if ok {
-		return fmt.Errorf("Already portforwarding to the pod (%v). Stop that first", getNamespacedName(podName, namespace))
+	podFullName := getNamespacedName(podName, namespace)
+	if conn, ok := pf.activeConnections[podFullName]; ok {
+		return fmt.Errorf("Already forwarding ports (%v) to the pod (%v). Stop that first", conn.ports, podFullName)
 	}
 
 	url := pf.kubeClient.CoreV1().RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
@@ -69,20 +79,34 @@ func (pf *portForwarder) StartForwarding(podName, namespace string, ports []stri
 	case <-readyChan:
 	}
 
-	pf.activePods[getNamespacedName(podName, namespace)] = stopChan
+	pf.activeConnections[podFullName] = connection{
+		podName:   podName,
+		namespace: namespace,
+		ports:     ports,
+		stopChan:  stopChan,
+	}
 	return nil
 }
 
 func (pf *portForwarder) StopForwarding(podName, namespace string) error {
-	stopChan, ok := pf.activePods[getNamespacedName(podName, namespace)]
+	podFullName := getNamespacedName(podName, namespace)
+	conn, ok := pf.activeConnections[podFullName]
 	if !ok {
-		return fmt.Errorf("No ports being forwarded to the pod (%v)", getNamespacedName(podName, namespace))
+		return fmt.Errorf("No ports being forwarded to the pod (%v)", podFullName)
 	}
 
 	// Stop the client-go port forwarder for this pod
-	close(stopChan)
-	delete(pf.activePods, getNamespacedName(podName, namespace))
+	close(conn.stopChan)
+	delete(pf.activeConnections, podFullName)
 	return nil
+}
+
+// StopForwardingAll stops portforwarding to all active pods
+func (pf *portForwarder) StopForwardingAll() {
+	for _, conn := range pf.activeConnections {
+		close(conn.stopChan)
+	}
+	pf.activeConnections = map[string]connection{}
 }
 
 func getNamespacedName(name, namespace string) string {
