@@ -45,9 +45,11 @@ func WaitUntilOperatorReady(kubecli kubernetes.Interface, namespace, name string
 }
 
 // WaitAvailableVaultsUp waits until the desired number of vault nodes are shown as available in the CR status
-func WaitAvailableVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *spec.Vault) error {
-	err := retryutil.Retry(retryInterval, 6, func() (bool, error) {
-		vault, err := vaultsCRClient.Get(context.TODO(), cl.Namespace, cl.Name)
+func WaitAvailableVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *spec.Vault) (*spec.Vault, error) {
+	var vault *spec.Vault
+	var err error
+	err = retryutil.Retry(retryInterval, 6, func() (bool, error) {
+		vault, err = vaultsCRClient.Get(context.TODO(), cl.Namespace, cl.Name)
 		if err != nil {
 			return false, fmt.Errorf("failed to get CR: %v", err)
 		}
@@ -57,7 +59,7 @@ func WaitAvailableVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, ret
 		return len(vault.Status.AvailableNodes) == size, nil
 	})
 	if err != nil {
-		return fmt.Errorf("failed to wait for available size to become (%v): %v", size, err)
+		return nil, fmt.Errorf("failed to wait for available size to become (%v): %v", size, err)
 	}
-	return nil
+	return vault, nil
 }
