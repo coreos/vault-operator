@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"reflect"
 
 	"github.com/coreos-inc/vault-operator/pkg/spec"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
@@ -14,7 +15,6 @@ import (
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -244,34 +244,58 @@ func (v *Vaults) deleteVault(vr *spec.Vault) error {
 	return err
 }
 
-func (v *Vaults) syncUpgrade(vr *spec.Vault, d *appsv1beta1.Deployment) error {
-	if _, ok := v.upgrading.Load(vr.Name); ok {
-		return nil
-	}
-
-	sel := k8sutil.LabelsForVault(vr.Name)
-	opt := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(sel).String()}
-	podList, err := v.kubecli.CoreV1().Pods(vr.Namespace).List(opt)
-	if err != nil {
-		return err
-	}
-
-	for _, p := range podList.Items {
-		if p.Status.Phase != v1.PodRunning || p.DeletionTimestamp != nil {
-			continue
+func (v *Vaults) syncUpgrade(vr *spec.Vault, d *appsv1beta1.Deployment) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("syncUpgrade failed: %v", err)
 		}
-		if !k8sutil.IsVaultVersionMatch(p.Spec, vr.Spec) {
-			// upgrade() will wait for user input. We need to make it non-blocking.
-			go func() {
-				defer v.upgrading.Delete(vr.Name)
-				err := k8sutil.Upgrade(v.kubecli, vr, d)
-				if err != nil {
-					logrus.Error(err)
-				}
-			}()
-			v.upgrading.Store(vr.Name, struct{}{})
-			return nil
+	}()
+
+	// If the deployment version hasn't been updated, roll forward the deployment version
+	// but keep the existing active Vault node alive though.
+	if !k8sutil.IsVaultVersionMatch(d.Spec.Template.Spec, vr.Spec) {
+		err = k8sutil.UpgradeDeployment(v.kubecli, vr, d)
+		if err != nil {
+			return err
 		}
 	}
+
+	// If there is one active node belonging to the old version, and all other nodes are
+	// standby and uptodate, then trigger step-down on active node.
+	// It maps to the following conditions on Status:
+	// 1. check standby == updated
+	// 2. check Available - Updated == Active
+	readyToTriggerStepdown := func() bool {
+		if len(vr.Status.ActiveNode) == 0 {
+			return false
+		}
+
+		if !reflect.DeepEqual(vr.Status.StandbyNodes, vr.Status.UpdatedNodes) {
+			return false
+		}
+
+		ava := vr.Status.AvailableNodes
+		for i := range ava {
+			if ava[i] == vr.Status.ActiveNode {
+				ava = append(ava[:i], ava[i+1:]...)
+				break
+			}
+		}
+		if !reflect.DeepEqual(ava, vr.Status.UpdatedNodes) {
+			return false
+		}
+		return true
+	}()
+
+	if readyToTriggerStepdown {
+		// This will send SIGTERM to the active Vault pod. It should release HA lock and exit properly.
+		// If it failed for some reason, kubelet will send SIGKILL after default grace period (30s) eventually.
+		// It take longer but the the lock will get released eventually on failure case.
+		err = v.kubecli.CoreV1().Pods(vr.Namespace).Delete(vr.Status.ActiveNode, nil)
+		if err != nil {
+			return fmt.Errorf("step down: failed to delete active Vault pod (%s): %v", vr.Status.ActiveNode, err)
+		}
+	}
+
 	return nil
 }

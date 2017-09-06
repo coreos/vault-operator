@@ -76,9 +76,10 @@ func (v *Vaults) onDeleteVault(obj interface{}) {
 		}
 	}
 
-	cancel := v.ctxCancels[vr.Name]
-	cancel()
-	delete(v.ctxCancels, vr.Name)
+	if cancel, ok := v.ctxCancels[vr.Name]; ok {
+		cancel()
+		delete(v.ctxCancels, vr.Name)
+	}
 
 	// IndexerInformer uses a delta queue, therefore for deletes we have to use this
 	// key function.
