@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"path/filepath"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/coreos-inc/vault-operator/pkg/spec"
 	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
@@ -20,7 +18,6 @@ import (
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 )
@@ -245,108 +242,18 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 	return nil
 }
 
-// Upgrade implement the idempotent upgrade process:
-// - Set deployment spec to make sure rolling update will roll forward without taking down active
-// - Wait until upgraded Vault nodes unsealed
-// - Terminate the active old node to transfer active-ship and finish upgrade
-// TODO: Sets a "Progressing" status
-func Upgrade(kubecli kubernetes.Interface, vr *spec.Vault, d *appsv1beta1.Deployment) (err error) {
-	defer func() {
-		if err != nil {
-			err = fmt.Errorf("failed to upgrade to (%s): %v", vaultImage(vr.Spec), err)
-		}
-	}()
-
+// UpgradeDeployment sets deployment spec to:
+// - roll forward version
+// - keep active Vault node available by setting `maxUnavailable=N-1` and `maxSurge=1`
+func UpgradeDeployment(kubecli kubernetes.Interface, vr *spec.Vault, d *appsv1beta1.Deployment) error {
 	mu := intstr.FromInt(int(vr.Spec.Nodes - 1))
 	d.Spec.Strategy.RollingUpdate.MaxUnavailable = &mu
 	d.Spec.Template.Spec.Containers[0].Image = vaultImage(vr.Spec)
-	_, err = kubecli.AppsV1beta1().Deployments(d.Namespace).Update(d)
+	_, err := kubecli.AppsV1beta1().Deployments(d.Namespace).Update(d)
 	if err != nil {
-		return fmt.Errorf("update deployment failed: %v", err)
-	}
-
-	err = waitUpgradedNodesUnsealed(kubecli, vr)
-	if err != nil {
-		return fmt.Errorf("failed to wait upgraded Vault nodes unsealed: %v", err)
-	}
-	active, err := getActiveVaultPod(kubecli, vr)
-	if err != nil {
-		return fmt.Errorf("failed to get active Vault pod: %v", err)
-	}
-	if active == nil {
-		// The active Vault node might have been deleted by external user. So it has done the work for us.
-		return nil
-	}
-	// This will send SIGTERM to the Vault container. Vault should release HA lock and exit properly.
-	// If it failed for some reason, kubelet will send SIGKILL after default grace period (30s) eventually.
-	// This will take longer but the the lock will get released eventually.
-	err = kubecli.CoreV1().Pods(active.Namespace).Delete(active.Name, nil)
-	if err != nil {
-		return fmt.Errorf("step down: failed to delete active Vault pod (%s): %v", active.Name, err)
+		return fmt.Errorf("failed to upgrade deployment to (%s): %v", vaultImage(vr.Spec), err)
 	}
 	return nil
-}
-
-func getActiveVaultPod(kubecli kubernetes.Interface, vr *spec.Vault) (*v1.Pod, error) {
-	selector := labels.SelectorFromSet(LabelsForVault(vr.Name))
-	listOpt := metav1.ListOptions{
-		LabelSelector: selector.String(),
-	}
-	podList, err := kubecli.CoreV1().Pods(vr.Namespace).List(listOpt)
-	if err != nil {
-		return nil, err
-	}
-	for _, p := range podList.Items {
-		if p.Status.Phase == v1.PodRunning && IsPodReady(p) {
-			return &p, nil
-		}
-	}
-	return nil, nil
-}
-
-func waitUpgradedNodesUnsealed(kubecli kubernetes.Interface, vr *spec.Vault) error {
-	tlsConfig, err := VaultTLSFromSecret(kubecli, vr)
-	if err != nil {
-		return err
-	}
-	selector := labels.SelectorFromSet(LabelsForVault(vr.Name))
-	listOpt := metav1.ListOptions{
-		LabelSelector: selector.String(),
-	}
-	// TODO: How to handle dangling upgrade?
-	return retryutil.Retry(5*time.Second, math.MaxInt64, func() (bool, error) {
-		podList, err := kubecli.CoreV1().Pods(vr.Namespace).List(listOpt)
-		if err != nil {
-			return false, err
-		}
-		count := int32(0)
-		for _, p := range podList.Items {
-			if p.Status.Phase != v1.PodRunning {
-				continue
-			}
-			if p.Spec.Containers[0].Image != vaultImage(vr.Spec) { // current version of Vault?
-				continue
-			}
-
-			vapi, err := vaultutil.NewClient(PodDNSName(p), tlsConfig)
-			if err != nil {
-				logrus.Errorf("failed to create Vault client: %v", err)
-				continue
-			}
-			hr, err := vapi.Sys().Health()
-			if err != nil {
-				logrus.Errorf("failed to request Vault's health info: %v", err)
-				continue
-			}
-			if hr.Initialized && !hr.Sealed && hr.Standby {
-				count++
-			}
-		}
-		// Wait until all upgraded nodes become standby as recommended by:
-		//   https://www.vaultproject.io/guides/upgrading/index.html#ha-installations
-		// There are N standby because maxSurge=1 and there are N+1 ndoes.
-		return count >= vr.Spec.Nodes, nil
-	})
 }
 
 func vaultImage(vs spec.VaultSpec) string {
