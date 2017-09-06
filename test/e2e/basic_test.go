@@ -1,7 +1,6 @@
 package e2e
 
 import (
-	"context"
 	"testing"
 
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
@@ -13,27 +12,21 @@ import (
 	vaultapi "github.com/hashicorp/vault/api"
 )
 
-func TestCreateCluster(t *testing.T) {
+func TestCreateHAVault(t *testing.T) {
 	f := framework.Global
-	testVault, err := e2eutil.CreateCluster(t, f.VaultsCRClient, e2eutil.NewCluster("test-vault-", f.Namespace, 1))
+	testVault, err := e2eutil.CreateCluster(t, f.VaultsCRClient, e2eutil.NewCluster("test-vault-", f.Namespace, 2))
 	if err != nil {
 		t.Fatalf("failed to create vault cluster: %v", err)
 	}
-
 	defer func() {
 		if err := e2eutil.DeleteCluster(t, f.VaultsCRClient, testVault); err != nil {
 			t.Fatalf("failed to delete vault cluster: %v", err)
 		}
 	}()
 
-	err = e2eutil.WaitAvailableVaultsUp(t, f.VaultsCRClient, 1, 6, testVault)
+	vault, err := e2eutil.WaitAvailableVaultsUp(t, f.VaultsCRClient, 2, 6, testVault)
 	if err != nil {
 		t.Fatalf("failed to wait for cluster nodes to become available: %v", err)
-	}
-
-	vault, err := f.VaultsCRClient.Get(context.TODO(), testVault.Namespace, testVault.Name)
-	if err != nil {
-		t.Fatalf("failed to get CR: %v", err)
 	}
 
 	pf, err := portforwarder.New(f.KubeClient, f.Config)
