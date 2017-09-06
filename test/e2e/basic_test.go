@@ -41,12 +41,6 @@ func TestCreateHAVault(t *testing.T) {
 		t.Fatalf("failed to forward ports to pod(%v): %v", podName, err)
 	}
 
-	defer func() {
-		if err = pf.StopForwarding(podName, f.Namespace); err != nil {
-			t.Errorf("failed to stop forwarding ports to pod(%v): %v", podName, err)
-		}
-	}()
-
 	tlsConfig, err := k8sutil.VaultTLSFromSecret(f.KubeClient, vault)
 	if err != nil {
 		t.Fatalf("failed to read TLS config for vault client: %v", err)
