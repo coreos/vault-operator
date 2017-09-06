@@ -38,17 +38,21 @@ func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, vr *spec.Vault) {
 		}
 
 		s := spec.VaultStatus{}
-		vs.updateLocalVaultCRStatus(ctx, vr.GetName(), vr.GetNamespace(), &s, tlsConfig)
+		vs.updateLocalVaultCRStatus(ctx, vr, &s, tlsConfig)
 
-		err := vs.updateVaultCRStatus(ctx, vr.GetName(), vr.GetNamespace(), s)
+		latest, err := vs.updateVaultCRStatus(ctx, vr.GetName(), vr.GetNamespace(), s)
 		if err != nil {
 			logrus.Errorf("failed updating the status for the vault service: %s (%v)", vr.GetName(), err)
+		}
+		if latest != nil {
+			vr = latest
 		}
 	}
 }
 
 // updateLocalVaultCRStatus updates local vault CR status by querying each vault pod's API.
-func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace string, s *spec.VaultStatus, tlsConfig *vaultapi.TLSConfig) {
+func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, vr *spec.Vault, s *spec.VaultStatus, tlsConfig *vaultapi.TLSConfig) {
+	name, namespace := vr.Name, vr.Namespace
 	sel := k8sutil.LabelsForVault(name)
 	// TODO: handle upgrades when pods from two replicaset can co-exist :(
 	opt := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(sel).String()}
@@ -61,15 +65,16 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace 
 	var sealNodes []string
 	var availableNodes []string
 	var standByNodes []string
-	// If it can't talk to any vault pod, we are not changing the state.
-	inited := s.Initialized
+	var updatedNodes []string
+	inited := false
+	// If it can't talk to any vault pod, we are not going to change the status.
+	changed := false
 
 	for _, p := range pods.Items {
 		// If a pod is Terminating, it is still Running but has no IP.
 		if p.Status.Phase != v1.PodRunning || p.DeletionTimestamp != nil {
 			continue
 		}
-		availableNodes = append(availableNodes, p.GetName())
 
 		vapi, err := vaultutil.NewClient(k8sutil.PodDNSName(p), tlsConfig)
 		if err != nil {
@@ -82,7 +87,14 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace 
 			logrus.Errorf("failed to update vault replica status: failed requesting health info for the vault pod (%s/%s): %v", namespace, p.GetName(), err)
 			continue
 		}
-		// is active node?
+
+		changed = true
+
+		availableNodes = append(availableNodes, p.GetName())
+		if k8sutil.IsVaultVersionMatch(p.Spec, vr.Spec) {
+			updatedNodes = append(updatedNodes, p.GetName())
+		}
+
 		// TODO: add to vaultutil?
 		if hr.Initialized && !hr.Sealed && !hr.Standby {
 			s.ActiveNode = p.GetName()
@@ -98,22 +110,27 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, name, namespace 
 		}
 	}
 
+	if !changed {
+		return
+	}
+
 	s.AvailableNodes = availableNodes
 	s.StandbyNodes = standByNodes
 	s.SealedNodes = sealNodes
 	s.Initialized = inited
+	s.UpdatedNodes = updatedNodes
 }
 
 // updateVaultCRStatus updates the status field of the Vault CR.
-func (vs *Vaults) updateVaultCRStatus(ctx context.Context, name, namespace string, status spec.VaultStatus) error {
+func (vs *Vaults) updateVaultCRStatus(ctx context.Context, name, namespace string, status spec.VaultStatus) (*spec.Vault, error) {
 	vault, err := vs.vaultsCRCli.Get(ctx, namespace, name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if reflect.DeepEqual(vault.Status, status) {
-		return nil
+		return vault, nil
 	}
 	vault.Status = status
 	_, err = vs.vaultsCRCli.Update(ctx, vault)
-	return err
+	return vault, err
 }

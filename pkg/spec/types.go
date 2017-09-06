@@ -91,6 +91,10 @@ type VaultStatus struct {
 	// PodNames of Sealed Vault nodes. Sealed nodes MUST be manually unsealed to
 	// become standby or leader.
 	SealedNodes []string `json:"sealedNodes"`
+
+	// PodNames of updated Vault nodes. Updated means the Vault container image version
+	// matches the spec's version.
+	UpdatedNodes []string `json:"updatedNodes"`
 }
 
 // DefaultVaultClientTLSSecretName returns the name of the default vault client TLS secret
