@@ -19,6 +19,21 @@ func CreateCluster(t *testing.T, crClient client.Vaults, cl *spec.Vault) (*spec.
 	return vault, nil
 }
 
+// ResizeCluster updates the Nodes field of the vault CR
+func ResizeCluster(t *testing.T, crClient client.Vaults, cl *spec.Vault, size int) (*spec.Vault, error) {
+	vault, err := crClient.Get(context.TODO(), cl.Namespace, cl.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get CR: %v", err)
+	}
+	vault.Spec.Nodes = int32(size)
+	vault, err = crClient.Update(context.TODO(), vault)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update CR: %v", err)
+	}
+	LogfWithTimestamp(t, "updated vault cluster(%v) to size(%v)", vault.Name, size)
+	return vault, nil
+}
+
 // DeleteCluster deletes the vault CR specified by cluster spec
 func DeleteCluster(t *testing.T, crClient client.Vaults, cl *spec.Vault) error {
 	t.Logf("deleting vault cluster: %v", cl.Name)
