@@ -32,7 +32,12 @@ function e2e_pass {
 		exit 1
 	fi
 
-	go test "./test/e2e/" -timeout 30m --race --kubeconfig=${KUBECONFIG} --operator-image=${OPERATOR_IMAGE} --namespace=${TEST_NAMESPACE}
+	cp ${KUBECONFIG} _output/kubeconfig
+	go test -c "./test/e2e/" --race -o _output/bin/e2e.test
+	docker run \
+	  -v="${PWD}/_output:/e2etest" \
+	  golang:1.9 \
+	  /e2etest/bin/e2e.test -test.timeout=30m --kubeconfig=/e2etest/kubeconfig --operator-image=${OPERATOR_IMAGE} --namespace=${TEST_NAMESPACE}
 }
 
 for p in $PASSES; do
