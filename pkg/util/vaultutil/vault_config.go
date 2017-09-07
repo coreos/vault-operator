@@ -54,9 +54,9 @@ func NewConfigWithListener(data string) string {
 	return data
 }
 
-func NewClient(addr string, tlsConfig *vaultapi.TLSConfig) (*vaultapi.Client, error) {
+func NewClient(hostname string, port string, tlsConfig *vaultapi.TLSConfig) (*vaultapi.Client, error) {
 	cfg := vaultapi.DefaultConfig()
-	podURL := fmt.Sprintf("https://%s:8200", addr)
+	podURL := fmt.Sprintf("https://%s:%s", hostname, port)
 	cfg.Address = podURL
 	cfg.ConfigureTLS(tlsConfig)
 	return vaultapi.NewClient(cfg)
