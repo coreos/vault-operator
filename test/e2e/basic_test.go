@@ -61,5 +61,10 @@ func TestCreateHAVault(t *testing.T) {
 		t.Fatalf("failed to initialize vault: %v", err)
 	}
 
-	// TODO: Wait until node shows up as sealed, then unseal it.
+	vault, err = e2eutil.WaitSealedVaultsUp(t, f.VaultsCRClient, 2, 6, testVault)
+	if err != nil {
+		t.Fatalf("failed to wait for vault nodes to become sealed: %v", err)
+	}
+
+	// TODO: Unseal both vault nodes and wait for 1 active and 1 standby node
 }
