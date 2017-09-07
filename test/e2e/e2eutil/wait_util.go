@@ -19,6 +19,9 @@ import (
 // Retry interval used for all retries in wait related functions
 var retryInterval = 10 * time.Second
 
+// checkConditionFunc is used to check if a condition for the vault CR is true
+type checkConditionFunc func(*spec.Vault) bool
+
 // WaitUntilOperatorReady will wait until the first pod with the label name=<name> is ready.
 func WaitUntilOperatorReady(kubecli kubernetes.Interface, namespace, name string) error {
 	var podName string
@@ -44,8 +47,8 @@ func WaitUntilOperatorReady(kubecli kubernetes.Interface, namespace, name string
 	return nil
 }
 
-// WaitAvailableVaultsUp waits until the desired number of vault nodes are shown as available in the CR status
-func WaitAvailableVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *spec.Vault) (*spec.Vault, error) {
+// WaitUntilVaultConditionTrue retries until the specified condition check becomes true for the vault CR
+func WaitUntilVaultConditionTrue(t *testing.T, vaultsCRClient client.Vaults, retries int, cl *spec.Vault, checkCondition checkConditionFunc) (*spec.Vault, error) {
 	var vault *spec.Vault
 	var err error
 	err = retryutil.Retry(retryInterval, 6, func() (bool, error) {
@@ -53,13 +56,34 @@ func WaitAvailableVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, ret
 		if err != nil {
 			return false, fmt.Errorf("failed to get CR: %v", err)
 		}
+		return checkCondition(vault), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return vault, nil
+}
 
-		LogfWithTimestamp(t, "available nodes: (%v)", vault.Status.AvailableNodes)
-
-		return len(vault.Status.AvailableNodes) == size, nil
+// WaitAvailableVaultsUp retries until the desired number of vault nodes are shown as available in the CR status
+func WaitAvailableVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *spec.Vault) (*spec.Vault, error) {
+	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *spec.Vault) bool {
+		LogfWithTimestamp(t, "available nodes: (%v)", v.Status.AvailableNodes)
+		return len(v.Status.AvailableNodes) == size
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait for available size to become (%v): %v", size, err)
+	}
+	return vault, nil
+}
+
+// WaitSealedVaultsUp retries until the desired number of vault nodes are shown as sealed in the CR status
+func WaitSealedVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *spec.Vault) (*spec.Vault, error) {
+	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *spec.Vault) bool {
+		LogfWithTimestamp(t, "sealed nodes: (%v)", v.Status.SealedNodes)
+		return len(v.Status.SealedNodes) == size
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to wait for sealed size to become (%v): %v", size, err)
 	}
 	return vault, nil
 }
