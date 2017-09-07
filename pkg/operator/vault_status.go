@@ -76,7 +76,7 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, vr *spec.Vault, 
 			continue
 		}
 
-		vapi, err := vaultutil.NewClient(k8sutil.PodDNSName(p), tlsConfig)
+		vapi, err := vaultutil.NewClient(k8sutil.PodDNSName(p), "8200", tlsConfig)
 		if err != nil {
 			logrus.Errorf("failed to update vault replica status: failed creating client for the vault pod (%s/%s): %v", namespace, p.GetName(), err)
 			continue
