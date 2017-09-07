@@ -15,6 +15,6 @@
 package version
 
 var (
-	Version = "0.0.2+git"
+	Version = "0.1.0"
 	GitSHA  = "Not provided (use ./build instead of go build)"
 )
