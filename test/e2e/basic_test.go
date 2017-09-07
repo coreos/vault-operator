@@ -56,7 +56,7 @@ func TestCreateHAVault(t *testing.T) {
 	if !ok {
 		t.Fatalf("failed to find vault client for pod (%v)", podName)
 	}
-	_, err = conn.VClient.Sys().Init(initOpts)
+	initResp, err := conn.VClient.Sys().Init(initOpts)
 	if err != nil {
 		t.Fatalf("failed to initialize vault: %v", err)
 	}
@@ -66,5 +66,36 @@ func TestCreateHAVault(t *testing.T) {
 		t.Fatalf("failed to wait for vault nodes to become sealed: %v", err)
 	}
 
-	// TODO: Unseal both vault nodes and wait for 1 active and 1 standby node
+	// Unseal the 1st vault node and wait for it to become active
+	unsealResp, err := conn.VClient.Sys().Unseal(initResp.Keys[0])
+	if err != nil {
+		t.Fatalf("failed to unseal vault: %v", err)
+	}
+	if unsealResp.Sealed {
+		t.Fatal("failed to unseal vault: unseal response still shows vault as sealed")
+	}
+	vault, err = e2eutil.WaitActiveVaultsUp(t, f.VaultsCRClient, 6, testVault)
+	if err != nil {
+		t.Fatalf("failed to wait for any node to become active: %v", err)
+	}
+
+	// Unseal the 2nd vault node(the remaining sealed node) and wait for it to become standby
+	podName = vault.Status.SealedNodes[0]
+	conn, ok = conns[podName]
+	if !ok {
+		t.Fatalf("failed to find vault client for pod (%v)", podName)
+	}
+	unsealResp, err = conn.VClient.Sys().Unseal(initResp.Keys[0])
+	if err != nil {
+		t.Fatalf("failed to unseal vault: %v", err)
+	}
+	if unsealResp.Sealed {
+		t.Fatal("failed to unseal vault: unseal response still shows vault as sealed")
+	}
+	vault, err = e2eutil.WaitStandbyVaultsUp(t, f.VaultsCRClient, 1, 6, testVault)
+	if err != nil {
+		t.Fatalf("failed to wait for vault nodes to become standby: %v", err)
+	}
+
+	// TODO: read write to vault cluster
 }

@@ -87,3 +87,27 @@ func WaitSealedVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retrie
 	}
 	return vault, nil
 }
+
+// WaitStandbyVaultsUp retries until the desired number of vault nodes are shown as standby in the CR status
+func WaitStandbyVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *spec.Vault) (*spec.Vault, error) {
+	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *spec.Vault) bool {
+		LogfWithTimestamp(t, "standby nodes: (%v)", v.Status.StandbyNodes)
+		return len(v.Status.StandbyNodes) == size
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to wait for standby size to become (%v): %v", size, err)
+	}
+	return vault, nil
+}
+
+// WaitActiveVaultsUp retries until there is 1 active node in the CR status
+func WaitActiveVaultsUp(t *testing.T, vaultsCRClient client.Vaults, retries int, cl *spec.Vault) (*spec.Vault, error) {
+	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *spec.Vault) bool {
+		LogfWithTimestamp(t, "active node: (%v)", v.Status.ActiveNode)
+		return len(v.Status.ActiveNode) != 0
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to wait for any node to become active: %v", err)
+	}
+	return vault, nil
+}
