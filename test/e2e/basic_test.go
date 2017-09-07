@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
@@ -97,5 +98,35 @@ func TestCreateHAVault(t *testing.T) {
 		t.Fatalf("failed to wait for vault nodes to become standby: %v", err)
 	}
 
-	// TODO: read write to vault cluster
+	// Write secret to active node
+	podName = vault.Status.ActiveNode
+	conn, ok = conns[podName]
+	if !ok {
+		t.Fatalf("failed to find vault client for pod (%v)", podName)
+	}
+	conn.VClient.SetToken(initResp.RootToken)
+
+	path := "secret/login"
+	data := &e2eutil.SampleSecret{Username: "user", Password: "pass"}
+	secretData, err := e2eutil.MapObjectToArbitraryData(data)
+	if err != nil {
+		t.Fatalf("failed to create secret data: %v", err)
+	}
+
+	_, err = conn.VClient.Logical().Write(path, secretData)
+	if err != nil {
+		t.Fatalf("failed to write secret (%v) to vault node (%v): %v", path, podName, err)
+	}
+
+	// Read secret back from active node
+	secret, err := conn.VClient.Logical().Read(path)
+	if err != nil {
+		t.Fatalf("failed to read secret(%v) from vault node (%v): %v", path, podName, err)
+	}
+
+	if !reflect.DeepEqual(secret.Data, secretData) {
+		// TODO: Print out secrets
+		t.Fatal("Read secret data is not the same as write secret")
+	}
+
 }
