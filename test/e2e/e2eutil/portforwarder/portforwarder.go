@@ -3,7 +3,6 @@ package portforwarder
 import (
 	"fmt"
 	"net/http"
-	"path"
 
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -20,10 +19,11 @@ type PortForwarder interface {
 }
 
 type portForwarder struct {
-	activePods map[string]chan struct{}
 	kubeClient kubernetes.Interface
 	transport  http.RoundTripper
 	upgrader   spdy.Upgrader
+	stopChan   chan struct{}
+	active     bool
 }
 
 // New returns a PortForwarder that uses client-go's implementation of the httpstream.Dialer interface
@@ -34,7 +34,6 @@ func New(kubeClient kubernetes.Interface, config *restclient.Config) (PortForwar
 		return nil, fmt.Errorf("failed to get roundtripper: %v", err)
 	}
 	return &portForwarder{
-		activePods: map[string]chan struct{}{},
 		kubeClient: kubeClient,
 		transport:  transport,
 		upgrader:   upgrader,
@@ -42,9 +41,8 @@ func New(kubeClient kubernetes.Interface, config *restclient.Config) (PortForwar
 }
 
 func (pf *portForwarder) StartForwarding(podName, namespace string, ports []string) error {
-	_, ok := pf.activePods[getNamespacedName(podName, namespace)]
-	if ok {
-		return fmt.Errorf("Already portforwarding to the pod (%v). Stop that first", getNamespacedName(podName, namespace))
+	if pf.active {
+		return fmt.Errorf("Already portforwarding to the pod (%v). Stop that first", podName)
 	}
 
 	url := pf.kubeClient.CoreV1().RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
@@ -69,22 +67,18 @@ func (pf *portForwarder) StartForwarding(podName, namespace string, ports []stri
 	case <-readyChan:
 	}
 
-	pf.activePods[getNamespacedName(podName, namespace)] = stopChan
+	pf.stopChan = stopChan
+	pf.active = true
 	return nil
 }
 
 func (pf *portForwarder) StopForwarding(podName, namespace string) error {
-	stopChan, ok := pf.activePods[getNamespacedName(podName, namespace)]
-	if !ok {
-		return fmt.Errorf("No ports being forwarded to the pod (%v)", getNamespacedName(podName, namespace))
+	if !pf.active {
+		return fmt.Errorf("No ports being forwarded to the pod (%v)", podName)
 	}
 
 	// Stop the client-go port forwarder for this pod
-	close(stopChan)
-	delete(pf.activePods, getNamespacedName(podName, namespace))
+	close(pf.stopChan)
+	pf.active = false
 	return nil
-}
-
-func getNamespacedName(name, namespace string) string {
-	return path.Join(namespace, name)
 }
