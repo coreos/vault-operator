@@ -204,7 +204,8 @@ func (v *Vaults) prepareVaultConfig(vr *spec.Vault) error {
 
 	cm := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: k8sutil.ConfigMapNameForVault(vr),
+			Name:   k8sutil.ConfigMapNameForVault(vr),
+			Labels: k8sutil.LabelsForVault(vr.Name),
 		},
 		Data: map[string]string{
 			filepath.Base(k8sutil.VaultConfigPath): cfgData,

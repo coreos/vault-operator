@@ -2,6 +2,8 @@
 
 An operator to create and manage Vault instances for Kubernetes clusters on Tectonic. Vault instances created by the Vault operator are highly available and support automatic failover and upgrade.
 
+For an overview of the resources created by the vault operator see the [resource labels and ownership](doc/user/resource_labels_and_ownership.md) doc.
+
 An example namespace, `vault-services`, is used in this document.
 
 ## Prerequisites
