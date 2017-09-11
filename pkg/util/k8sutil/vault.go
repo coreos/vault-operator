@@ -58,6 +58,7 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) erro
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      EtcdNameForVault(v.Name),
 			Namespace: v.Namespace,
+			Labels:    LabelsForVault(v.Name),
 		},
 		Spec: etcdCRAPI.ClusterSpec{
 			Size: size,
@@ -352,7 +353,7 @@ func EtcdURLForVault(name string) string {
 // LabelsForVault returns the labels for selecting the resources
 // belonging to the given vault name.
 func LabelsForVault(name string) map[string]string {
-	return map[string]string{"app": "vault", "name": name}
+	return map[string]string{"app": "vault", "vault_cluster": name}
 }
 
 // configEtcdBackendTLS configures the volume and mounts in vault pod to
