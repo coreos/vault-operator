@@ -52,12 +52,14 @@ func (v *Vaults) prepareDefaultVaultTLSSecrets(vr *spec.Vault) (err error) {
 	if err != nil {
 		return err
 	}
+	k8sutil.AddOwnerRefToObject(se, k8sutil.AsOwner(vr))
 	_, err = v.kubecli.CoreV1().Secrets(vr.Namespace).Create(se)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
 	}
 
 	se = newVaultClientTLSSecret(vr, caCrt)
+	k8sutil.AddOwnerRefToObject(se, k8sutil.AsOwner(vr))
 	_, err = v.kubecli.CoreV1().Secrets(vr.Namespace).Create(se)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
@@ -93,6 +95,7 @@ func (v *Vaults) prepareEtcdTLSSecrets(vr *spec.Vault) (err error) {
 	if err != nil {
 		return err
 	}
+	k8sutil.AddOwnerRefToObject(se, k8sutil.AsOwner(vr))
 	_, err = v.kubecli.CoreV1().Secrets(vr.Namespace).Create(se)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
@@ -102,6 +105,7 @@ func (v *Vaults) prepareEtcdTLSSecrets(vr *spec.Vault) (err error) {
 	if err != nil {
 		return err
 	}
+	k8sutil.AddOwnerRefToObject(se, k8sutil.AsOwner(vr))
 	_, err = v.kubecli.CoreV1().Secrets(vr.Namespace).Create(se)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
@@ -111,6 +115,7 @@ func (v *Vaults) prepareEtcdTLSSecrets(vr *spec.Vault) (err error) {
 	if err != nil {
 		return err
 	}
+	k8sutil.AddOwnerRefToObject(se, k8sutil.AsOwner(vr))
 	_, err = v.kubecli.CoreV1().Secrets(vr.Namespace).Create(se)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return err

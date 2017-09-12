@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/coreos-inc/vault-operator/pkg/spec"
+
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -22,4 +24,21 @@ func CascadeDeleteBackground() *metav1.DeleteOptions {
 func PodDNSName(p v1.Pod) string {
 	podIP := strings.Replace(p.Status.PodIP, ".", "-", -1)
 	return fmt.Sprintf("%s.%s.pod", podIP, p.Namespace)
+}
+
+// AddOwnerRefToObject appends the desired OwnerReference to the object
+func AddOwnerRefToObject(o metav1.Object, r metav1.OwnerReference) {
+	o.SetOwnerReferences(append(o.GetOwnerReferences(), r))
+}
+
+// AsOwner returns an owner reference set as the vault cluster CR
+func AsOwner(v *spec.Vault) metav1.OwnerReference {
+	trueVar := true
+	return metav1.OwnerReference{
+		APIVersion: spec.SchemeGroupVersion.String(),
+		Kind:       spec.VaultResourceKind,
+		Name:       v.Name,
+		UID:        v.UID,
+		Controller: &trueVar,
+	}
 }
