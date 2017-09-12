@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/coreos-inc/vault-operator/pkg/spec"
+	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -14,10 +14,10 @@ import (
 type Vaults interface {
 	RESTClient() *rest.RESTClient
 
-	Get(ctx context.Context, namespace, name string) (*spec.Vault, error)
-	Create(ctx context.Context, vault *spec.Vault) (*spec.Vault, error)
+	Get(ctx context.Context, namespace, name string) (*api.VaultService, error)
+	Create(ctx context.Context, vault *api.VaultService) (*api.VaultService, error)
 	Delete(ctx context.Context, namespace, name string) error
-	Update(ctx context.Context, vault *spec.Vault) (*spec.Vault, error)
+	Update(ctx context.Context, vault *api.VaultService) (*api.VaultService, error)
 }
 
 type vaults struct {
@@ -57,12 +57,12 @@ func NewCRClient(cfg *rest.Config) (Vaults, error) {
 
 func newClient(cfg *rest.Config) (*rest.RESTClient, *runtime.Scheme, error) {
 	crScheme := runtime.NewScheme()
-	if err := spec.AddToScheme(crScheme); err != nil {
+	if err := api.AddToScheme(crScheme); err != nil {
 		return nil, nil, err
 	}
 
 	config := *cfg
-	config.GroupVersion = &spec.SchemeGroupVersion
+	config.GroupVersion = &api.SchemeGroupVersion
 	config.APIPath = "/apis"
 	config.ContentType = runtime.ContentTypeJSON
 	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: serializer.NewCodecFactory(crScheme)}
@@ -76,11 +76,11 @@ func newClient(cfg *rest.Config) (*rest.RESTClient, *runtime.Scheme, error) {
 }
 
 // Get returns a Vault resource for the given name in the given namespace.
-func (vs *vaults) Get(ctx context.Context, namespace, name string) (*spec.Vault, error) {
-	v := &spec.Vault{}
+func (vs *vaults) Get(ctx context.Context, namespace, name string) (*api.VaultService, error) {
+	v := &api.VaultService{}
 	err := vs.restCli.Get().Context(ctx).
 		Namespace(namespace).
-		Resource(spec.VaultResourcePlural).
+		Resource(api.VaultServicePlural).
 		Name(name).
 		Do().
 		Into(v)
@@ -88,11 +88,11 @@ func (vs *vaults) Get(ctx context.Context, namespace, name string) (*spec.Vault,
 }
 
 // Create creates a Vault resource in the given namespace.
-func (vs *vaults) Create(ctx context.Context, vault *spec.Vault) (*spec.Vault, error) {
-	nv := &spec.Vault{}
+func (vs *vaults) Create(ctx context.Context, vault *api.VaultService) (*api.VaultService, error) {
+	nv := &api.VaultService{}
 	err := vs.restCli.Post().Context(ctx).
 		Namespace(vault.Namespace).
-		Resource(spec.VaultResourcePlural).
+		Resource(api.VaultServicePlural).
 		Body(vault).
 		Do().
 		Into(nv)
@@ -103,18 +103,18 @@ func (vs *vaults) Create(ctx context.Context, vault *spec.Vault) (*spec.Vault, e
 func (vs *vaults) Delete(ctx context.Context, namespace, name string) error {
 	return vs.restCli.Delete().Context(ctx).
 		Namespace(namespace).
-		Resource(spec.VaultResourcePlural).
+		Resource(api.VaultServicePlural).
 		Name(name).
 		Do().
 		Error()
 }
 
 // Update updates the Vault resource in the given namespace.
-func (vs *vaults) Update(ctx context.Context, vault *spec.Vault) (*spec.Vault, error) {
-	nv := &spec.Vault{}
+func (vs *vaults) Update(ctx context.Context, vault *api.VaultService) (*api.VaultService, error) {
+	nv := &api.VaultService{}
 	err := vs.restCli.Put().Context(ctx).
 		Namespace(vault.Namespace).
-		Resource(spec.VaultResourcePlural).
+		Resource(api.VaultServicePlural).
 		Name(vault.Name).
 		Body(vault).
 		Do().

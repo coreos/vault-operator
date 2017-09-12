@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/coreos-inc/vault-operator/pkg/spec"
+	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
@@ -18,7 +18,7 @@ import (
 
 // monitorAndUpdateStaus monitors the vault service and replicas statuses, and
 // updates the status resrouce in the vault CR item.
-func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, vr *spec.Vault) {
+func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, vr *api.VaultService) {
 	var tlsConfig *vaultapi.TLSConfig
 	for {
 		select {
@@ -37,7 +37,7 @@ func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, vr *spec.Vault) {
 			}
 		}
 
-		s := spec.VaultStatus{}
+		s := api.VaultServiceStatus{}
 		vs.updateLocalVaultCRStatus(ctx, vr, &s, tlsConfig)
 
 		latest, err := vs.updateVaultCRStatus(ctx, vr.GetName(), vr.GetNamespace(), s)
@@ -51,7 +51,7 @@ func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, vr *spec.Vault) {
 }
 
 // updateLocalVaultCRStatus updates local vault CR status by querying each vault pod's API.
-func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, vr *spec.Vault, s *spec.VaultStatus, tlsConfig *vaultapi.TLSConfig) {
+func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, vr *api.VaultService, s *api.VaultServiceStatus, tlsConfig *vaultapi.TLSConfig) {
 	name, namespace := vr.Name, vr.Namespace
 	sel := k8sutil.LabelsForVault(name)
 	// TODO: handle upgrades when pods from two replicaset can co-exist :(
@@ -122,7 +122,7 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, vr *spec.Vault, 
 }
 
 // updateVaultCRStatus updates the status field of the Vault CR.
-func (vs *Vaults) updateVaultCRStatus(ctx context.Context, name, namespace string, status spec.VaultStatus) (*spec.Vault, error) {
+func (vs *Vaults) updateVaultCRStatus(ctx context.Context, name, namespace string, status api.VaultServiceStatus) (*api.VaultService, error) {
 	vault, err := vs.vaultsCRCli.Get(ctx, namespace, name)
 	if err != nil {
 		return nil, err

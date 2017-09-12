@@ -1,4 +1,4 @@
-package spec
+package v1alpha1
 
 const (
 	// Name of CA cert file in the client secret

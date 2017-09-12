@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/coreos-inc/vault-operator/pkg/spec"
+	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -17,12 +17,12 @@ import (
 func (v *Vaults) run(ctx context.Context) {
 	source := cache.NewListWatchFromClient(
 		v.vaultsCRCli.RESTClient(),
-		spec.VaultResourcePlural,
+		api.VaultServicePlural,
 		v.namespace,
 		fields.Everything())
 
 	v.queue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "vault-operator")
-	v.indexer, v.informer = cache.NewIndexerInformer(source, &spec.Vault{}, 0, cache.ResourceEventHandlerFuncs{
+	v.indexer, v.informer = cache.NewIndexerInformer(source, &api.VaultService{}, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc:    v.onAddVault,
 		UpdateFunc: v.onUpdateVault,
 		DeleteFunc: v.onDeleteVault,
@@ -64,13 +64,13 @@ func (v *Vaults) onUpdateVault(oldObj, newObj interface{}) {
 }
 
 func (v *Vaults) onDeleteVault(obj interface{}) {
-	vr, ok := obj.(*spec.Vault)
+	vr, ok := obj.(*api.VaultService)
 	if !ok {
 		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
 		if !ok {
 			panic(fmt.Sprintf("unknown object from Vault delete event: %#v", obj))
 		}
-		vr, ok = tombstone.Obj.(*spec.Vault)
+		vr, ok = tombstone.Obj.(*api.VaultService)
 		if !ok {
 			panic(fmt.Sprintf("Tombstone contained object that is not a Vault: %#v", obj))
 		}

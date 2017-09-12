@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/coreos-inc/vault-operator/pkg/spec"
+	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
 	etcdCRClient "github.com/coreos/etcd-operator/pkg/client"
@@ -48,7 +48,7 @@ func EtcdPeerTLSSecretName(vaultName string) string {
 
 // DeployEtcdCluster creates an etcd cluster for the given vault's name via etcd operator and
 // waits for all of its members to be ready.
-func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) error {
+func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *api.VaultService) error {
 	size := 3
 	etcdCluster := &etcdCRAPI.EtcdCluster{
 		TypeMeta: metav1.TypeMeta{
@@ -99,7 +99,7 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) erro
 }
 
 // DeleteEtcdCluster deletes the etcd cluster for the given vault
-func DeleteEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) error {
+func DeleteEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *api.VaultService) error {
 	err := etcdCRCli.Delete(context.TODO(), v.Namespace, EtcdNameForVault(v.Name))
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
@@ -113,7 +113,7 @@ func DeleteEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) erro
 //
 // DeployVault is idempotent. If an object already exists, this function will ignore creating
 // it and return no error. It is safe to retry on this function.
-func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
+func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 	// TODO: set owner ref.
 
 	selector := LabelsForVault(v.GetName())
@@ -249,7 +249,7 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 // UpgradeDeployment sets deployment spec to:
 // - roll forward version
 // - keep active Vault node available by setting `maxUnavailable=N-1` and `maxSurge=1`
-func UpgradeDeployment(kubecli kubernetes.Interface, vr *spec.Vault, d *appsv1beta1.Deployment) error {
+func UpgradeDeployment(kubecli kubernetes.Interface, vr *api.VaultService, d *appsv1beta1.Deployment) error {
 	mu := intstr.FromInt(int(vr.Spec.Nodes - 1))
 	d.Spec.Strategy.RollingUpdate.MaxUnavailable = &mu
 	d.Spec.Template.Spec.Containers[0].Image = vaultImage(vr.Spec)
@@ -260,16 +260,16 @@ func UpgradeDeployment(kubecli kubernetes.Interface, vr *spec.Vault, d *appsv1be
 	return nil
 }
 
-func vaultImage(vs spec.VaultSpec) string {
+func vaultImage(vs api.VaultServiceSpec) string {
 	return fmt.Sprintf("%s:%s", vs.BaseImage, vs.Version)
 }
 
-func IsVaultVersionMatch(ps v1.PodSpec, vs spec.VaultSpec) bool {
+func IsVaultVersionMatch(ps v1.PodSpec, vs api.VaultServiceSpec) bool {
 	return ps.Containers[0].Image == vaultImage(vs)
 }
 
 // VaultTLSFromSecret reads Vault CR's TLS secret and converts it into a vault client's TLS config struct.
-func VaultTLSFromSecret(kubecli kubernetes.Interface, vr *spec.Vault) (*vaultapi.TLSConfig, error) {
+func VaultTLSFromSecret(kubecli kubernetes.Interface, vr *api.VaultService) (*vaultapi.TLSConfig, error) {
 	secretName := vr.Spec.TLS.Static.ClientSecret
 
 	secret, err := kubecli.CoreV1().Secrets(vr.GetNamespace()).Get(secretName, metav1.GetOptions{})
@@ -278,8 +278,8 @@ func VaultTLSFromSecret(kubecli kubernetes.Interface, vr *spec.Vault) (*vaultapi
 	}
 
 	// Read the secret and write ca.crt to a temporary file
-	caCertData := secret.Data[spec.CATLSCertName]
-	f, err := ioutil.TempFile("", spec.CATLSCertName)
+	caCertData := secret.Data[api.CATLSCertName]
+	f, err := ioutil.TempFile("", api.CATLSCertName)
 	if err != nil {
 		return nil, fmt.Errorf("read client tls failed: create temp file failed: %v", err)
 	}
@@ -308,7 +308,7 @@ func IsPodReady(p v1.Pod) bool {
 // ConfigMapNameForVault is the configmap name for the given vault.
 // If ConfigMapName is given is spec, it will make a new name based on that.
 // Otherwise, we will create a default configmap using the Vault's name.
-func ConfigMapNameForVault(v *spec.Vault) string {
+func ConfigMapNameForVault(v *api.VaultService) string {
 	n := v.Spec.ConfigMapName
 	if len(n) == 0 {
 		n = v.Name
@@ -323,7 +323,7 @@ func VaultServiceURL(name, namespace string) string {
 
 // DestroyVault destroys a vault service.
 // TODO: remove this function when CRD GC is enabled.
-func DestroyVault(kubecli kubernetes.Interface, v *spec.Vault) error {
+func DestroyVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 	bg := metav1.DeletePropagationBackground
 	do := &metav1.DeleteOptions{PropagationPolicy: &bg}
 
@@ -361,7 +361,7 @@ func LabelsForVault(name string) map[string]string {
 
 // configEtcdBackendTLS configures the volume and mounts in vault pod to
 // set up etcd backend TLS assets
-func configEtcdBackendTLS(pt *v1.PodTemplateSpec, v *spec.Vault) {
+func configEtcdBackendTLS(pt *v1.PodTemplateSpec, v *api.VaultService) {
 	sn := EtcdClientTLSSecretName(v.Name)
 	pt.Spec.Volumes = append(pt.Spec.Volumes, v1.Volume{
 		Name: vaultTLSAssetVolume,
@@ -385,7 +385,7 @@ func configEtcdBackendTLS(pt *v1.PodTemplateSpec, v *spec.Vault) {
 }
 
 // configVaultServerTLS mounts the volume containing the vault server TLS assets for the vault pod
-func configVaultServerTLS(pt *v1.PodTemplateSpec, v *spec.Vault) {
+func configVaultServerTLS(pt *v1.PodTemplateSpec, v *api.VaultService) {
 	secretName := v.Spec.TLS.Static.ServerSecret
 
 	serverTLSVolume := v1.VolumeProjection{

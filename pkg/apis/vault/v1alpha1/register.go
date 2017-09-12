@@ -1,4 +1,4 @@
-package spec
+package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -7,18 +7,22 @@ import (
 )
 
 const (
-	VaultResourceKind   = "Vault"
-	VaultResourcePlural = "vaults"
+	VaultServiceKind   = "VaultService"
+	VaultServicePlural = "vaultservices"
+)
+
+var (
+	VaultServiceShortNames = []string{"vault"}
 )
 
 var (
 	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 	AddToScheme   = SchemeBuilder.AddToScheme
 
-	CRDName = VaultResourcePlural + "." + groupName
+	CRDName = VaultServicePlural + "." + groupName
 )
 
-const groupName = "vault.coreos.com"
+const groupName = "vault.security.coreos.com"
 
 // SchemeGroupVersion is the group version used to register these objects.
 var SchemeGroupVersion = schema.GroupVersion{Group: groupName, Version: "v1alpha1"}
@@ -26,8 +30,8 @@ var SchemeGroupVersion = schema.GroupVersion{Group: groupName, Version: "v1alpha
 // addKnownTypes adds the set of types defined in this package to the supplied scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Vault{},
-		&VaultList{},
+		&VaultService{},
+		&VaultServiceList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

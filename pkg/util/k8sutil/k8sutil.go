@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/coreos-inc/vault-operator/pkg/spec"
+	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,11 +32,11 @@ func AddOwnerRefToObject(o metav1.Object, r metav1.OwnerReference) {
 }
 
 // AsOwner returns an owner reference set as the vault cluster CR
-func AsOwner(v *spec.Vault) metav1.OwnerReference {
+func AsOwner(v *api.VaultService) metav1.OwnerReference {
 	trueVar := true
 	return metav1.OwnerReference{
-		APIVersion: spec.SchemeGroupVersion.String(),
-		Kind:       spec.VaultResourceKind,
+		APIVersion: api.SchemeGroupVersion.String(),
+		Kind:       api.VaultServiceKind,
 		Name:       v.Name,
 		UID:        v.UID,
 		Controller: &trueVar,

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/pkg/client"
-	"github.com/coreos-inc/vault-operator/pkg/spec"
 
 	"github.com/coreos/etcd-operator/pkg/util/k8sutil"
 	"github.com/coreos/etcd-operator/pkg/util/retryutil"
@@ -20,7 +20,7 @@ import (
 var retryInterval = 10 * time.Second
 
 // checkConditionFunc is used to check if a condition for the vault CR is true
-type checkConditionFunc func(*spec.Vault) bool
+type checkConditionFunc func(*api.VaultService) bool
 
 // WaitUntilOperatorReady will wait until the first pod with the label name=<name> is ready.
 func WaitUntilOperatorReady(kubecli kubernetes.Interface, namespace, name string) error {
@@ -48,8 +48,8 @@ func WaitUntilOperatorReady(kubecli kubernetes.Interface, namespace, name string
 }
 
 // WaitUntilVaultConditionTrue retries until the specified condition check becomes true for the vault CR
-func WaitUntilVaultConditionTrue(t *testing.T, vaultsCRClient client.Vaults, retries int, cl *spec.Vault, checkCondition checkConditionFunc) (*spec.Vault, error) {
-	var vault *spec.Vault
+func WaitUntilVaultConditionTrue(t *testing.T, vaultsCRClient client.Vaults, retries int, cl *api.VaultService, checkCondition checkConditionFunc) (*api.VaultService, error) {
+	var vault *api.VaultService
 	var err error
 	err = retryutil.Retry(retryInterval, 6, func() (bool, error) {
 		vault, err = vaultsCRClient.Get(context.TODO(), cl.Namespace, cl.Name)
@@ -65,8 +65,8 @@ func WaitUntilVaultConditionTrue(t *testing.T, vaultsCRClient client.Vaults, ret
 }
 
 // WaitAvailableVaultsUp retries until the desired number of vault nodes are shown as available in the CR status
-func WaitAvailableVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *spec.Vault) (*spec.Vault, error) {
-	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *spec.Vault) bool {
+func WaitAvailableVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *api.VaultService) (*api.VaultService, error) {
+	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *api.VaultService) bool {
 		LogfWithTimestamp(t, "available nodes: (%v)", v.Status.AvailableNodes)
 		return len(v.Status.AvailableNodes) == size
 	})
@@ -77,8 +77,8 @@ func WaitAvailableVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, ret
 }
 
 // WaitSealedVaultsUp retries until the desired number of vault nodes are shown as sealed in the CR status
-func WaitSealedVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *spec.Vault) (*spec.Vault, error) {
-	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *spec.Vault) bool {
+func WaitSealedVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *api.VaultService) (*api.VaultService, error) {
+	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *api.VaultService) bool {
 		LogfWithTimestamp(t, "sealed nodes: (%v)", v.Status.SealedNodes)
 		return len(v.Status.SealedNodes) == size
 	})
@@ -89,8 +89,8 @@ func WaitSealedVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retrie
 }
 
 // WaitStandbyVaultsUp retries until the desired number of vault nodes are shown as standby in the CR status
-func WaitStandbyVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *spec.Vault) (*spec.Vault, error) {
-	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *spec.Vault) bool {
+func WaitStandbyVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *api.VaultService) (*api.VaultService, error) {
+	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *api.VaultService) bool {
 		LogfWithTimestamp(t, "standby nodes: (%v)", v.Status.StandbyNodes)
 		return len(v.Status.StandbyNodes) == size
 	})
@@ -101,8 +101,8 @@ func WaitStandbyVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retri
 }
 
 // WaitActiveVaultsUp retries until there is 1 active node in the CR status
-func WaitActiveVaultsUp(t *testing.T, vaultsCRClient client.Vaults, retries int, cl *spec.Vault) (*spec.Vault, error) {
-	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *spec.Vault) bool {
+func WaitActiveVaultsUp(t *testing.T, vaultsCRClient client.Vaults, retries int, cl *api.VaultService) (*api.VaultService, error) {
+	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *api.VaultService) bool {
 		LogfWithTimestamp(t, "active node: (%v)", v.Status.ActiveNode)
 		return len(v.Status.ActiveNode) != 0
 	})

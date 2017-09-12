@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"testing"
 
+	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/pkg/client"
-	"github.com/coreos-inc/vault-operator/pkg/spec"
 )
 
 // CreateCluster creates a vault CR with the desired spec
-func CreateCluster(t *testing.T, crClient client.Vaults, cl *spec.Vault) (*spec.Vault, error) {
+func CreateCluster(t *testing.T, crClient client.Vaults, cl *api.VaultService) (*api.VaultService, error) {
 	vault, err := crClient.Create(context.TODO(), cl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
@@ -20,7 +20,7 @@ func CreateCluster(t *testing.T, crClient client.Vaults, cl *spec.Vault) (*spec.
 }
 
 // ResizeCluster updates the Nodes field of the vault CR
-func ResizeCluster(t *testing.T, crClient client.Vaults, cl *spec.Vault, size int) (*spec.Vault, error) {
+func ResizeCluster(t *testing.T, crClient client.Vaults, cl *api.VaultService, size int) (*api.VaultService, error) {
 	vault, err := crClient.Get(context.TODO(), cl.Namespace, cl.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get CR: %v", err)
@@ -35,7 +35,7 @@ func ResizeCluster(t *testing.T, crClient client.Vaults, cl *spec.Vault, size in
 }
 
 // DeleteCluster deletes the vault CR specified by cluster spec
-func DeleteCluster(t *testing.T, crClient client.Vaults, cl *spec.Vault) error {
+func DeleteCluster(t *testing.T, crClient client.Vaults, cl *api.VaultService) error {
 	t.Logf("deleting vault cluster: %v", cl.Name)
 	err := crClient.Delete(context.TODO(), cl.Namespace, cl.Name)
 	if err != nil {

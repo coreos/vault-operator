@@ -1,23 +1,23 @@
 package e2eutil
 
 import (
-	"github.com/coreos-inc/vault-operator/pkg/spec"
+	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NewCluster returns a minimal vault cluster CR
-func NewCluster(genName, namespace string, size int) *spec.Vault {
-	return &spec.Vault{
+func NewCluster(genName, namespace string, size int) *api.VaultService {
+	return &api.VaultService{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       spec.VaultResourceKind,
-			APIVersion: spec.SchemeGroupVersion.String(),
+			Kind:       api.VaultServiceKind,
+			APIVersion: api.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: genName,
 			Namespace:    namespace,
 		},
-		Spec: spec.VaultSpec{
+		Spec: api.VaultServiceSpec{
 			Nodes: int32(size),
 		},
 	}
