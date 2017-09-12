@@ -212,6 +212,7 @@ func (v *Vaults) prepareVaultConfig(vr *spec.Vault) error {
 		},
 	}
 
+	k8sutil.AddOwnerRefToObject(cm, k8sutil.AsOwner(vr))
 	_, err := v.kubecli.CoreV1().ConfigMaps(vr.Namespace).Create(cm)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return fmt.Errorf("prepare vault config error: create new configmap (%s) failed: %v", cm.Name, err)

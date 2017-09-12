@@ -73,6 +73,7 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *spec.Vault) erro
 			},
 		},
 	}
+	AddOwnerRefToObject(etcdCluster, AsOwner(v))
 	_, err := etcdCRCli.Create(context.TODO(), etcdCluster)
 	if err != nil {
 		if apierrors.IsAlreadyExists(err) {
@@ -217,6 +218,7 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 			},
 		},
 	}
+	AddOwnerRefToObject(d, AsOwner(v))
 	_, err := kubecli.AppsV1beta1().Deployments(v.Namespace).Create(d)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return err
@@ -236,6 +238,7 @@ func DeployVault(kubecli kubernetes.Interface, v *spec.Vault) error {
 			}},
 		},
 	}
+	AddOwnerRefToObject(svc, AsOwner(v))
 	_, err = kubecli.CoreV1().Services(v.Namespace).Create(svc)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return fmt.Errorf("failed to create vault service: %v", err)
