@@ -1,4 +1,4 @@
-package spec
+package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -10,20 +10,20 @@ const (
 	defaultVersion = "0.8.0-0"
 )
 
-type VaultList struct {
+type VaultServiceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
-	Items           []Vault `json:"items"`
+	Items           []VaultService `json:"items"`
 }
 
-type Vault struct {
+type VaultService struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
-	Spec              VaultSpec   `json:"spec"`
-	Status            VaultStatus `json:"status,omitempty"`
+	Spec              VaultServiceSpec   `json:"spec"`
+	Status            VaultServiceStatus `json:"status,omitempty"`
 }
 
-type VaultSpec struct {
+type VaultServiceSpec struct {
 	// Number of nodes to deploy for a Vault deployment.
 	// Default: 1.
 	Nodes int32 `json:"nodes,omitempty"`
@@ -45,7 +45,7 @@ type VaultSpec struct {
 }
 
 // SetDefaults sets the default vaules for the vault spec and returns true if the spec was changed
-func (v *Vault) SetDefaults() bool {
+func (v *VaultService) SetDefaults() bool {
 	changed := false
 	vs := &v.Spec
 	if vs.Nodes == 0 {
@@ -70,7 +70,7 @@ func (v *Vault) SetDefaults() bool {
 	return changed
 }
 
-type VaultStatus struct {
+type VaultServiceStatus struct {
 	// Initialized indicates if the Vault service is initialized.
 	Initialized bool `json:"initialized"`
 

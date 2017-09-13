@@ -16,8 +16,8 @@ Prerequisites
 Assuming we will create the following Vault CR:
 
 ```yaml
-apiVersion: "vault.coreos.com/v1alpha1"
-kind: "Vault"
+apiVersion: "vault.security.coreos.com/v1alpha1"
+kind: "VaultService"
 metadata:
   name: "example-vault"
 spec:

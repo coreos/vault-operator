@@ -15,8 +15,8 @@ These default TLS assets are stored in the following secrets:
 For example, create a Vault cluster with no TLS secrets specified using the following specification:
 
 ```yaml
-apiVersion: "vault.coreos.com/v1alpha1"
-kind: "Vault"
+apiVersion: "vault.security.coreos.com/v1alpha1"
+kind: "VaultService"
 metadata:
   name: example-vault
 spec:
@@ -47,8 +47,8 @@ The users can pass in custom TLS assets while creating a cluster. Specify the cl
 The final CR specification is given below:
 
 ```yaml
-apiVersion: "vault.coreos.com/v1alpha1"
-kind: "Vault"
+apiVersion: "vault.security.coreos.com/v1alpha1"
+kind: "VaultService"
 metadata:
   name: <vault-cluster-name>
 spec:

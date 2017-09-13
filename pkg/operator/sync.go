@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"reflect"
 
-	"github.com/coreos-inc/vault-operator/pkg/spec"
+	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
@@ -108,7 +108,7 @@ func (v *Vaults) syncVault(key string) (err error) {
 
 	// TODO: use deepcopy-gen
 	cobj, err := scheme.Scheme.DeepCopy(obj)
-	vr := cobj.(*spec.Vault)
+	vr := cobj.(*api.VaultService)
 
 	// Simulate initializer.
 	// TODO: remove this when we have initializers for Vault CR.
@@ -126,7 +126,7 @@ func (v *Vaults) syncVault(key string) (err error) {
 // reconcileVault reconciles the vault cluster's state to the spec specified by vr
 // by preparing the TLS secrets, deploying the etcd and vault cluster,
 // and finally updating the vault deployment if needed.
-func (v *Vaults) reconcileVault(vr *spec.Vault) (err error) {
+func (v *Vaults) reconcileVault(vr *api.VaultService) (err error) {
 	err = v.prepareDefaultVaultTLSSecrets(vr)
 	if err != nil {
 		return err
@@ -188,7 +188,7 @@ func (v *Vaults) reconcileVault(vr *spec.Vault) (err error) {
 // - If given user configmap, appends into user provided vault config
 //   and creates another configmap "${configMapName}-copy" for it.
 // - Otherwise, creates a new configmap "${vaultName}-copy" with our section.
-func (v *Vaults) prepareVaultConfig(vr *spec.Vault) error {
+func (v *Vaults) prepareVaultConfig(vr *api.VaultService) error {
 	// TODO: What if user initially didn't give ConfigMapName but then update it later?
 
 	var cfgData string
@@ -223,7 +223,7 @@ func (v *Vaults) prepareVaultConfig(vr *spec.Vault) error {
 
 // TODO: replace this method with custom or k8s Garbage Collector
 // deleteVault attempts to delete all associated resources with the vault cluster
-func (v *Vaults) deleteVault(vr *spec.Vault) error {
+func (v *Vaults) deleteVault(vr *api.VaultService) error {
 	err := k8sutil.DestroyVault(v.kubecli, vr)
 	if err != nil {
 		return err
@@ -246,7 +246,7 @@ func (v *Vaults) deleteVault(vr *spec.Vault) error {
 	return err
 }
 
-func (v *Vaults) syncUpgrade(vr *spec.Vault, d *appsv1beta1.Deployment) (err error) {
+func (v *Vaults) syncUpgrade(vr *api.VaultService, d *appsv1beta1.Deployment) (err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("syncUpgrade failed: %v", err)

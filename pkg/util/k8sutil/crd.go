@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/coreos-inc/vault-operator/pkg/spec"
+	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -17,15 +17,16 @@ import (
 func CreateVaultCRD(clientset apiextensionsclient.Interface) error {
 	crd := &apiextensionsv1beta1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: spec.CRDName,
+			Name: api.CRDName,
 		},
 		Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
-			Group:   spec.SchemeGroupVersion.Group,
-			Version: spec.SchemeGroupVersion.Version,
+			Group:   api.SchemeGroupVersion.Group,
+			Version: api.SchemeGroupVersion.Version,
 			Scope:   apiextensionsv1beta1.NamespaceScoped,
 			Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
-				Plural: spec.VaultResourcePlural,
-				Kind:   spec.VaultResourceKind,
+				Plural:     api.VaultServicePlural,
+				Kind:       api.VaultServiceKind,
+				ShortNames: api.VaultServiceShortNames,
 			},
 		},
 	}
@@ -36,7 +37,7 @@ func CreateVaultCRD(clientset apiextensionsclient.Interface) error {
 
 	// wait for CR creation
 	return wait.Poll(500*time.Millisecond, 60*time.Second, func() (bool, error) {
-		crd, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Get(spec.CRDName, metav1.GetOptions{})
+		crd, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Get(api.CRDName, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
