@@ -3,5 +3,5 @@ kind: "VaultService"
 metadata:
   name: "example-vault"
 spec:
-  nodes: 1
+  nodes: 2
   version: "0.8.0-0"

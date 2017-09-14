@@ -8,7 +8,9 @@ See [Vault operator][getting-started] for information on managing Vault instance
 * [Vault Commands (CLI)][vault-cli] is installed
 * [Vault operator][getting-started] is configured
 
-## Initiating a sealed node
+## Initializing a Vault cluster
+
+Initialize a new Vault cluster before performing any operations.
 
 1. Configure port forwarding between the local machine and the first sealed Vault node:
 
@@ -24,22 +26,38 @@ See [Vault operator][getting-started] for information on managing Vault instance
     export VAULT_SKIP_VERIFY="true"
     ```
 
-4. Verify that the Vault server is up using the Vault CLI:
+4. Verify that the Vault server is accessible using the Vault CLI:
 
     ```sh
     $ vault status
 
-    * server is initialized
+    Error checking seal status: Error making API request.
+
+    URL: GET https://localhost:8200/v1/sys/seal-status
+    Code: 400. Errors:
+
+    * server is not yet initialized
     ```
 
-    The Vault CLI is ready to interact with the Vault server.
-    For information on initializing and unsealing, see [Initializing the Vault][initialize-vault].
+    A response confirms that the Vault CLI is ready to interact with the Vault server. However, the output indicates that the Vault server is not initialized.
 
+5. Initalize the vault server to generate the unseal keys and the root token.
+    
+    See [Initializing the Vault][initialize-vault] on how to initialize your vault cluster.
+
+## Unsealing a sealed node
+
+1. Ensure that the desired sealed node is accessible from the Vault CLI via portforwarding.
+
+    For more information see [Initializing a Vault cluster](#initializing-a-vault-cluster).
+
+2. Unseal the vault node by using the unseal keys generated from the initialized Vault cluster.
+
+    See [Seal/Unseal a Vault node][seal-unseal-vault] on how to unseal a vault node.
+
+The first node that is unsealed in a multi-node vault cluster will become the active node. The active node holds the leader election lock. The other unsealed nodes become standby.
 
 ## Writing secret to the active node
-
-When a node is unsealed, it becomes active and initialized. The active Vault holds the leader election lock.
-
 
 1. Check the active Vault node:
 
@@ -54,12 +72,15 @@ When a node is unsealed, it becomes active and initialized. The active Vault hol
     ```
 
 3. Open a new terminal.
-4. Export the following environment for [Vault CLI environment][vault-cli-env]:
+4. Export the following environment for [Vault CLI environment][vault-cli-env]. 
+    The root token used to authenticate the Vault CLI requests is given below. Replace the `<root-token>` with the root token generated during [Initalization](#initializing-a-vault-cluster).
 
     ```sh
     export VAULT_ADDR='https://localhost:8200'
     export VAULT_SKIP_VERIFY="true"
+    export VAULT_TOKEN=<root-token>
     ```
+    Consult the Vault [Authentication][authentication] docs for more advanced configuration.
 
 5. Write and read an example secret:
 
@@ -86,40 +107,25 @@ The name and namespace of the service are the same as the Vault resource. For ex
 
 Applications in the Kubernetes pod network can access the service through `https://example-vault.vault-services.svc:8200`.
 
-## Enabling high availability
-
-Vault supports [HA mode][ha] for production usage. To enable HA mode, scale Vault nodes from one to two or more by modifying the custom resource:
-
-```sh
-kubectl -n vault-services get vault example-vault -o json | sed 's/"nodes": 1/"nodes": 2/g' | kubectl apply -f -
-```
-
-Wait until all the Vault nodes are up:
-
-```sh
-$ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.availableNodes}'
-[example-vault-994933690-37ts8 example-vault-994933690-5v7c1]
-```
-
-The first Vault node that is unsealed becomes the active node. In an HA Vault setup, only one active node is allowed to exist and serve user requests. The other unsealed nodes become standby.
-
-### Starting a standby Vault node
+## Starting a standby Vault node
 
 A standby Vault node is initialized and unsealed, but does not hold the leader election lock. The standby node cannot serve user requests. It forwards user requests to the active node. If the active node goes down, a standby node becomes the active node.
 
 
-1. Unseal a sealed node by using the instructions given in [Initiating a sealed node](#initiating-a-sealed-node).
+1. Unseal the next sealed node.
+    
+    See [Unsealing a sealed node](#unsealing-a-sealed-node) for more information.
 
 2. Verify that the node becomes standby:
 
     ```sh
     $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.standbyNodes}'
-    [example-vault-994933690-5v7c1]
+    [example-vault-1003480066-jzmwd]
     ```
 
     The setup now contains an active and a standby Vault nodes.
 
-### Automated failover
+## Automated failover
 
 In an HA Vault setup, when the active node goes down the standby node takes over the active role and starts serving client requests.
 
@@ -137,17 +143,15 @@ To see how it works, perform the following:
 
     ```
     $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.activeNode}'
-    example-vault-994933690-5v7c1
+    example-vault-1003480066-jzmwd
     ```
-
-    The previous port forward session should be terminated.
 
 3. Create a new port forward session between the local machine and the new active node.
 
-   See [Initiating a sealed node](#initiating-a-sealed-node) for more information.
+   See [Initializing a Vault cluster](#initializing-a-vault-cluster) for more information on how to portforward to a sealed node.
    Successful operations indicate that automated failover works as expected.
 
-### Failure recovery
+## Failure recovery
 
 Vault operator recovers any inactive or terminated Vault pods to maintain the size of cluster.
 
@@ -161,7 +165,7 @@ To see how it works, perform the following:
 
     ```
     $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.availableNodes}'
-    [example-vault-994933690-5v7c1 example-vault-994933690-h066h]
+    [example-vault-1003480066-jzmwd example-vault-994933690-h066h]
     ```
 
 3. Verify that the newly created Vault node is sealed:
@@ -176,6 +180,8 @@ To see how it works, perform the following:
 [getting-started]: ../../README.md#getting-started
 [ha]: https://www.vaultproject.io/docs/concepts/ha.html
 [initialize-vault]: https://www.vaultproject.io/intro/getting-started/deploy.html#initializing-the-vault
+[seal-unseal-vault]: https://www.vaultproject.io/intro/getting-started/deploy.html#seal-unseal
+[authentication]: https://www.vaultproject.io/docs/concepts/auth.html
 [vault-cli]: https://www.vaultproject.io/docs/install/index.html
 [vault-cli-env]: https://www.vaultproject.io/docs/commands/environment.html
 [k8s-services]: https://kubernetes.io/docs/concepts/services-networking/service/

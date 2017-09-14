@@ -92,6 +92,8 @@ In this example, the Vault operator configures a default TLS setup for all the V
 
 #### Submitting Vault Custom Resource
 
+In this example, a Vault cluster is configured with two nodes in high availability mode.
+
 1. Create a Vault custom resource:
 
     ```
@@ -100,32 +102,34 @@ In this example, the Vault operator configures a default TLS setup for all the V
 
     Wait for around 20s.
 
-2. Ensure that `example-vault-...` pod is up:
+2. Ensure that `example-vault-...` pods are up:
 
     ```
     $ kubectl -n vault-services get pods
-    NAME                             READY     STATUS    RESTARTS   AGE
-    etcd-operator-809151189-1j7jl    1/1       Running   0          2d
-    example-vault-613074584-5lwbg    0/1       Running   0          49s
-    example-vault-etcd-0000          1/1       Running   0          1m
-    example-vault-etcd-0001          1/1       Running   0          1m
-    example-vault-etcd-0002          1/1       Running   0          1m
-    vault-operator-146442885-gj98d   1/1       Running   0          1m
+    NAME                              READY     STATUS    RESTARTS   AGE
+    etcd-operator-346152359-34pwm     1/1       Running   0          43m
+    example-vault-1003480066-b757c    0/1       Running   0          36m
+    example-vault-1003480066-jzmwd    0/1       Running   0          36m
+    example-vault-etcd-0000           1/1       Running   0          37m
+    example-vault-etcd-0001           1/1       Running   0          37m
+    example-vault-etcd-0002           1/1       Running   0          36m
+    vault-operator-1388630079-7g04c   1/1       Running   0          37m
     ```
 
 3. Print the Vault pods:
 
     ```
     $ kubectl -n vault-services get pods -l app=vault,name=example-vault
-    NAME                            READY     STATUS    RESTARTS   AGE
-    example-vault-613074584-5lwbg   0/1       Running   0          8m
+    NAME                              READY     STATUS    RESTARTS   AGE
+    example-vault-1003480066-b757c    0/1       Running   0          36m
+    example-vault-1003480066-jzmwd    0/1       Running   0          36m
     ```
 
 4. Verify that the Vault nodes can be viewed in the "vault" resource status:
 
       ```
       $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.sealedNodes}'
-      [example-vault-994933690-5v7c1]
+      [example-vault-1003480066-b757c example-vault-1003480066-jzmwd]
       ```
 
       Vault is unready because it is uninitialized and sealed.
