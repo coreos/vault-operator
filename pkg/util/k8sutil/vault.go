@@ -71,6 +71,12 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *api.VaultService
 					OperatorSecret: EtcdClientTLSSecretName(v.Name),
 				},
 			},
+			Pod: &etcdCRAPI.PodPolicy{
+				EtcdEnv: []v1.EnvVar{{
+					Name:  "ETCD_AUTO_COMPACTION_RETENTION",
+					Value: "1",
+				}},
+			},
 		},
 	}
 	AddOwnerRefToObject(etcdCluster, AsOwner(v))
