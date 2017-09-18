@@ -36,8 +36,8 @@ type VaultServiceSpec struct {
 
 	// Name of the ConfigMap for Vault's configuration
 	// If this is empty, operator will create a default config for Vault.
-	// If this is not empty, the storage, listener sections in the configuration
-	// will be overwritten by operator automatically.
+	// If this is not empty, operator will create a new config overwriting
+	// the "storage", "listener" sections in orignal config.
 	ConfigMapName string `json:"configMapName"`
 
 	// TLS policy of vault nodes
