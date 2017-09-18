@@ -34,6 +34,21 @@ func ResizeCluster(t *testing.T, crClient client.Vaults, cl *api.VaultService, s
 	return vault, nil
 }
 
+// UpdateVersion updates the Version field of the vault CR
+func UpdateVersion(t *testing.T, crClient client.Vaults, cl *api.VaultService, version string) (*api.VaultService, error) {
+	vault, err := crClient.Get(context.TODO(), cl.Namespace, cl.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get CR: %v", err)
+	}
+	vault.Spec.Version = version
+	vault, err = crClient.Update(context.TODO(), vault)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update CR: %v", err)
+	}
+	LogfWithTimestamp(t, "updated vault cluster(%v) to version(%v)", vault.Name, version)
+	return vault, nil
+}
+
 // DeleteCluster deletes the vault CR specified by cluster spec
 func DeleteCluster(t *testing.T, crClient client.Vaults, cl *api.VaultService) error {
 	t.Logf("deleting vault cluster: %v", cl.Name)
