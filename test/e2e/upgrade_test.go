@@ -20,26 +20,20 @@ func TestUpgradeVault(t *testing.T) {
 	}()
 	vaultCR, tlsConfig := e2eutil.WaitForCluster(t, f.KubeClient, f.VaultsCRClient, vaultCR)
 
-	conns := map[string]*e2eutil.Connection{}
-	if err := e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, conns, tlsConfig, vaultCR.Status.AvailableNodes...); err != nil {
+	startingConns, err := e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, tlsConfig, vaultCR.Status.AvailableNodes...)
+	if err != nil {
 		t.Fatalf("failed to portforward and create vault clients: %v", err)
 	}
-	defer func() {
-		for podName, conn := range conns {
-			if err := conn.PF.StopForwarding(podName, f.Namespace); err != nil {
-				t.Errorf("failed to stop port forwarding to pod(%v): %v", podName, err)
-			}
-		}
-	}()
+	defer e2eutil.CleanupConnections(t, f.Namespace, startingConns)
 
 	// Initialize vault via the 1st available node
 	podName := vaultCR.Status.AvailableNodes[0]
-	conn := e2eutil.GetConnOrFail(t, podName, conns)
+	conn := e2eutil.GetConnOrFail(t, podName, startingConns)
 	vaultCR, initResp := e2eutil.InitializeVault(t, f.VaultsCRClient, vaultCR, conn)
 
 	// Unseal the 1st vault node and wait for it to become active
 	podName = vaultCR.Status.SealedNodes[0]
-	conn = e2eutil.GetConnOrFail(t, podName, conns)
+	conn = e2eutil.GetConnOrFail(t, podName, startingConns)
 	if err := e2eutil.UnsealVaultNode(initResp.Keys[0], conn); err != nil {
 		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
 	}
@@ -50,7 +44,7 @@ func TestUpgradeVault(t *testing.T) {
 
 	// Unseal the 2nd vault node and wait for it to become standby
 	podName = vaultCR.Status.SealedNodes[0]
-	conn = e2eutil.GetConnOrFail(t, podName, conns)
+	conn = e2eutil.GetConnOrFail(t, podName, startingConns)
 	if err = e2eutil.UnsealVaultNode(initResp.Keys[0], conn); err != nil {
 		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
 	}
@@ -73,16 +67,19 @@ func TestUpgradeVault(t *testing.T) {
 	}
 
 	// Portforward to and unseal the sealed nodes
-	if err = e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, conns, tlsConfig, vaultCR.Status.SealedNodes...); err != nil {
+	connsUpgraded, err := e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, tlsConfig, vaultCR.Status.SealedNodes...)
+	if err != nil {
 		t.Fatalf("failed to portforward and create vault clients: %v", err)
 	}
+	defer e2eutil.CleanupConnections(t, f.Namespace, connsUpgraded)
+
 	podName = vaultCR.Status.SealedNodes[0]
-	conn = e2eutil.GetConnOrFail(t, podName, conns)
+	conn = e2eutil.GetConnOrFail(t, podName, connsUpgraded)
 	if err = e2eutil.UnsealVaultNode(initResp.Keys[0], conn); err != nil {
 		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
 	}
 	podName = vaultCR.Status.SealedNodes[1]
-	conn = e2eutil.GetConnOrFail(t, podName, conns)
+	conn = e2eutil.GetConnOrFail(t, podName, connsUpgraded)
 	if err = e2eutil.UnsealVaultNode(initResp.Keys[0], conn); err != nil {
 		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
 	}

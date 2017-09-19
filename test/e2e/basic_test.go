@@ -33,18 +33,11 @@ func TestCreateHAVault(t *testing.T) {
 		t.Fatalf("failed to read TLS config for vault client: %v", err)
 	}
 
-	// TODO: Run e2e tests in a container to avoid port conflicts between concurrent test runs
-	conns := map[string]*e2eutil.Connection{}
-	if err = e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, conns, tlsConfig, vault.Status.AvailableNodes...); err != nil {
+	conns, err := e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, tlsConfig, vault.Status.AvailableNodes...)
+	if err != nil {
 		t.Fatalf("failed to portforward and create vault clients: %v", err)
 	}
-	defer func() {
-		for podName, conn := range conns {
-			if err = conn.PF.StopForwarding(podName, f.Namespace); err != nil {
-				t.Errorf("failed to stop port forwarding to pod(%v): %v", podName, err)
-			}
-		}
-	}()
+	defer e2eutil.CleanupConnections(t, f.Namespace, conns)
 
 	initOpts := &vaultapi.InitRequest{
 		SecretShares:    1,
