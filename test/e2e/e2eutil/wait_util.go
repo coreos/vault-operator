@@ -3,13 +3,14 @@ package e2eutil
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/pkg/client"
+	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 
-	"github.com/coreos/etcd-operator/pkg/util/k8sutil"
 	"github.com/coreos/etcd-operator/pkg/util/retryutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -35,7 +36,7 @@ func WaitUntilOperatorReady(kubecli kubernetes.Interface, namespace, name string
 		}
 		if len(podList.Items) > 0 {
 			podName = podList.Items[0].Name
-			if k8sutil.IsPodReady(&podList.Items[0]) {
+			if k8sutil.IsPodReady(podList.Items[0]) {
 				return true, nil
 			}
 		}
@@ -110,4 +111,49 @@ func WaitActiveVaultsUp(t *testing.T, vaultsCRClient client.Vaults, retries int,
 		return nil, fmt.Errorf("failed to wait for any node to become active: %v", err)
 	}
 	return vault, nil
+}
+
+// CheckVersionReached checks if all the targetVaultPods are of the specified version
+func CheckVersionReached(t *testing.T, kubeClient kubernetes.Interface, version string, retries int, cl *api.VaultService, targetVaultPods ...string) error {
+	size := len(targetVaultPods)
+	var names []string
+	sel := k8sutil.LabelsForVault(cl.Name)
+	opt := metav1.ListOptions{LabelSelector: labels.SelectorFromSet(sel).String()}
+	podList, err := kubeClient.Core().Pods(cl.Namespace).List(opt)
+	if err != nil {
+		return err
+	}
+	names = nil
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+		if !presentIn(pod.Name, targetVaultPods) {
+			continue
+		}
+
+		containerVersion := getVersionFromImage(pod.Spec.Containers[0].Image)
+		if containerVersion != version {
+			LogfWithTimestamp(t, "pod(%v): expected version(%v) current version(%v)", pod.Name, version, containerVersion)
+			continue
+		}
+
+		names = append(names, pod.Name)
+	}
+
+	if len(names) != size {
+		return fmt.Errorf("failed to see target pods(%v) update to version (%v): currently updated (%v)", targetVaultPods, size, names)
+	}
+	return nil
+}
+
+func presentIn(a string, list []string) bool {
+	for _, l := range list {
+		if a == l {
+			return true
+		}
+	}
+	return false
+}
+
+func getVersionFromImage(image string) string {
+	return strings.Split(image, ":")[1]
 }
