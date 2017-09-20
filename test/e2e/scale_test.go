@@ -32,22 +32,16 @@ func TestScaleUp(t *testing.T) {
 		t.Fatalf("failed to read TLS config for vault client: %v", err)
 	}
 
-	conns := map[string]*e2eutil.Connection{}
-	if err = e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, conns, tlsConfig, vault.Status.AvailableNodes...); err != nil {
+	startingConns, err := e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, tlsConfig, vault.Status.AvailableNodes...)
+	if err != nil {
 		t.Fatalf("failed to portforward and create vault clients: %v", err)
 	}
-	defer func() {
-		for podName, conn := range conns {
-			if err = conn.PF.StopForwarding(podName, f.Namespace); err != nil {
-				t.Errorf("failed to stop port forwarding to pod(%v): %v", podName, err)
-			}
-		}
-	}()
+	defer e2eutil.CleanupConnections(t, f.Namespace, startingConns)
 
 	// Init vault via the first available node
 	initOpts := &vaultapi.InitRequest{SecretShares: 1, SecretThreshold: 1}
 	podName := vault.Status.AvailableNodes[0]
-	conn, ok := conns[podName]
+	conn, ok := startingConns[podName]
 	if !ok {
 		t.Fatalf("failed to find vault client for pod (%v)", podName)
 	}
@@ -88,12 +82,14 @@ func TestScaleUp(t *testing.T) {
 		t.Fatalf("failed to wait for vault nodes to become sealed: %v", err)
 	}
 	podName = vault.Status.SealedNodes[0]
-	if err = e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, conns, tlsConfig, podName); err != nil {
+	scaledConns, err := e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, tlsConfig, podName)
+	if err != nil {
 		t.Fatalf("failed to portforward and create vault clients: %v", err)
 	}
+	defer e2eutil.CleanupConnections(t, f.Namespace, scaledConns)
 
 	// Unseal the new node and wait for it to become standby
-	conn, ok = conns[podName]
+	conn, ok = scaledConns[podName]
 	if !ok {
 		t.Fatalf("failed to find vault client for pod (%v)", podName)
 	}
