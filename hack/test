@@ -40,6 +40,24 @@ function e2e_pass {
 	  /e2etest/bin/e2e.test -test.timeout=30m --kubeconfig=/e2etest/kubeconfig --operator-image=${OPERATOR_IMAGE} --namespace=${TEST_NAMESPACE}
 }
 
+function upgrade_pass {
+	# Setup test namespace, RBAC rules and pull secret
+	source hack/ci/utils.sh
+	trap cleanup_all EXIT
+	if setup_all ; then
+		echo "Namespace, RBAC and pull secret setup success! ==="
+	else
+		echo "Namespace, RBAC and pull secret setup fail! ==="
+		exit 1
+	fi
+
+	cp ${KUBECONFIG} _output/kubeconfig
+	# TODO: Run upgrade tests in docker
+	go test -v "./test/e2e/upgradetest" -timeout 30m --race --kubeconfig=${KUBECONFIG} --namespace=${TEST_NAMESPACE} \
+		--old-vop-image=$UPGRADE_FROM \
+		--new-vop-image=$UPGRADE_TO
+}
+
 for p in $PASSES; do
 	${p}_pass
 done
