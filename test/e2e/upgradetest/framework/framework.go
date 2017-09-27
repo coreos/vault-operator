@@ -6,10 +6,11 @@ import (
 
 	"github.com/coreos-inc/vault-operator/pkg/client"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
+	"github.com/coreos-inc/vault-operator/pkg/util/probe"
 	"github.com/coreos-inc/vault-operator/test/e2e/e2eutil"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/coreos/etcd-operator/pkg/util/probe"
+	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -81,6 +82,68 @@ func TearDown() error {
 	}
 	Global = nil
 	logrus.Info("e2e teardown successfully")
+	return nil
+}
+
+// CreateOperatorDeployment creates a vault operator deployment with the specified name
+func (f *Framework) CreateOperatorDeployment(name string) error {
+	d := &appsv1beta1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: f.Namespace,
+		},
+		Spec: appsv1beta1.DeploymentSpec{
+			Strategy: appsv1beta1.DeploymentStrategy{
+				Type: appsv1beta1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &appsv1beta1.RollingUpdateDeployment{
+					MaxUnavailable: &intstr.IntOrString{Type: intstr.Int, IntVal: 1},
+					MaxSurge:       &intstr.IntOrString{Type: intstr.Int, IntVal: 1},
+				},
+			},
+			Selector: &metav1.LabelSelector{MatchLabels: e2eutil.PodLabelForOperator(name)},
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: e2eutil.PodLabelForOperator(name),
+				},
+				Spec: v1.PodSpec{
+					RestartPolicy: v1.RestartPolicyNever,
+					Containers: []v1.Container{{
+						Name:            name,
+						Image:           f.oldVOPImage,
+						ImagePullPolicy: v1.PullAlways,
+						Env: []v1.EnvVar{
+							{
+								Name:      "MY_POD_NAMESPACE",
+								ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"}},
+							},
+							{
+								Name:      "MY_POD_NAME",
+								ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"}},
+							},
+						},
+						ReadinessProbe: &v1.Probe{
+							Handler: v1.Handler{
+								HTTPGet: &v1.HTTPGetAction{
+									Path: probe.HTTPReadyzEndpoint,
+									Port: intstr.IntOrString{Type: intstr.Int, IntVal: 8080},
+								},
+							},
+							InitialDelaySeconds: 3,
+							PeriodSeconds:       3,
+							FailureThreshold:    3,
+						},
+					}},
+					ImagePullSecrets: []v1.LocalObjectReference{{
+						Name: "coreos-pull-secret",
+					}},
+				},
+			},
+		},
+	}
+	_, err := f.KubeClient.AppsV1beta1().Deployments(f.Namespace).Create(d)
+	if err != nil {
+		return fmt.Errorf("failed to create deployment: %v", err)
+	}
 	return nil
 }
 
