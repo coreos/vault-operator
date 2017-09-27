@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"runtime"
 	"time"
 
 	"github.com/coreos-inc/vault-operator/pkg/operator"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
+	"github.com/coreos-inc/vault-operator/pkg/util/probe"
 	"github.com/coreos-inc/vault-operator/version"
+
+	"github.com/Sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -16,8 +20,6 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/record"
-
-	"github.com/Sirupsen/logrus"
 )
 
 func main() {
@@ -40,6 +42,9 @@ func main() {
 		panic(err)
 	}
 	kubecli := kubernetes.NewForConfigOrDie(kubecfg)
+
+	http.HandleFunc(probe.HTTPReadyzEndpoint, probe.ReadyzHandler)
+	go http.ListenAndServe("0.0.0.0:8080", nil)
 
 	id, err := os.Hostname()
 	if err != nil {
