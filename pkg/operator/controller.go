@@ -7,6 +7,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
+	"github.com/coreos-inc/vault-operator/pkg/util/probe"
 
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -37,6 +38,8 @@ func (v *Vaults) run(ctx context.Context) {
 		logrus.Error("Timed out waiting for caches to sync")
 		return
 	}
+
+	probe.SetReady()
 
 	const numWorkers = 1
 	for i := 0; i < numWorkers; i++ {
