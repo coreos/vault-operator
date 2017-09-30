@@ -81,7 +81,9 @@ func run(stop <-chan struct{}) {
 	v := operator.New()
 	err := v.Start(context.TODO())
 	if err != nil {
-		logrus.Infof("operator stopped with %v", err)
+		// If we don't exit the program,
+		// there is another go routine that keeps renewing the LE lock.
+		logrus.Fatalf("operator stopped with %v", err)
 	}
 }
 
