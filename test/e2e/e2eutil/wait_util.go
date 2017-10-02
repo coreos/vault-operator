@@ -113,6 +113,18 @@ func WaitActiveVaultsUp(t *testing.T, vaultsCRClient client.Vaults, retries int,
 	return vault, nil
 }
 
+// WaitPodsDeletedCompletely waits until the pods are completely removed(not just terminating) for the given label selector
+func WaitPodsDeletedCompletely(kubecli kubernetes.Interface, namespace string, retries int, lo metav1.ListOptions) error {
+	err := retryutil.Retry(retryInterval, retries, func() (bool, error) {
+		podList, err := kubecli.CoreV1().Pods(namespace).List(lo)
+		if err != nil {
+			return false, fmt.Errorf("failed to list pods: %v", err)
+		}
+		return len(podList.Items) == 0, nil
+	})
+	return err
+}
+
 // CheckVersionReached checks if all the targetVaultPods are of the specified version
 func CheckVersionReached(t *testing.T, kubeClient kubernetes.Interface, version string, retries int, cl *api.VaultService, targetVaultPods ...string) error {
 	size := len(targetVaultPods)

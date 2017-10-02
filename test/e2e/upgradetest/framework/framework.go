@@ -13,6 +13,7 @@ import (
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -106,7 +107,6 @@ func (f *Framework) CreateOperatorDeployment(name string) error {
 					Labels: e2eutil.PodLabelForOperator(name),
 				},
 				Spec: v1.PodSpec{
-					RestartPolicy: v1.RestartPolicyNever,
 					Containers: []v1.Container{{
 						Name:            name,
 						Image:           f.oldVOPImage,
@@ -145,6 +145,26 @@ func (f *Framework) CreateOperatorDeployment(name string) error {
 		return fmt.Errorf("failed to create deployment: %v", err)
 	}
 	return nil
+}
+
+// DeleteOperatorDeployment deletes the vault operator deployment with the specified name, waits for all its pods to be removed and deletes the Endpoint resource used for the leader election lock
+func (f *Framework) DeleteOperatorDeployment(name string) error {
+	err := f.KubeClient.AppsV1beta1().Deployments(f.Namespace).Delete(name, k8sutil.CascadeDeleteBackground())
+	if err != nil {
+		return fmt.Errorf("failed to delete deployment: %v", err)
+	}
+
+	lo := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(e2eutil.PodLabelForOperator(name)).String(),
+	}
+	err = e2eutil.WaitPodsDeletedCompletely(f.KubeClient, f.Namespace, 3, lo)
+	if err != nil {
+		return fmt.Errorf("failed to wait for operator pods to be completely removed: %v", err)
+	}
+	// The deleted operator will not actively release the Endpoints lock causing a non-leader candidate to timeout for the lease duration: 15s
+	// Deleting the Endpoints resource simulates the leader actively releasing the lock so that the next candidate avoids the timeout.
+	// TODO: change this if we change to use another kind of lock, e.g. configmap.
+	return f.KubeClient.CoreV1().Endpoints(f.Namespace).Delete("vault-operator", metav1.NewDeleteOptions(0))
 }
 
 func (f *Framework) deployEtcdOperatorPod() error {
