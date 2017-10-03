@@ -12,6 +12,7 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 
 	"github.com/coreos/etcd-operator/pkg/util/retryutil"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
@@ -22,6 +23,9 @@ var retryInterval = 10 * time.Second
 
 // checkConditionFunc is used to check if a condition for the vault CR is true
 type checkConditionFunc func(*api.VaultService) bool
+
+// filterFunc returns true if the pod matches some condition defined by filterFunc
+type filterFunc func(*v1.Pod) bool
 
 // WaitUntilOperatorReady will wait until the first pod with the label name=<name> is ready.
 func WaitUntilOperatorReady(kubecli kubernetes.Interface, namespace, name string) error {
@@ -114,15 +118,46 @@ func WaitActiveVaultsUp(t *testing.T, vaultsCRClient client.Vaults, retries int,
 }
 
 // WaitPodsDeletedCompletely waits until the pods are completely removed(not just terminating) for the given label selector
-func WaitPodsDeletedCompletely(kubecli kubernetes.Interface, namespace string, retries int, lo metav1.ListOptions) error {
+func WaitPodsDeletedCompletely(kubecli kubernetes.Interface, namespace string, retries int, lo metav1.ListOptions) ([]*v1.Pod, error) {
+	return waitPodsDeleted(kubecli, namespace, retries, lo)
+}
+
+// WaitPodsWithImageDeleted waits until the pods with the specified image and labels are removed
+func WaitPodsWithImageDeleted(kubecli kubernetes.Interface, namespace, image string, retries int, lo metav1.ListOptions) ([]*v1.Pod, error) {
+	return waitPodsDeleted(kubecli, namespace, retries, lo, func(p *v1.Pod) bool {
+		for _, c := range p.Spec.Containers {
+			if c.Image == image {
+				return false
+			}
+		}
+		return true
+	})
+}
+
+// waitPodsDeleted waits until the pods selected by the desired label selector and passing the filter conditions are completely removed
+func waitPodsDeleted(kubecli kubernetes.Interface, namespace string, retries int, lo metav1.ListOptions, filters ...filterFunc) ([]*v1.Pod, error) {
+	var pods []*v1.Pod
 	err := retryutil.Retry(retryInterval, retries, func() (bool, error) {
 		podList, err := kubecli.CoreV1().Pods(namespace).List(lo)
 		if err != nil {
 			return false, fmt.Errorf("failed to list pods: %v", err)
 		}
-		return len(podList.Items) == 0, nil
+		pods = nil
+		for i := range podList.Items {
+			p := &podList.Items[i]
+			filtered := false
+			for _, filter := range filters {
+				if filter(p) {
+					filtered = true
+				}
+			}
+			if !filtered {
+				pods = append(pods, p)
+			}
+		}
+		return len(pods) == 0, nil
 	})
-	return err
+	return pods, err
 }
 
 // CheckVersionReached checks if all the targetVaultPods are of the specified version
