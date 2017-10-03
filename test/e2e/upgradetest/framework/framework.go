@@ -10,6 +10,7 @@ import (
 	"github.com/coreos-inc/vault-operator/test/e2e/e2eutil"
 
 	"github.com/Sirupsen/logrus"
+	eopk8sutil "github.com/coreos/etcd-operator/pkg/util/k8sutil"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -157,7 +158,7 @@ func (f *Framework) DeleteOperatorDeployment(name string) error {
 	lo := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(e2eutil.PodLabelForOperator(name)).String(),
 	}
-	err = e2eutil.WaitPodsDeletedCompletely(f.KubeClient, f.Namespace, 3, lo)
+	_, err = e2eutil.WaitPodsDeletedCompletely(f.KubeClient, f.Namespace, 3, lo)
 	if err != nil {
 		return fmt.Errorf("failed to wait for operator pods to be completely removed: %v", err)
 	}
@@ -165,6 +166,26 @@ func (f *Framework) DeleteOperatorDeployment(name string) error {
 	// Deleting the Endpoints resource simulates the leader actively releasing the lock so that the next candidate avoids the timeout.
 	// TODO: change this if we change to use another kind of lock, e.g. configmap.
 	return f.KubeClient.CoreV1().Endpoints(f.Namespace).Delete("vault-operator", metav1.NewDeleteOptions(0))
+}
+
+func (f *Framework) UpgradeOperator(name string) error {
+	uf := func(d *appsv1beta1.Deployment) {
+		d.Spec.Template.Spec.Containers[0].Image = f.newVOPImage
+	}
+	// TODO: Put PatchDeployment into vault's k8sutil
+	err := eopk8sutil.PatchDeployment(f.KubeClient, f.Namespace, name, uf)
+	if err != nil {
+		return fmt.Errorf("failed to patch deployment: %v", err)
+	}
+
+	lo := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(e2eutil.PodLabelForOperator(name)).String(),
+	}
+	pods, err := e2eutil.WaitPodsWithImageDeleted(f.KubeClient, f.Namespace, f.oldVOPImage, 3, lo)
+	if err != nil {
+		return fmt.Errorf("failed to wait for pods (%v) with old image (%v) to get deleted: %v", pods, f.oldVOPImage, err)
+	}
+	return e2eutil.WaitUntilOperatorReady(f.KubeClient, f.Namespace, name)
 }
 
 func (f *Framework) deployEtcdOperatorPod() error {
