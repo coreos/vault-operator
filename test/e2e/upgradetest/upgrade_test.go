@@ -64,5 +64,35 @@ func TestUpgradeAndScaleVault(t *testing.T) {
 		t.Fatalf("failed to wait for any node to become active: %v", err)
 	}
 
-	// TODO: Upgrade the operator and try to scale the cluster
+	if err = f.UpgradeOperator(name); err != nil {
+		t.Fatalf("failed to upgrade operator: %v", err)
+	}
+
+	// Resize cluster to 2 nodes
+	vaultCR, err = e2eutil.ResizeCluster(t, f.VaultsCRClient, vaultCR, 2)
+	if err != nil {
+		t.Fatalf("failed to resize vault cluster: %v", err)
+	}
+
+	// Wait for 1 unsealed node and create a vault client for it
+	vaultCR, err = e2eutil.WaitSealedVaultsUp(t, f.VaultsCRClient, 1, 6, vaultCR)
+	if err != nil {
+		t.Fatalf("failed to wait for vault nodes to become sealed: %v", err)
+	}
+	podName = vaultCR.Status.SealedNodes[0]
+	scaledConns, err := e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, tlsConfig, podName)
+	if err != nil {
+		t.Fatalf("failed to portforward and create vault clients: %v", err)
+	}
+	defer e2eutil.CleanupConnections(t, f.Namespace, scaledConns)
+
+	// Unseal the new node and wait for it to become standby
+	conn = e2eutil.GetConnOrFail(t, podName, scaledConns)
+	if err := e2eutil.UnsealVaultNode(initResp.Keys[0], conn); err != nil {
+		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
+	}
+	vaultCR, err = e2eutil.WaitStandbyVaultsUp(t, f.VaultsCRClient, 1, 6, vaultCR)
+	if err != nil {
+		t.Fatalf("failed to wait for vault nodes to become standby: %v", err)
+	}
 }
