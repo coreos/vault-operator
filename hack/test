@@ -51,7 +51,6 @@ function upgrade_pass {
 		exit 1
 	fi
 
-	cp ${KUBECONFIG} _output/kubeconfig
 	# TODO: Run upgrade tests in docker
 	go test -v "./test/e2e/upgradetest" -timeout 30m --race --kubeconfig=${KUBECONFIG} --namespace=${TEST_NAMESPACE} \
 		--old-vop-image=$UPGRADE_FROM \

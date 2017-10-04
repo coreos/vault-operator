@@ -73,4 +73,5 @@ func TestScaleUp(t *testing.T) {
 		t.Fatalf("failed to wait for vault nodes to become standby: %v", err)
 	}
 
+	// TEST PR Upgrade test.
 }
