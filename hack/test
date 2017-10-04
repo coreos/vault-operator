@@ -52,8 +52,11 @@ function upgrade_pass {
 	fi
 
 	cp ${KUBECONFIG} _output/kubeconfig
-	# TODO: Run upgrade tests in docker
-	go test -v "./test/e2e/upgradetest" -timeout 30m --race --kubeconfig=${KUBECONFIG} --namespace=${TEST_NAMESPACE} \
+	go test -c "./test/e2e/upgradetest" --race -o _output/bin/upgradetest.test
+	docker run --rm \
+	  -v="${PWD}/_output:/upgradetest" \
+	  golang:1.9 \
+	  /upgradetest/bin/upgradetest.test -test.timeout=30m --kubeconfig=/upgradetest/kubeconfig --namespace=${TEST_NAMESPACE} \
 		--old-vop-image=$UPGRADE_FROM \
 		--new-vop-image=$UPGRADE_TO
 }
