@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
+	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/test/e2e/e2eutil"
 	"github.com/coreos-inc/vault-operator/test/e2e/upgradetest/framework"
 )
@@ -19,12 +20,12 @@ func TestUpgradeAndScaleVault(t *testing.T) {
 	name := newOperatorName()
 	err := f.CreateOperatorDeployment(name)
 	if err != nil {
-		t.Fatal("failed to create vault operator: %v", err)
+		t.Fatalf("failed to create vault operator: %v", err)
 	}
 	defer func() {
 		err := f.DeleteOperatorDeployment(name)
 		if err != nil {
-			t.Fatal("failed to delete vault operator: %v", err)
+			t.Fatalf("failed to delete vault operator: %v", err)
 		}
 	}()
 	if err = e2eutil.WaitUntilOperatorReady(f.KubeClient, f.Namespace, name); err != nil {
@@ -35,11 +36,11 @@ func TestUpgradeAndScaleVault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create vault cluster: %v", err)
 	}
-	defer func() {
+	defer func(vaultCR *api.VaultService) {
 		if err := e2eutil.DeleteCluster(t, f.VaultsCRClient, vaultCR); err != nil {
 			t.Fatalf("failed to delete vault cluster: %v", err)
 		}
-	}()
+	}(vaultCR)
 	vaultCR, tlsConfig := e2eutil.WaitForCluster(t, f.KubeClient, f.VaultsCRClient, vaultCR)
 
 	startingConns, err := e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, tlsConfig, vaultCR.Status.AvailableNodes...)

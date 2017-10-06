@@ -3,6 +3,7 @@ package e2e
 import (
 	"testing"
 
+	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/test/e2e/e2eutil"
 	"github.com/coreos-inc/vault-operator/test/e2e/framework"
 )
@@ -13,11 +14,11 @@ func TestUpgradeVault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create vault cluster: %v", err)
 	}
-	defer func() {
+	defer func(vaultCR *api.VaultService) {
 		if err := e2eutil.DeleteCluster(t, f.VaultsCRClient, vaultCR); err != nil {
 			t.Fatalf("failed to delete vault cluster: %v", err)
 		}
-	}()
+	}(vaultCR)
 	vaultCR, tlsConfig := e2eutil.WaitForCluster(t, f.KubeClient, f.VaultsCRClient, vaultCR)
 
 	startingConns, err := e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, tlsConfig, vaultCR.Status.AvailableNodes...)
@@ -54,7 +55,7 @@ func TestUpgradeVault(t *testing.T) {
 	}
 
 	// Upgrade vault version
-	newVersion := "0.8.0-1"
+	newVersion := "0.8.3-1"
 	vaultCR, err = e2eutil.UpdateVersion(t, f.VaultsCRClient, vaultCR, newVersion)
 	if err != nil {
 		t.Fatalf("failed to update vault version: %v", err)
@@ -83,6 +84,11 @@ func TestUpgradeVault(t *testing.T) {
 	if err = e2eutil.UnsealVaultNode(initResp.Keys[0], conn); err != nil {
 		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
 	}
+
+	// TODO: The below checking is indirect proof. We should do more strict checking:
+	//   - check the active Vault node is one of newly unsealed nodes
+	//   - check the standby Vault node is one of newly unsealed nodes
+	//   - check the previous active one is deleted.
 
 	// Wait for only 2 available nodes, i.e the old active node steps down and is removed
 	vaultCR, err = e2eutil.WaitAvailableVaultsUp(t, f.VaultsCRClient, 2, 6, vaultCR)

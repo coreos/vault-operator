@@ -3,6 +3,7 @@ package e2e
 import (
 	"testing"
 
+	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/test/e2e/e2eutil"
 	"github.com/coreos-inc/vault-operator/test/e2e/framework"
 )
@@ -13,11 +14,11 @@ func TestScaleUp(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create vault cluster: %v", err)
 	}
-	defer func() {
+	defer func(vaultCR *api.VaultService) {
 		if err := e2eutil.DeleteCluster(t, f.VaultsCRClient, vaultCR); err != nil {
 			t.Fatalf("failed to delete vault cluster: %v", err)
 		}
-	}()
+	}(vaultCR)
 
 	vaultCR, tlsConfig := e2eutil.WaitForCluster(t, f.KubeClient, f.VaultsCRClient, vaultCR)
 
