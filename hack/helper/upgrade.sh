@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script upgrades a vault cluster to the desired version and unseals the new upgraded nodes.
+# This script upgrades a vault cluster to the desired version, unseals the new upgraded nodes and checks if upgrade succeeded.
 
 set -o errexit
 set -o nounset
@@ -25,8 +25,7 @@ NUM_NODES=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{
 # Check for 1 active node
 # There must be an active node before upgrade in order for N sealed nodes to show up after upgrade. Otherwise if N=1 and it is sealed then after upgrade there will be 2 sealed nodes.
 ACT_NODE=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.activeNode}')
-if [ -z "$ACT_NODE" ]
-then
+if [ -z "$ACT_NODE" ]; then
     echo "Vault cluster must have an active node before upgrading"
     exit 1
 fi
@@ -52,6 +51,35 @@ for NODE in "${SEALED_ARRAY[@]}"
 do
     echo "Unsealing ${NODE}"
     kubectl -n ${KUBE_NS} exec ${NODE} -- /bin/sh -c "VAULT_ADDR=https://localhost:8200 VAULT_SKIP_VERIFY=true vault unseal ${UNSEAL_KEY}"
+done
+
+# Wait until new active node is of the new version
+echo "Waiting until active node is of new version ${UPGRADE_TO}"
+IS_UPGRADED="false"
+while [ "${IS_UPGRADED}" != "true" ]
+do
+    # Wait before retrying
+    sleep 2
+
+    # Get the active node name
+    ACT_NODE=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.activeNode}')
+    if [ -z "$ACT_NODE" ]; then
+        echo "No active node in status"
+        continue
+    fi
+
+    # Get the image version tag of the active pod. Retry if "get pod" fails (if the pod of the active node shown has been deleted)
+    IMAGE=$(kubectl -n ${KUBE_NS} get pod ${ACT_NODE} -o jsonpath='{.spec.containers[0].image}' || echo "")
+    if [ -z "$IMAGE" ]; then
+        continue
+    fi
+    IFS=':' read -r -a IMAGE_TOK <<< "${IMAGE}"
+    VERSION=${IMAGE_TOK[1]}
+
+    echo "Current active node version: ${VERSION}"
+    if [ "${VERSION}" == "${UPGRADE_TO}" ]; then
+        IS_UPGRADED="true"
+    fi
 done
 
 echo "Upgrade and unseal complete!"
