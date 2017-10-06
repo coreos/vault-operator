@@ -54,7 +54,7 @@ func TestUpgradeVault(t *testing.T) {
 	}
 
 	// Upgrade vault version
-	newVersion := "0.8.0-1"
+	newVersion := "0.8.3-1"
 	vaultCR, err = e2eutil.UpdateVersion(t, f.VaultsCRClient, vaultCR, newVersion)
 	if err != nil {
 		t.Fatalf("failed to update vault version: %v", err)
