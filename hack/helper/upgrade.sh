@@ -13,6 +13,8 @@ set -o pipefail
 # TODO: Check current version and automatically alternate between the two versions: 0.8.3-0 and 0.8.3-1
 : ${UPGRADE_TO:?"Need to set the vault version to upgrade to UPGRADE_TO"}
 
+RETRY_INTERVAL=5
+
 if ! kubectl version 1> /dev/null ; then
     echo "kubectl with kubeconfig needs to be setup"
     exit 1
@@ -41,17 +43,15 @@ echo "Waiting for ${NUM_NODES} sealed nodes after upgrade..."
 NUM_SEALED=-1
 while [ "${NUM_SEALED}" -ne "${NUM_NODES}" ]
 do
+    sleep ${RETRY_INTERVAL}
+
     SEALED_NODES=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.sealedNodes}' | sed 's/^.\(.*\).$/\1/' )
     IFS=' ' read -r -a SEALED_ARRAY <<< "${SEALED_NODES}"
     NUM_SEALED=${#SEALED_ARRAY[@]}
 done
 
 # Unseal all sealed nodes
-for NODE in "${SEALED_ARRAY[@]}"
-do
-    echo "Unsealing ${NODE}"
-    kubectl -n ${KUBE_NS} exec ${NODE} -- /bin/sh -c "VAULT_ADDR=https://localhost:8200 VAULT_SKIP_VERIFY=true vault unseal ${UNSEAL_KEY}"
-done
+KUBE_NS=${KUBE_NS} VAULT_CLUSTER_NAME=${VAULT_CLUSTER_NAME} UNSEAL_KEY=${UNSEAL_KEY} hack/helper/unseal.sh
 
 # Wait until new active node is of the new version
 echo "Waiting until active node is of new version ${UPGRADE_TO}"
@@ -59,24 +59,26 @@ IS_UPGRADED="false"
 while [ "${IS_UPGRADED}" != "true" ]
 do
     # Wait before retrying
-    sleep 2
+    sleep ${RETRY_INTERVAL}
 
     # Get the active node name
     ACT_NODE=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.activeNode}')
     if [ -z "$ACT_NODE" ]; then
-        echo "No active node in status"
+        echo "No active node found in CR status. Retrying"
         continue
     fi
 
-    # Get the image version tag of the active pod. Retry if "get pod" fails (if the pod of the active node shown has been deleted)
-    IMAGE=$(kubectl -n ${KUBE_NS} get pod ${ACT_NODE} -o jsonpath='{.spec.containers[0].image}' || echo "")
+    # Get the image version tag of the active node's pod.
+    # Retry if "kubectl get pod" fails for some reason (if the pod of the active node shown has been deleted)
+    IMAGE=$( (kubectl -n ${KUBE_NS} get pod ${ACT_NODE} -o jsonpath='{.spec.containers[0].image}' 2> /dev/null) || echo "")
     if [ -z "$IMAGE" ]; then
+        echo "Get active pod ${ACT_NODE} failed. Retrying."
         continue
     fi
     IFS=':' read -r -a IMAGE_TOK <<< "${IMAGE}"
     VERSION=${IMAGE_TOK[1]}
 
-    echo "Current active node version: ${VERSION}"
+    echo "Current active node: (${ACT_NODE}), version: (${VERSION})"
     if [ "${VERSION}" == "${UPGRADE_TO}" ]; then
         IS_UPGRADED="true"
     fi
