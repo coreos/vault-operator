@@ -22,15 +22,15 @@ metadata:
   name: "example-vault"
 spec:
   nodes: 2
-  version: "0.8.0-0"
+  version: "0.8.3-0"
 ```
 
 After the Vault cluster is deployed and unsealed, there will be one active and one standby.
 
-Upgrade Vault version to `0.8.0-1`:
+Upgrade Vault version to `0.8.3-1`:
 
 ```
-kubectl -n vault-services get vault example-vault -o yaml | sed 's/version: 0.8.0-0/version: 0.8.0-1/g' | kubectl apply -f
+kubectl -n vault-services get vault example-vault -o yaml | sed 's/version: 0.8.3-0/version: 0.8.3-1/g' | kubectl apply -f -
 ```
 
 Vault operator will upgrade all nodes except the active node to keep service availability.
