@@ -85,30 +85,30 @@ func TestUpgradeVault(t *testing.T) {
 		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
 	}
 
-	// TODO: The below checking is indirect proof. We should do more strict checking:
-	//   - check the active Vault node is one of newly unsealed nodes
-	//   - check the standby Vault node is one of newly unsealed nodes
-	//   - check the previous active one is deleted.
+	upgradedNodes := vaultCR.Status.SealedNodes
 
-	// Wait for only 2 available nodes, i.e the old active node steps down and is removed
-	vaultCR, err = e2eutil.WaitAvailableVaultsUp(t, f.VaultsCRClient, 2, 6, vaultCR)
+	// Check that the active node is one of the newly unsealed nodes
+	vaultCR, err = e2eutil.WaitUntilActiveIsFrom(t, f.VaultsCRClient, 6, vaultCR, upgradedNodes...)
 	if err != nil {
-		t.Fatalf("failed to wait for nodes to become available: %v", err)
+		t.Fatalf("failed to see the active node to be from the newly unsealed pods (%v): %v", upgradedNodes, err)
+	}
+
+	// Check that the standby node(s) are all from the newly unsealed nodes
+	vaultCR, err = e2eutil.WaitUntilStandbyAreFrom(t, f.VaultsCRClient, 6, vaultCR, upgradedNodes...)
+	if err != nil {
+		t.Fatalf("failed to see all the standby nodes to be from the newly unsealed pods (%v): %v", upgradedNodes, err)
+	}
+
+	// Check that the available nodes are all from the newly unsealed nodes, i.e the old nodes are deleted
+	vaultCR, err = e2eutil.WaitUntilAvailableAreFrom(t, f.VaultsCRClient, 6, vaultCR, upgradedNodes...)
+	if err != nil {
+		t.Fatalf("failed to see all available nodes to be from the newly unsealed pods (%v): %v", upgradedNodes, err)
 	}
 
 	// Check that 1 active and 1 standby are of the updated version
-	vaultCR, err = e2eutil.WaitActiveVaultsUp(t, f.VaultsCRClient, 6, vaultCR)
-	if err != nil {
-		t.Fatalf("failed to wait for any node to become active: %v", err)
-	}
 	err = e2eutil.CheckVersionReached(t, f.KubeClient, newVersion, 6, vaultCR, vaultCR.Status.ActiveNode)
 	if err != nil {
 		t.Fatalf("failed to wait for active node to become updated: %v", err)
-	}
-
-	vaultCR, err = e2eutil.WaitStandbyVaultsUp(t, f.VaultsCRClient, 1, 6, vaultCR)
-	if err != nil {
-		t.Fatalf("failed to wait for vault nodes to become standby: %v", err)
 	}
 	err = e2eutil.CheckVersionReached(t, f.KubeClient, newVersion, 6, vaultCR, vaultCR.Status.StandbyNodes...)
 	if err != nil {
