@@ -56,7 +56,7 @@ func WaitUntilOperatorReady(kubecli kubernetes.Interface, namespace, name string
 func WaitUntilVaultConditionTrue(t *testing.T, vaultsCRClient client.Vaults, retries int, cl *api.VaultService, checkCondition checkConditionFunc) (*api.VaultService, error) {
 	var vault *api.VaultService
 	var err error
-	err = retryutil.Retry(retryInterval, 6, func() (bool, error) {
+	err = retryutil.Retry(retryInterval, retries, func() (bool, error) {
 		vault, err = vaultsCRClient.Get(context.TODO(), cl.Namespace, cl.Name)
 		if err != nil {
 			return false, fmt.Errorf("failed to get CR: %v", err)
@@ -173,7 +173,7 @@ func CheckVersionReached(t *testing.T, kubeClient kubernetes.Interface, version 
 	names = nil
 	for i := range podList.Items {
 		pod := &podList.Items[i]
-		if !presentIn(pod.Name, targetVaultPods) {
+		if !presentIn(pod.Name, targetVaultPods...) {
 			continue
 		}
 
@@ -192,7 +192,7 @@ func CheckVersionReached(t *testing.T, kubeClient kubernetes.Interface, version 
 	return nil
 }
 
-func presentIn(a string, list []string) bool {
+func presentIn(a string, list ...string) bool {
 	for _, l := range list {
 		if a == l {
 			return true
@@ -203,4 +203,71 @@ func presentIn(a string, list []string) bool {
 
 func getVersionFromImage(image string) string {
 	return strings.Split(image, ":")[1]
+}
+
+// WaitUntilActiveIsFrom waits until the active node is from one of the target pods
+func WaitUntilActiveIsFrom(t *testing.T, vaultsCRClient client.Vaults, retries int, cl *api.VaultService, targetVaultPods ...string) (*api.VaultService, error) {
+	var vault *api.VaultService
+	var err error
+	err = retryutil.Retry(retryInterval, retries, func() (bool, error) {
+		vault, err = vaultsCRClient.Get(context.TODO(), cl.Namespace, cl.Name)
+		if err != nil {
+			return false, fmt.Errorf("failed to get CR: %v", err)
+		}
+		LogfWithTimestamp(t, "active node: (%v)", vault.Status.ActiveNode)
+		if !presentIn(vault.Status.ActiveNode, targetVaultPods...) {
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return vault, nil
+}
+
+// WaitUntilStandbyAreFrom waits until all the standby nodes are from the target pods
+func WaitUntilStandbyAreFrom(t *testing.T, vaultsCRClient client.Vaults, retries int, cl *api.VaultService, targetVaultPods ...string) (*api.VaultService, error) {
+	var vault *api.VaultService
+	var err error
+	err = retryutil.Retry(retryInterval, retries, func() (bool, error) {
+		vault, err = vaultsCRClient.Get(context.TODO(), cl.Namespace, cl.Name)
+		if err != nil {
+			return false, fmt.Errorf("failed to get CR: %v", err)
+		}
+		LogfWithTimestamp(t, "standby nodes: (%v)", vault.Status.StandbyNodes)
+		for _, standbyNode := range vault.Status.StandbyNodes {
+			if !presentIn(standbyNode, targetVaultPods...) {
+				return false, nil
+			}
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return vault, nil
+}
+
+// WaitUntilAvailableAreFrom waits until all the available nodes are from the target pods
+func WaitUntilAvailableAreFrom(t *testing.T, vaultsCRClient client.Vaults, retries int, cl *api.VaultService, targetVaultPods ...string) (*api.VaultService, error) {
+	var vault *api.VaultService
+	var err error
+	err = retryutil.Retry(retryInterval, retries, func() (bool, error) {
+		vault, err = vaultsCRClient.Get(context.TODO(), cl.Namespace, cl.Name)
+		if err != nil {
+			return false, fmt.Errorf("failed to get CR: %v", err)
+		}
+		LogfWithTimestamp(t, "available nodes: (%v)", vault.Status.AvailableNodes)
+		for _, availableNode := range vault.Status.AvailableNodes {
+			if !presentIn(availableNode, targetVaultPods...) {
+				return false, nil
+			}
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return vault, nil
 }
