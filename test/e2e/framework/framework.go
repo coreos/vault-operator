@@ -13,6 +13,7 @@ import (
 	eopK8sutil "github.com/coreos/etcd-operator/pkg/util/k8sutil"
 	"github.com/coreos/etcd-operator/pkg/util/probe"
 	"k8s.io/api/core/v1"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
@@ -30,6 +31,7 @@ var (
 // Framework struct contains the various clients and other information needed to run the e2e tests
 type Framework struct {
 	KubeClient     kubernetes.Interface
+	crdcli         apiextensionsclient.Interface
 	Config         *restclient.Config
 	RESTClient     *restclient.RESTClient
 	VaultsCRClient client.Vaults
@@ -54,6 +56,10 @@ func Setup() error {
 	if err != nil {
 		return fmt.Errorf("faild to create kube client: %v", err)
 	}
+	crdcli, err := apiextensionsclient.NewForConfig(config)
+	if err != nil {
+		return fmt.Errorf("failed to create kube CRD client: %v", err)
+	}
 	vaultsCRClient, err := client.NewCRClient(config)
 	if err != nil {
 		return fmt.Errorf("failed to create CR client: %v", err)
@@ -61,6 +67,7 @@ func Setup() error {
 
 	Global = &Framework{
 		KubeClient:     kubeClient,
+		crdcli:         crdcli,
 		Config:         config,
 		VaultsCRClient: vaultsCRClient,
 		Namespace:      *ns,
@@ -89,6 +96,11 @@ func Teardown() error {
 func (f *Framework) setup() error {
 	if err := f.deployEtcdOperatorPod(); err != nil {
 		return fmt.Errorf("failed to setup etcd operator: %v", err)
+	}
+
+	err := k8sutil.CreateVaultCRD(f.crdcli)
+	if err != nil {
+		return fmt.Errorf("failed to setup vault operator: %v", err)
 	}
 	if err := f.deployVaultOperatorPod(); err != nil {
 		return fmt.Errorf("failed to setup vault operator: %v", err)
