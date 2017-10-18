@@ -58,6 +58,12 @@ kubectl -n vault-services create -f https://raw.githubusercontent.com/coreos/etc
 
 ### Deploying the Vault operator
 
+Create Vault Custom Resource Definition (CRD):
+
+```
+kubectl create -f ./example/vault_crd.yaml
+```
+
 Vault operator image is private. Use "quay.io" pull secret to get the image.
 
 1. Create pull secret from the existing `coreos-pull-secret`:
