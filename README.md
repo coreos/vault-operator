@@ -35,7 +35,7 @@ By default, the Vault operator has no privilege to access any resources in Tecto
 1. Generate a RBAC yaml file from the template given in the repository:
 
     ```sh
-    sed 's/{KUBE_NS}/vault-services/g' example/rbac-template.yaml > example/rbac.yaml
+    sed 's/<kube-ns>/vault-services/g' example/rbac-template.yaml > example/rbac.yaml
     ```
 
 2. Create the RBAC role:
@@ -53,7 +53,7 @@ The Vault operator employs etcd operator to deploy an etcd cluster as the storag
 Deploy one into the `vault-services` namespace:
 
 ```sh
-kubectl -n vault-services create -f https://raw.githubusercontent.com/coreos/etcd-operator/master/example/deployment.yaml
+kubectl -n vault-services create -f example/etcd-operator-deploy.yaml
 ```
 
 ### Deploying the Vault operator
