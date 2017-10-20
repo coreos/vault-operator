@@ -44,7 +44,8 @@ By default, the Vault operator has no privilege to access any resources in Tecto
     kubectl -n vault-services create -f example/rbac.yaml
     ```
 
-    The RBAC rule grants `admin` role to the service account in the `vault-services` namespace.
+    The RBAC rule grants the `default` service account in the `vault-services` namespace
+    access to all resources under `vault-services` namespace, but not outside.
 
 
 ### Deploying the etcd operator
