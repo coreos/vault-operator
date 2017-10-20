@@ -200,6 +200,7 @@ func (f *Framework) deployEtcdOperatorPod() error {
 					Name:            etcdOperatorName,
 					Image:           f.eopImage,
 					ImagePullPolicy: v1.PullAlways,
+					Command:         []string{"etcd-operator", "--create-crd=false"},
 					Env: []v1.EnvVar{
 						{
 							Name:      "MY_POD_NAMESPACE",

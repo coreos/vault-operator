@@ -37,7 +37,7 @@ function e2e_pass {
 	docker run --rm \
 	  -v="${PWD}/_output:/e2etest" \
 	  golang:1.9 \
-	  /e2etest/bin/e2e.test -test.timeout=30m --kubeconfig=/e2etest/kubeconfig --operator-image=${OPERATOR_IMAGE} --namespace=${TEST_NAMESPACE}
+	  /e2etest/bin/e2e.test -test.timeout=30m --kubeconfig=/e2etest/kubeconfig --operator-image=${OPERATOR_IMAGE} --namespace=${TEST_NAMESPACE} --etcd-operator-image=quay.io/coreos/etcd-operator:dev
 }
 
 function upgrade_pass {
@@ -56,7 +56,7 @@ function upgrade_pass {
 	docker run --rm \
 	  -v="${PWD}/_output:/upgradetest" \
 	  golang:1.9 \
-	  /upgradetest/bin/upgradetest.test -test.timeout=30m --kubeconfig=/upgradetest/kubeconfig --namespace=${TEST_NAMESPACE} \
+	  /upgradetest/bin/upgradetest.test -test.timeout=30m --kubeconfig=/upgradetest/kubeconfig --namespace=${TEST_NAMESPACE} --etcd-operator-image=quay.io/coreos/etcd-operator:dev \
 		--old-vop-image=$UPGRADE_FROM \
 		--new-vop-image=$UPGRADE_TO
 }
