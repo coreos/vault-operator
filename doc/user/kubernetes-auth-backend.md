@@ -22,7 +22,7 @@ In order to enable and configure the auth backend with the necessary roles and p
 1. Configure port forwarding between the local machine and the active Vault node:
    
     ```sh
-    $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.activeNode}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+    $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
     ```
 
 2. Open a new terminal. Use this terminal for the rest of this guide.

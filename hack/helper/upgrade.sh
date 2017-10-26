@@ -26,7 +26,7 @@ NUM_NODES=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{
 # Check the cluster conditions before upgrade can be performed: 1 active and 0 sealed nodes
 # Check for 1 active node
 # There must be an active node before upgrade in order for N sealed nodes to show up after upgrade. Otherwise if N=1 and it is sealed then after upgrade there will be 2 sealed nodes.
-ACT_NODE=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.activeNode}')
+ACT_NODE=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.nodes.active}')
 if [ -z "$ACT_NODE" ]; then
     echo "Vault cluster must have an active node before upgrading"
     exit 1
@@ -45,7 +45,7 @@ while [ "${NUM_SEALED}" -ne "${NUM_NODES}" ]
 do
     sleep ${RETRY_INTERVAL}
 
-    SEALED_NODES=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.sealedNodes}' | sed 's/^.\(.*\).$/\1/' )
+    SEALED_NODES=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.nodes.sealed}' | sed 's/^.\(.*\).$/\1/' )
     IFS=' ' read -r -a SEALED_ARRAY <<< "${SEALED_NODES}"
     NUM_SEALED=${#SEALED_ARRAY[@]}
 done
@@ -62,7 +62,7 @@ do
     sleep ${RETRY_INTERVAL}
 
     # Get the active node name
-    ACT_NODE=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.activeNode}')
+    ACT_NODE=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.nodes.active}')
     if [ -z "$ACT_NODE" ]; then
         echo "No active node found in CR status. Retrying"
         continue

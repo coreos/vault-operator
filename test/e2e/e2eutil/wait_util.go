@@ -72,8 +72,8 @@ func WaitUntilVaultConditionTrue(t *testing.T, vaultsCRClient client.Vaults, ret
 // WaitAvailableVaultsUp retries until the desired number of vault nodes are shown as available in the CR status
 func WaitAvailableVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *api.VaultService) (*api.VaultService, error) {
 	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *api.VaultService) bool {
-		LogfWithTimestamp(t, "available nodes: (%v)", v.Status.AvailableNodes)
-		return len(v.Status.AvailableNodes) == size
+		LogfWithTimestamp(t, "available nodes: (%v)", v.Status.Nodes.Available)
+		return len(v.Status.Nodes.Available) == size
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait for available size to become (%v): %v", size, err)
@@ -84,8 +84,8 @@ func WaitAvailableVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, ret
 // WaitSealedVaultsUp retries until the desired number of vault nodes are shown as sealed in the CR status
 func WaitSealedVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *api.VaultService) (*api.VaultService, error) {
 	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *api.VaultService) bool {
-		LogfWithTimestamp(t, "sealed nodes: (%v)", v.Status.SealedNodes)
-		return len(v.Status.SealedNodes) == size
+		LogfWithTimestamp(t, "sealed nodes: (%v)", v.Status.Nodes.Sealed)
+		return len(v.Status.Nodes.Sealed) == size
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait for sealed size to become (%v): %v", size, err)
@@ -96,8 +96,8 @@ func WaitSealedVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retrie
 // WaitStandbyVaultsUp retries until the desired number of vault nodes are shown as standby in the CR status
 func WaitStandbyVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retries int, cl *api.VaultService) (*api.VaultService, error) {
 	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *api.VaultService) bool {
-		LogfWithTimestamp(t, "standby nodes: (%v)", v.Status.StandbyNodes)
-		return len(v.Status.StandbyNodes) == size
+		LogfWithTimestamp(t, "standby nodes: (%v)", v.Status.Nodes.Standby)
+		return len(v.Status.Nodes.Standby) == size
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait for standby size to become (%v): %v", size, err)
@@ -108,8 +108,8 @@ func WaitStandbyVaultsUp(t *testing.T, vaultsCRClient client.Vaults, size, retri
 // WaitActiveVaultsUp retries until there is 1 active node in the CR status
 func WaitActiveVaultsUp(t *testing.T, vaultsCRClient client.Vaults, retries int, cl *api.VaultService) (*api.VaultService, error) {
 	vault, err := WaitUntilVaultConditionTrue(t, vaultsCRClient, retries, cl, func(v *api.VaultService) bool {
-		LogfWithTimestamp(t, "active node: (%v)", v.Status.ActiveNode)
-		return len(v.Status.ActiveNode) != 0
+		LogfWithTimestamp(t, "active node: (%v)", v.Status.Nodes.Active)
+		return len(v.Status.Nodes.Active) != 0
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait for any node to become active: %v", err)
@@ -214,8 +214,8 @@ func WaitUntilActiveIsFrom(t *testing.T, vaultsCRClient client.Vaults, retries i
 		if err != nil {
 			return false, fmt.Errorf("failed to get CR: %v", err)
 		}
-		LogfWithTimestamp(t, "active node: (%v)", vault.Status.ActiveNode)
-		if !presentIn(vault.Status.ActiveNode, targetVaultPods...) {
+		LogfWithTimestamp(t, "active node: (%v)", vault.Status.Nodes.Active)
+		if !presentIn(vault.Status.Nodes.Active, targetVaultPods...) {
 			return false, nil
 		}
 		return true, nil
@@ -235,8 +235,8 @@ func WaitUntilStandbyAreFrom(t *testing.T, vaultsCRClient client.Vaults, retries
 		if err != nil {
 			return false, fmt.Errorf("failed to get CR: %v", err)
 		}
-		LogfWithTimestamp(t, "standby nodes: (%v)", vault.Status.StandbyNodes)
-		for _, standbyNode := range vault.Status.StandbyNodes {
+		LogfWithTimestamp(t, "standby nodes: (%v)", vault.Status.Nodes.Standby)
+		for _, standbyNode := range vault.Status.Nodes.Standby {
 			if !presentIn(standbyNode, targetVaultPods...) {
 				return false, nil
 			}
@@ -258,8 +258,8 @@ func WaitUntilAvailableAreFrom(t *testing.T, vaultsCRClient client.Vaults, retri
 		if err != nil {
 			return false, fmt.Errorf("failed to get CR: %v", err)
 		}
-		LogfWithTimestamp(t, "available nodes: (%v)", vault.Status.AvailableNodes)
-		for _, availableNode := range vault.Status.AvailableNodes {
+		LogfWithTimestamp(t, "available nodes: (%v)", vault.Status.Nodes.Available)
+		for _, availableNode := range vault.Status.Nodes.Available {
 			if !presentIn(availableNode, targetVaultPods...) {
 				return false, nil
 			}
