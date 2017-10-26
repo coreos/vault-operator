@@ -89,7 +89,7 @@ type Nodes struct {
 	// PodNames of available nodes.
 	// Avaliable node is a running Vault pod, but not necessarily unsealed and ready
 	// to serve requests.
-	Available []string `json:"available"`
+	Available []string `json:"available,omitempty"`
 
 	// PodNames of the active Vault node. Active node is unsealed.
 	// Only active node can serve requests.
@@ -98,15 +98,15 @@ type Nodes struct {
 
 	// PodNames of the standby Vault nodes. Standby nodes are unsealed.
 	// Standby nodes do not process requests, and instead redirect to the active Vault.
-	Standby []string `json:"standby"`
+	Standby []string `json:"standby,omitempty"`
 
 	// PodNames of Sealed Vault nodes. Sealed nodes MUST be manually unsealed to
 	// become standby or leader.
-	Sealed []string `json:"sealed"`
+	Sealed []string `json:"sealed,omitempty"`
 
 	// PodNames of updated Vault nodes. Updated means the Vault container image version
 	// matches the spec's version.
-	Updated []string `json:"updated"`
+	Updated []string `json:"updated,omitempty"`
 }
 
 // DefaultVaultClientTLSSecretName returns the name of the default vault client TLS secret
