@@ -74,6 +74,13 @@ type VaultServiceStatus struct {
 	// Initialized indicates if the Vault service is initialized.
 	Initialized bool `json:"initialized"`
 
+	// ServiceName is the LB service for accessing vault nodes.
+	ServiceName string `json:"serviceName,omitempty"`
+
+	// ClientPort is the port for vault client to access.
+	// It's the same on client LB service and vault nodes.
+	ClientPort int `json:"clientPort,omitempty"`
+
 	// PodNames of available nodes.
 	// Avaliable node is a running Vault pod, but not necessarily unsealed and ready
 	// to serve requests.
