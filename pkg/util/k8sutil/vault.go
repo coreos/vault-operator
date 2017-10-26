@@ -31,6 +31,8 @@ var (
 	evnVaultRedirectAddr = "VAULT_REDIRECT_ADDR"
 )
 
+const VaultClientPort = 8200
+
 // EtcdClientTLSSecretName returns the name of etcd client TLS secret for the given vault name
 func EtcdClientTLSSecretName(vaultName string) string {
 	return vaultName + "-etcd-client-tls"
@@ -123,7 +125,6 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 	// TODO: set owner ref.
 
 	selector := LabelsForVault(v.GetName())
-	vaultPort := 8200
 
 	podTempl := v1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
@@ -157,7 +158,7 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 					},
 				},
 				Ports: []v1.ContainerPort{{
-					ContainerPort: int32(vaultPort),
+					ContainerPort: int32(VaultClientPort),
 				}},
 				LivenessProbe: &v1.Probe{
 					Handler: v1.Handler{
@@ -167,7 +168,7 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 								"--connect-timeout", "5",
 								"--max-time", "10",
 								"-k", "-s",
-								fmt.Sprintf("https://localhost:%d/v1/sys/health", vaultPort),
+								fmt.Sprintf("https://localhost:%d/v1/sys/health", VaultClientPort),
 							},
 						},
 					},
@@ -180,7 +181,7 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 					Handler: v1.Handler{
 						HTTPGet: &v1.HTTPGetAction{
 							Path:   "/v1/sys/health",
-							Port:   intstr.FromInt(vaultPort),
+							Port:   intstr.FromInt(VaultClientPort),
 							Scheme: v1.URISchemeHTTPS,
 						},
 					},
@@ -240,7 +241,7 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 			Ports: []v1.ServicePort{{
 				Name:     "vault",
 				Protocol: v1.ProtocolTCP,
-				Port:     8200,
+				Port:     VaultClientPort,
 			}},
 		},
 	}
@@ -324,7 +325,7 @@ func ConfigMapNameForVault(v *api.VaultService) string {
 
 // VaultServiceURL returns the DNS record of the vault service in the given namespace.
 func VaultServiceURL(name, namespace string) string {
-	return fmt.Sprintf("https://%s.%s.svc:8200", name, namespace)
+	return fmt.Sprintf("https://%s.%s.svc:%v", name, namespace, VaultClientPort)
 }
 
 // DestroyVault destroys a vault service.

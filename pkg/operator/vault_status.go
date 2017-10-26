@@ -37,7 +37,10 @@ func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, vr *api.VaultServic
 			}
 		}
 
-		s := api.VaultServiceStatus{}
+		s := api.VaultServiceStatus{
+			ServiceName: vr.GetName(),
+			ClientPort:  k8sutil.VaultClientPort,
+		}
 		vs.updateLocalVaultCRStatus(ctx, vr, &s, tlsConfig)
 
 		latest, err := vs.updateVaultCRStatus(ctx, vr.GetName(), vr.GetNamespace(), s)
