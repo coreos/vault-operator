@@ -135,7 +135,7 @@ In this example, a Vault cluster is configured with two nodes in high availabili
 4. Verify that the Vault nodes can be viewed in the "vault" resource status:
 
       ```
-      $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.sealedNodes}'
+      $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.sealed}'
       [example-vault-1003480066-b757c example-vault-1003480066-jzmwd]
       ```
 

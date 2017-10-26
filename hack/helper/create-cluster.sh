@@ -34,7 +34,7 @@ while [ "${NUM_SEALED}" -ne "${NUM_NODES}" ]
 do
     sleep ${RETRY_INTERVAL}
 
-    SEALED_NODES=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.sealedNodes}' | sed 's/^.\(.*\).$/\1/' )
+    SEALED_NODES=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.nodes.sealed}' | sed 's/^.\(.*\).$/\1/' )
     IFS=' ' read -r -a SEALED_ARRAY <<< "${SEALED_NODES}"
     NUM_SEALED=${#SEALED_ARRAY[@]}
 done
@@ -62,7 +62,7 @@ while [ -z "${ACT_NODE}" ]
 do
     echo "Waiting for active node to show up"
     sleep ${RETRY_INTERVAL}
-    ACT_NODE=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.activeNode}')
+    ACT_NODE=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.nodes.active}')
 done
 
 echo "Vault cluster setup complete!"

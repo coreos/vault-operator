@@ -23,19 +23,19 @@ func TestCreateHAVault(t *testing.T) {
 
 	vaultCR, tlsConfig := e2eutil.WaitForCluster(t, f.KubeClient, f.VaultsCRClient, vaultCR)
 
-	conns, err := e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, tlsConfig, vaultCR.Status.AvailableNodes...)
+	conns, err := e2eutil.PortForwardVaultClients(f.KubeClient, f.Config, f.Namespace, tlsConfig, vaultCR.Status.Nodes.Available...)
 	if err != nil {
 		t.Fatalf("failed to portforward and create vault clients: %v", err)
 	}
 	defer e2eutil.CleanupConnections(t, f.Namespace, conns)
 
 	// Init vault via the first available node
-	podName := vaultCR.Status.AvailableNodes[0]
+	podName := vaultCR.Status.Nodes.Available[0]
 	conn := e2eutil.GetConnOrFail(t, podName, conns)
 	vaultCR, initResp := e2eutil.InitializeVault(t, f.VaultsCRClient, vaultCR, conn)
 
 	// Unseal the 1st vault node and wait for it to become active
-	podName = vaultCR.Status.SealedNodes[0]
+	podName = vaultCR.Status.Nodes.Sealed[0]
 	conn = e2eutil.GetConnOrFail(t, podName, conns)
 	if err := e2eutil.UnsealVaultNode(initResp.Keys[0], conn); err != nil {
 		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
@@ -46,7 +46,7 @@ func TestCreateHAVault(t *testing.T) {
 	}
 
 	// Unseal the 2nd vault node(the remaining sealed node) and wait for it to become standby
-	podName = vaultCR.Status.SealedNodes[0]
+	podName = vaultCR.Status.Nodes.Sealed[0]
 	conn = e2eutil.GetConnOrFail(t, podName, conns)
 	if err := e2eutil.UnsealVaultNode(initResp.Keys[0], conn); err != nil {
 		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
@@ -57,7 +57,7 @@ func TestCreateHAVault(t *testing.T) {
 	}
 
 	// Write secret to active node
-	podName = vaultCR.Status.ActiveNode
+	podName = vaultCR.Status.Nodes.Active
 	conn, ok := conns[podName]
 	if !ok {
 		t.Fatalf("failed to find vault client for pod (%v)", podName)

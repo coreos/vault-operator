@@ -9,7 +9,7 @@ We will add following fields to Vault status:
 
 ```
 // PodNames of the up-to-date Vault Pods
-UpdatedNodes []string
+Updated []string
 ```
 
 The status update goroutine will take care of it.
