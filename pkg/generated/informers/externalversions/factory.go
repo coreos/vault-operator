@@ -9,9 +9,9 @@ Commercial software license.
 package externalversions
 
 import (
-	versioned "github.com/coreos/vault-operator/pkg/generated/clientset/versioned"
-	internalinterfaces "github.com/coreos/vault-operator/pkg/generated/informers/externalversions/internalinterfaces"
-	vault "github.com/coreos/vault-operator/pkg/generated/informers/externalversions/vault"
+	versioned "github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned"
+	internalinterfaces "github.com/coreos-inc/vault-operator/pkg/generated/informers/externalversions/internalinterfaces"
+	vault "github.com/coreos-inc/vault-operator/pkg/generated/informers/externalversions/vault"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
