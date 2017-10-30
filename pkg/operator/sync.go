@@ -114,7 +114,7 @@ func (v *Vaults) syncVault(key string) (err error) {
 	// TODO: remove this when we have initializers for Vault CR.
 	changed := vr.SetDefaults()
 	if changed {
-		vr, err = v.vaultsCRCli.Update(context.TODO(), vr)
+		vr, err = v.vaultsCRCli.VaultV1alpha1().VaultServices(vr.Namespace).Update(vr)
 		if err != nil {
 			return err
 		}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/coreos-inc/vault-operator/pkg/client"
+	"github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 	"github.com/coreos-inc/vault-operator/test/e2e/e2eutil"
 
@@ -34,7 +35,7 @@ type Framework struct {
 	crdcli         apiextensionsclient.Interface
 	Config         *restclient.Config
 	RESTClient     *restclient.RESTClient
-	VaultsCRClient client.Vaults
+	VaultsCRClient versioned.Interface
 	Namespace      string
 	vopImage       string
 	eopImage       string
@@ -60,10 +61,7 @@ func Setup() error {
 	if err != nil {
 		return fmt.Errorf("failed to create kube CRD client: %v", err)
 	}
-	vaultsCRClient, err := client.NewCRClient(config)
-	if err != nil {
-		return fmt.Errorf("failed to create CR client: %v", err)
-	}
+	vaultsCRClient := client.MustNew(config)
 
 	Global = &Framework{
 		KubeClient:     kubeClient,

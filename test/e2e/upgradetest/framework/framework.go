@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/coreos-inc/vault-operator/pkg/client"
+	"github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 	"github.com/coreos-inc/vault-operator/pkg/util/probe"
 	"github.com/coreos-inc/vault-operator/test/e2e/e2eutil"
@@ -31,7 +32,7 @@ var (
 type Framework struct {
 	KubeClient     kubernetes.Interface
 	Config         *restclient.Config
-	VaultsCRClient client.Vaults
+	VaultsCRClient versioned.Interface
 	Namespace      string
 	oldVOPImage    string
 	newVOPImage    string
@@ -55,10 +56,7 @@ func Setup() error {
 	if err != nil {
 		return fmt.Errorf("faild to create kube client: %v", err)
 	}
-	vaultsCRClient, err := client.NewCRClient(config)
-	if err != nil {
-		return fmt.Errorf("failed to create CR client: %v", err)
-	}
+	vaultsCRClient := client.MustNew(config)
 
 	Global = &Framework{
 		KubeClient:     kubeClient,

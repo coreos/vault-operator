@@ -17,7 +17,7 @@ import (
 
 func (v *Vaults) run(ctx context.Context) {
 	source := cache.NewListWatchFromClient(
-		v.vaultsCRCli.RESTClient(),
+		v.vaultsCRCli.VaultV1alpha1().RESTClient(),
 		api.VaultServicePlural,
 		v.namespace,
 		fields.Everything())
