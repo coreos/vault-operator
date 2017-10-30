@@ -1,5 +1,5 @@
-hash: d8c016256cb7990a9c721e500679a3d89477958edf6e09a78185323b331476ec
-updated: 2017-10-30T10:34:49.863354209-07:00
+hash: 1c837e8263678b5caf714c6feaa4565256a860e801629fcb13ce259ec144a24d
+updated: 2017-10-30T15:30:40.741763587-07:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -141,7 +141,7 @@ imports:
   - json/scanner
   - json/token
 - name: github.com/hashicorp/vault
-  version: af63d879130d2ee292f09257571d371100a513eb
+  version: 6b29fb2b7f70ed538ee2b3c057335d706b6d4e36
   subpackages:
   - api
   - helper/compressutil
@@ -366,6 +366,7 @@ imports:
   version: 35ccd4336052e7d73018b1382413534936f34eee
   subpackages:
   - discovery
+  - discovery/fake
   - kubernetes
   - kubernetes/scheme
   - kubernetes/typed/admissionregistration/v1alpha1
@@ -396,6 +397,7 @@ imports:
   - plugin/pkg/client/auth/gcp
   - rest
   - rest/watch
+  - testing
   - third_party/forked/golang/template
   - tools/auth
   - tools/cache
