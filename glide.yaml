@@ -1,17 +1,16 @@
 package: github.com/coreos-inc/vault-operator
 import:
 - package: k8s.io/client-go
-  version: 1850dd66e4213a26bd70d0b85fee4176d324b845
+  version: kubernetes-1.8.2
 - package: k8s.io/api
-  version: e532fdb5587debfd7aade56dabe9eb5df9544baf
+  version: kubernetes-1.8.2
 - package: k8s.io/apimachinery
-  version: a13245d02534abe88286859b547d041816f9a3f4
+  version: kubernetes-1.8.2
 - package: k8s.io/apiextensions-apiserver
-  version: 6d8c23d2e66ce61e2a7e34f92e8eb3eec13279fa
-- package: github.com/Sirupsen/logrus
+  version: kubernetes-1.8.2
+- package: github.com/sirupsen/logrus
   version: v1.0.0
 - package: github.com/coreos/etcd-operator
-  version: 7318f757a8847cbdb1a36e05dd55b085230ef75a
+  version: 7b8940180c24d5490e740d165bd85623693278ad
 - package: github.com/hashicorp/vault
   version: v0.8.0
-- package: golang.org/x/sync/syncmap # changed to sync.Map in Go 1.9

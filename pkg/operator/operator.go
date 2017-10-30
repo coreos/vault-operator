@@ -8,7 +8,8 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/client"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 
-	etcdCRClient "github.com/coreos/etcd-operator/pkg/client"
+	etcdCRClientPkg "github.com/coreos/etcd-operator/pkg/client"
+	etcdCRClient "github.com/coreos/etcd-operator/pkg/generated/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
@@ -31,7 +32,7 @@ type Vaults struct {
 
 	kubecli     kubernetes.Interface
 	vaultsCRCli client.Vaults
-	etcdCRCli   etcdCRClient.EtcdClusterCR
+	etcdCRCli   etcdCRClient.Interface
 }
 
 // New creates a vault operator.
@@ -42,7 +43,7 @@ func New() *Vaults {
 		toDelete:    map[string]*api.VaultService{},
 		kubecli:     k8sutil.MustNewKubeClient(),
 		vaultsCRCli: client.MustNewInCluster(),
-		etcdCRCli:   etcdCRClient.MustNewCRInCluster(),
+		etcdCRCli:   etcdCRClientPkg.MustNewInCluster(),
 	}
 }
 

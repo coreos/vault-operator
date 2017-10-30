@@ -9,9 +9,9 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 	"github.com/coreos-inc/vault-operator/test/e2e/e2eutil"
 
-	"github.com/Sirupsen/logrus"
 	eopK8sutil "github.com/coreos/etcd-operator/pkg/util/k8sutil"
 	"github.com/coreos/etcd-operator/pkg/util/probe"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
