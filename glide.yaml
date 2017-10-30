@@ -13,4 +13,4 @@ import:
 - package: github.com/coreos/etcd-operator
   version: 7b8940180c24d5490e740d165bd85623693278ad
 - package: github.com/hashicorp/vault
-  version: v0.8.0
+  version: v0.8.3
