@@ -6,7 +6,7 @@ Commercial software license.
 package versioned
 
 import (
-	vaultv1alpha1 "github.com/coreos/vault-operator/pkg/generated/clientset/versioned/typed/vault/v1alpha1"
+	vaultv1alpha1 "github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned/typed/vault/v1alpha1"
 	glog "github.com/golang/glog"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"

@@ -9,7 +9,7 @@ Commercial software license.
 package internalinterfaces
 
 import (
-	versioned "github.com/coreos/vault-operator/pkg/generated/clientset/versioned"
+	versioned "github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	cache "k8s.io/client-go/tools/cache"
 	time "time"
