@@ -1,7 +1,6 @@
 package k8sutil
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -11,7 +10,7 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
 	etcdCRAPI "github.com/coreos/etcd-operator/pkg/apis/etcd/v1beta2"
-	etcdCRClient "github.com/coreos/etcd-operator/pkg/client"
+	etcdCRClient "github.com/coreos/etcd-operator/pkg/generated/clientset/versioned"
 	"github.com/coreos/etcd-operator/pkg/util/retryutil"
 	vaultapi "github.com/hashicorp/vault/api"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
@@ -50,11 +49,11 @@ func EtcdPeerTLSSecretName(vaultName string) string {
 
 // DeployEtcdCluster creates an etcd cluster for the given vault's name via etcd operator and
 // waits for all of its members to be ready.
-func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *api.VaultService) error {
+func DeployEtcdCluster(etcdCRCli etcdCRClient.Interface, v *api.VaultService) error {
 	size := 3
 	etcdCluster := &etcdCRAPI.EtcdCluster{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       etcdCRAPI.CRDResourceKind,
+			Kind:       etcdCRAPI.EtcdClusterResourceKind,
 			APIVersion: etcdCRAPI.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -82,7 +81,7 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *api.VaultService
 		},
 	}
 	AddOwnerRefToObject(etcdCluster, AsOwner(v))
-	_, err := etcdCRCli.Create(context.TODO(), etcdCluster)
+	_, err := etcdCRCli.EtcdV1beta2().EtcdClusters(v.Namespace).Create(etcdCluster)
 	if err != nil {
 		if apierrors.IsAlreadyExists(err) {
 			return nil
@@ -91,7 +90,7 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *api.VaultService
 	}
 
 	err = retryutil.Retry(10*time.Second, 10, func() (bool, error) {
-		er, err := etcdCRCli.Get(context.TODO(), v.Namespace, EtcdNameForVault(v.Name))
+		er, err := etcdCRCli.EtcdV1beta2().EtcdClusters(v.Namespace).Get(EtcdNameForVault(v.Name), metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -107,8 +106,8 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *api.VaultService
 }
 
 // DeleteEtcdCluster deletes the etcd cluster for the given vault
-func DeleteEtcdCluster(etcdCRCli etcdCRClient.EtcdClusterCR, v *api.VaultService) error {
-	err := etcdCRCli.Delete(context.TODO(), v.Namespace, EtcdNameForVault(v.Name))
+func DeleteEtcdCluster(etcdCRCli etcdCRClient.Interface, v *api.VaultService) error {
+	err := etcdCRCli.EtcdV1beta2().EtcdClusters(v.Namespace).Delete(EtcdNameForVault(v.Name), nil)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}

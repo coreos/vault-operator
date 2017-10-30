@@ -53,7 +53,7 @@ func main() {
 	rl, err := resourcelock.New(resourcelock.EndpointsResourceLock,
 		namespace,
 		"vault-operator",
-		kubecli,
+		kubecli.CoreV1(),
 		resourcelock.ResourceLockConfig{
 			Identity:      id,
 			EventRecorder: createRecorder(kubecli, name, namespace),

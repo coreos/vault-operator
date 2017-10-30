@@ -8,13 +8,17 @@ if [ -z "${PASSES-}" ]; then
 	PASSES="build e2e unit"
 fi
 
+function listPkgs() {
+	go list ./cmd/... ./pkg/... | grep -v generated
+}
+
 function build_pass {
 	IMAGE=$OPERATOR_IMAGE hack/build
 	IMAGE=$OPERATOR_IMAGE hack/push
 }
 
 function unit_pass {
-	TEST_PKGS=`go list ./cmd/... ./pkg/...`
+	TEST_PKGS=$(listPkgs)
 	for pkg in $TEST_PKGS
 	do
 		go test $pkg

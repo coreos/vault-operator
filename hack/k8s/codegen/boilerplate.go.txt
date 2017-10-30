@@ -1,0 +1,5 @@
+/*
+Copyright YEAR The vault-operator Authors
+
+Commercial software license.
+*/
