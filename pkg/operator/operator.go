@@ -6,6 +6,7 @@ import (
 
 	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/pkg/client"
+	"github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 
 	etcdCRClientPkg "github.com/coreos/etcd-operator/pkg/client"
@@ -31,7 +32,7 @@ type Vaults struct {
 	queue    workqueue.RateLimitingInterface
 
 	kubecli     kubernetes.Interface
-	vaultsCRCli client.Vaults
+	vaultsCRCli versioned.Interface
 	etcdCRCli   etcdCRClient.Interface
 }
 

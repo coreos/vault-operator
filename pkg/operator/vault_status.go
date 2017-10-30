@@ -126,7 +126,7 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, vr *api.VaultSer
 
 // updateVaultCRStatus updates the status field of the Vault CR.
 func (vs *Vaults) updateVaultCRStatus(ctx context.Context, name, namespace string, status api.VaultServiceStatus) (*api.VaultService, error) {
-	vault, err := vs.vaultsCRCli.Get(ctx, namespace, name)
+	vault, err := vs.vaultsCRCli.VaultV1alpha1().VaultServices(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -134,6 +134,6 @@ func (vs *Vaults) updateVaultCRStatus(ctx context.Context, name, namespace strin
 		return vault, nil
 	}
 	vault.Status = status
-	_, err = vs.vaultsCRCli.Update(ctx, vault)
+	_, err = vs.vaultsCRCli.VaultV1alpha1().VaultServices(namespace).Update(vault)
 	return vault, err
 }

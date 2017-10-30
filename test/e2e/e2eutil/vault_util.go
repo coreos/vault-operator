@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
-	"github.com/coreos-inc/vault-operator/pkg/client"
+	"github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 
 	vaultapi "github.com/hashicorp/vault/api"
@@ -14,7 +14,7 @@ import (
 
 // WaitForCluster waits for all available nodes of a cluster to appear in the vault CR status
 // Returns the updated vault cluster and the TLS configuration to use for vault clients interacting with the cluster
-func WaitForCluster(t *testing.T, kubeClient kubernetes.Interface, vaultsCRClient client.Vaults, vaultCR *api.VaultService) (*api.VaultService, *vaultapi.TLSConfig) {
+func WaitForCluster(t *testing.T, kubeClient kubernetes.Interface, vaultsCRClient versioned.Interface, vaultCR *api.VaultService) (*api.VaultService, *vaultapi.TLSConfig) {
 	vaultCR, err := WaitAvailableVaultsUp(t, vaultsCRClient, int(vaultCR.Spec.Nodes), 6, vaultCR)
 	if err != nil {
 		t.Fatalf("failed to wait for cluster nodes to become available: %v", err)
@@ -30,7 +30,7 @@ func WaitForCluster(t *testing.T, kubeClient kubernetes.Interface, vaultsCRClien
 // InitializeVault initializes the specified vault cluster and waits for all available nodes to appear as sealed.
 // Requires established portforwarded connections to the vault pods
 // Returns the updated vault cluster and the initialization response which includes the unseal key
-func InitializeVault(t *testing.T, vaultsCRClient client.Vaults, vault *api.VaultService, conn *Connection) (*api.VaultService, *vaultapi.InitResponse) {
+func InitializeVault(t *testing.T, vaultsCRClient versioned.Interface, vault *api.VaultService, conn *Connection) (*api.VaultService, *vaultapi.InitResponse) {
 	initOpts := &vaultapi.InitRequest{SecretShares: 1, SecretThreshold: 1}
 	initResp, err := conn.VClient.Sys().Init(initOpts)
 	if err != nil {
