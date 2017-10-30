@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/pkg/util/probe"
+	"github.com/sirupsen/logrus"
 
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/wait"

@@ -9,8 +9,8 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
-	"github.com/Sirupsen/logrus"
 	vaultapi "github.com/hashicorp/vault/api"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"

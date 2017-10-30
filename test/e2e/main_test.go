@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/coreos-inc/vault-operator/test/e2e/framework"
+	"github.com/sirupsen/logrus"
 )
 
 func TestMain(m *testing.M) {

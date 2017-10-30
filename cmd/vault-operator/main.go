@@ -12,7 +12,7 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/util/probe"
 	"github.com/coreos-inc/vault-operator/version"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"

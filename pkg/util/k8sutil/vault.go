@@ -10,8 +10,8 @@ import (
 	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
+	etcdCRAPI "github.com/coreos/etcd-operator/pkg/apis/etcd/v1beta2"
 	etcdCRClient "github.com/coreos/etcd-operator/pkg/client"
-	etcdCRAPI "github.com/coreos/etcd-operator/pkg/spec"
 	"github.com/coreos/etcd-operator/pkg/util/retryutil"
 	vaultapi "github.com/hashicorp/vault/api"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
