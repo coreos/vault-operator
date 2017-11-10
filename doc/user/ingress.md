@@ -1,24 +1,24 @@
-# Setup Ingress for Vault Service
+# Set up Ingress for Vault Service
 
-This guide shows how to make the vault service accessible from outside a k8s cluster by setting up an Ingress resource. For more information about ingress see the [tectonic ingress docs][tectonic ingress docs].
+This guide shows how to make the Vault service accessible from outside a Kubernetes cluster by setting up an Ingress resource. For more information about Ingress see the [Tectonic Ingress docs][tectonic ingress docs].
 
-Have a vault cluster that is already initialized and unsealed. You can use the [create-cluster][create-cluster] script for a quick setup.
+Before beginning, create a Vault cluster that is initialized and unsealed. Use the [create-cluster][create-cluster] script for a quick setup.
 
 ### Assumptions
 
-- This example assumes a vault cluster named `example-vault` in the namespace `vault-services` whose service is accessible at `https://example-vault.vault-services.svc:8200` from inside the cluster.
+* This example assumes a Vault cluster named `example-vault` in the namespace `vault-services` whose service is accessible at `https://example-vault.vault-services.svc:8200` from inside the cluster.
 
-- The ingress hostname used to access the vault service will be `vault.ingress.staging.core-os.net`.
+* The Ingress hostname used to access the Vault service will be `vault.ingress.staging.core-os.net`.
 
-- The tectonic cluster is on AWS.
+* The Tectonic cluster is on AWS.
 
 Modify the example as needed for your use case.
 
-## Generate custom TLS assets for the ingress host:
+## Generate custom TLS assets for the Ingress host
 
-The ingress host can be configured with TLS assets for secure access.
+The Ingress host can be configured with TLS assets for secure access.
 
-Use the [tls-gen][tls-gen] script to generate the required TLS assets as secrets in the namespace of your vault cluster:
+Use the [tls-gen][tls-gen] script to generate the required TLS assets as secrets in the namespace of the Vault cluster:
 
 ```sh
 KUBE_NS=vault-services \
@@ -30,12 +30,12 @@ SERVER_KEY=tls.key \
 hack/tls-gen.sh
 ```
 
-- `vault-server-ingress-tls`: secret that contains the ingress server certificate `tls.crt` and key `tls.key`
-- `vault-client-ingress-tls`: secret that contains the CA certificate `vault-client-ca.crt` that can be used to verify the ingress host
+* `vault-server-ingress-tls`: secret that contains the Ingress server certificate `tls.crt` and key `tls.key`
+* `vault-client-ingress-tls`: secret that contains the CA certificate `vault-client-ca.crt` used to verify the Ingress host
 
-## Create the ingress resource
+## Create the Ingress resource
 
-Create the following ingress resource:
+Create the following Ingress resource:
 
 ```yaml
 kind: Ingress
@@ -59,24 +59,23 @@ spec:
             backend:
               serviceName: example-vault
               servicePort: 8200
-
 ```
 
-## Create DNS record for the ingress host
+## Create DNS record for the Ingress host
 
-The traffic on the ingress host `vault.ingress.staging.core-os.net` needs to reach the ingress controller in the tectonic cluster.
+The traffic on the Ingress host `vault.ingress.staging.core-os.net` must reach the Ingress controller in the Tectonic cluster.
 
-To enable that a DNS alias record for `vault.ingress.staging.core-os.net` needs to be present which redirects traffic to the ELB of the tectonic cluster.
+To enable that a DNS alias record for `vault.ingress.staging.core-os.net` must be present which redirects traffic to the ELB of the Tectonic cluster.
 
-1. Find the DNS name of your tectonic ELB from the aws console. The ELB should be named `<tectonic-cluster-name>-con`.
+1. Find the DNS name of your Tectonic ELB from the AWS console. The ELB should be named `<tectonic-cluster-name>-con`.
 
-2. Create a record set in the hosted zone for the ingress host. In this case we create the record set named `vault.ingress.k8s.staging.core-os.net` in the hosted zone `staging.core-os.net`. Choose the type `A` and select Alias as `Yes`. Set the Alias Target to the the DNS name of the ELB from the previous step.
+2. Create a record set in the hosted zone for the Ingress host. In this case we create the record set named `vault.ingress.k8s.staging.core-os.net` in the hosted zone `staging.core-os.net`. Choose the type `A` and select Alias as `Yes`. Set the Alias Target to the DNS name of the ELB from the previous step.
 
-## Access the vault service through the ingress host
+## Access the Vault service through the Ingress host
 
-Your vault CLI should now be able to successfully interact with the vault service through ingress host.
+Your Vault CLI should now be able to successfully interact with the Vault service through Ingress host.
 
-Set the following environment variables to access the vault service:
+Set the following environment variables to access the Vault service:
 
 ```sh
 VAULT_TLS_SERVER_NAME=vault.ingress.staging.core-os.net
@@ -85,7 +84,8 @@ VAULT_TOKEN=<root token>
 VAULT_SKIP_VERIFY=true
 ```
 
-To verify the ingress server certificate first get the CA cert file `vault-client-ca.crt` from the `vault-client-ingress-tls` secret and base64 decode it into a local file, then set the following envs:
+To verify the Ingress server certificate first get the CA cert file `vault-client-ca.crt` from the `vault-client-ingress-tls` secret and base64 decode it into a local file, then set the following envs:
+
 ```sh
 VAULT_CACERT=<path-to-ca-cert>
 VAULT_SKIP_VERIFY=false
