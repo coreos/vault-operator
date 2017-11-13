@@ -1,24 +1,25 @@
-# Setup Vault-UI on Tectonic
+# Set up Vault-UI on Tectonic
 
-[Vault-UI](https://github.com/djenriquez/vault-ui) is an open source project for managing and interacting with Vault via a web UI. Vault by itself does not provide a web UI all interactions are done either using the Vault CLI or REST API calls.
+[Vault-UI](https://github.com/djenriquez/vault-ui) is an open source project for managing and interacting with Vault through a web UI. Vault itself does not provide a web UI. All interactions are done using either the Vault CLI or REST API calls.
 
 ### Prerequisites
 
-- Setup an initialized and unsealed vault cluster. Use the [create-cluster][create-cluster] script for a quick setup.
-- Installed and initialized Helm per [these instructions][helm-install]
+- Set up an initialized and unsealed Vault cluster. Use the [create-cluster][create-cluster] script for a quick setup.
+- Install and initialize Helm using the [Helm installation instructions][helm-install]
 
-This example assumes a vault cluster named `example-vault` in the namespace `vault-services`.
+This example assumes a Vault cluster named `example-vault` in the namespace `vault-services`.
 
-## Install the Vault-UI
+## Install Vault-UI
 
-The Vault UI can be setup by configuring and installing the Helm chart provided in the Vault UI repo.
+To install Vault-UI, install and configure the Helm chart provided in the Vault-UI repo.
 
 Clone Vault-UI repository:
 ```sh
 git clone https://github.com/djenriquez/vault-ui
 ```
 
-Modify the file `vault-ui/kubernetes/chart/vault-ui/templates/deployment.yaml` to add the `NODE_TLS_REJECT_UNAUTHORIZED` environment variable to to allow self-signed HTTPS certificates.
+Modify the file `vault-ui/kubernetes/chart/vault-ui/templates/deployment.yaml` to add the `NODE_TLS_REJECT_UNAUTHORIZED` environment variable to allow self-signed HTTPS certificates.
+
 ```sh
         env:
             - name: VAULT_URL_DEFAULT
@@ -30,15 +31,14 @@ Modify the file `vault-ui/kubernetes/chart/vault-ui/templates/deployment.yaml` t
 
 ```
 
-Next modify the file `vault-ui/kubernetes/chart/vault-ui/values.yaml` to configure the way to access the Vault-UI e.g using Ingress, ClusterIP, LoadBalancer etc.
+Next modify the file `vault-ui/kubernetes/chart/vault-ui/values.yaml` to configure the way to access the Vault-UI using Ingress, ClusterIP, LoadBalancer, or other access means.
 
 **Configuration for Ingress:**
 
-The following example will setup the vault UI to be accessbile at the ingress host `vault-ui.ingress.staging.core-os.net` in the namespace `vault-services`.
-Change the ingress hostname and namespace as needed.
+The following example will set up Vault-UI to be accessible at the Ingress host `vault-ui.ingress.staging.core-os.net` in the namespace `vault-services`. Change the Ingress hostname and namespace as needed.
 
+To use Ingress first manually create a TLS certificate that will be used to set up the Ingress resource for Vault-UI, as described in the [Vault TLS setup guide][ingress-tls]:
 
-If you use ingress you’ll need to manually create TLS certificate that will be used to setup the ingress resource for the Vault-UI as described in the [ingress setup][ingress-tls] guide:
 ```sh
 KUBE_NS=vault-services \
 SERVER_SECRET=vault-ui-server-ingress-tls \
@@ -49,7 +49,7 @@ SERVER_KEY=tls.key \
 hack/tls-gen.sh
 ```
 
-With the above secrets the `vaules.yaml` file should be modified to look like:
+Use the secrets listed above to modify the `vaules.yaml` file:
 
 ```yaml
 replicaCount: 1
@@ -79,18 +79,18 @@ vault:
   url: https://example-vault:8200
 ```
 
-Use Helm to install the Vault-UI within the `vault-services` namespace:
+Use Helm to install Vault-UI within the `vault-services` namespace:
 
 ```sh
 $ cd vault-ui/kubernetes/chart/vault-ui
 $ helm install . --namespace=vault-services
 ```
 
-## Accessing the Vault-UI
+## Accessing Vault-UI
 
 After running Helm install it will give you notes on how to access Vault-UI via port-forwarding. If you are unable to access Vault-UI via Ingress you might want to try accessing it via port-forwarding to isolate the issue.
 
-With the ingress configuration the vault UI should be accessible at the ingress host `vault-ui.ingress.staging.core-os.net`. Make sure to setup the DNS record for the ingress host to make it accessible as described in the [ingress guide][ingress-dns].
+With the Ingress configuration Vault-UI should be accessible at the Ingress host `vault-ui.ingress.staging.core-os.net`. Make sure to set up the DNS record for the Ingress host to make it accessible as described in the [Ingress setup guide][ingress-dns].
 
 
 [create-cluster]: ../../hack/helper/create-cluster.sh
