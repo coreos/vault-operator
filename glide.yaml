@@ -11,6 +11,6 @@ import:
 - package: github.com/sirupsen/logrus
   version: v1.0.0
 - package: github.com/coreos/etcd-operator
-  version: 7b8940180c24d5490e740d165bd85623693278ad
+  version: v0.7.0
 - package: github.com/hashicorp/vault
   version: v0.8.3
