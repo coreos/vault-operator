@@ -1,5 +1,5 @@
-hash: 1c837e8263678b5caf714c6feaa4565256a860e801629fcb13ce259ec144a24d
-updated: 2017-10-30T15:30:40.741763587-07:00
+hash: 15ce517d90d11a404ef51819271835eacbf8f99b0f7777356d240d48677a681d
+updated: 2017-11-15T14:16:54.504708403-08:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -22,10 +22,9 @@ imports:
   - pkg/tlsutil
   - pkg/transport
 - name: github.com/coreos/etcd-operator
-  version: 7b8940180c24d5490e740d165bd85623693278ad
+  version: 3bcbdb19d9a82a48d49f280ba7facb87060d8303
   subpackages:
   - pkg/apis/etcd/v1beta2
-  - pkg/backup/env
   - pkg/client
   - pkg/generated/clientset/versioned
   - pkg/generated/clientset/versioned/scheme
@@ -243,7 +242,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/appengine
-  version: a2e0dc829727a4f957a7428b1f322805cfc1f362
+  version: 9d8544a6b2c7df9cff240fcf92d7b2f59bc13416
   subpackages:
   - internal
   - internal/app_identity
