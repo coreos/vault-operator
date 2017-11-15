@@ -13,10 +13,10 @@ See [Vault operator][getting-started] for information on managing Vault instance
 
 Initialize a new Vault cluster before performing any operations.
 
-1. Configure port forwarding between the local machine and the first sealed Vault node:
+1. Configure port forwarding between the local machine and the first available Vault node:
 
 ```sh
-kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.sealed[0]}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.available[0]}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
 ```
 
 2. Open a new terminal.
