@@ -15,31 +15,31 @@ Initialize a new Vault cluster before performing any operations.
 
 1. Configure port forwarding between the local machine and the first available Vault node:
 
-```sh
-kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.available[0]}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
-```
+    ```sh
+    kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.available[0]}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+    ```
 
 2. Open a new terminal.
 
 3. Export the following environment for [Vault CLI environment][vault-cli-env]:
 
-```sh
-export VAULT_ADDR='https://localhost:8200'
-export VAULT_SKIP_VERIFY="true"
-```
+    ```sh
+    export VAULT_ADDR='https://localhost:8200'
+    export VAULT_SKIP_VERIFY="true"
+    ```
 
 4. Verify that the Vault server is accessible using the Vault CLI:
 
-```sh
-$ vault status
+    ```sh
+    $ vault status
 
-Error checking seal status: Error making API request.
+    Error checking seal status: Error making API request.
 
-URL: GET https://localhost:8200/v1/sys/seal-status
-Code: 400. Errors:
+    URL: GET https://localhost:8200/v1/sys/seal-status
+    Code: 400. Errors:
 
-* server is not yet initialized
-```
+    * server is not yet initialized
+    ```
 
 A response confirms that the Vault CLI is ready to interact with the Vault server. However, the output indicates that the Vault server is not initialized.
 
@@ -49,11 +49,22 @@ A response confirms that the Vault CLI is ready to interact with the Vault serve
 
 ## Unsealing a sealed node
 
-1. Ensure that the desired sealed node is accessible from the Vault CLI via portforwarding.
+1. Configure port forwarding between the local machine and the first sealed Vault node:
 
-    For more information see [Initializing a Vault cluster](#initializing-a-vault-cluster).
+    ```sh
+    kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.sealed[0]}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+    ```
 
-2. Unseal the Vault node by using the unseal keys generated from the initialized Vault cluster.
+2. Open a new terminal.
+
+3. Export the following environment for [Vault CLI environment][vault-cli-env]:
+
+    ```sh
+    export VAULT_ADDR='https://localhost:8200'
+    export VAULT_SKIP_VERIFY="true"
+    ```
+
+4. Unseal the Vault node by using the unseal keys generated from the initialized Vault cluster.
 
     See [Seal/Unseal a Vault node][seal-unseal-vault] on how to unseal a vault node.
 
@@ -63,39 +74,41 @@ The first node that is unsealed in a multi-node Vault cluster will become the ac
 
 1. Check the active Vault node:
 
-```sh
-kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.active}'
-```
+    ```sh
+    kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.active}'
+    ```
 
 2. Configure port forwarding between the local machine and the active Vault node:
 
-```sh
-kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
-```
+    ```sh
+    kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+    ```
 
 3. Open a new terminal.
+
 4. Export the following environment for [Vault CLI environment][vault-cli-env].
     The root token used to authenticate the Vault CLI requests is given below. Replace the `<root-token>` with the root token generated during [Initalization](#initializing-a-vault-cluster).
 
-```sh
-export VAULT_ADDR='https://localhost:8200'
-export VAULT_SKIP_VERIFY="true"
-export VAULT_TOKEN=<root-token>
-```
+    ```sh
+    export VAULT_ADDR='https://localhost:8200'
+    export VAULT_SKIP_VERIFY="true"
+    export VAULT_TOKEN=<root-token>
+    ```
+
     Consult the [Vault Authentication][authentication] docs for more advanced configuration.
 
 5. Write and read an example secret:
 
-```sh
-$ vault write secret/foo value=bar
+    ```sh
+    $ vault write secret/foo value=bar
 
-$ vault read secret/foo
+    $ vault read secret/foo
 
-Key             	Value
----             	-----
-refresh_interval	768h0m0s
-value           	bar
-```
+    Key             	Value
+    ---             	-----
+    refresh_interval	768h0m0s
+    value           	bar
+    ```
 
     Successful operations indicate that the active Vault node is serving requests.
 
@@ -119,10 +132,10 @@ A standby Vault node is initialized and unsealed, but does not hold the leader e
 
 2. Verify that the node becomes standby:
 
-```sh
-$ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.standby}'
-[example-vault-1003480066-jzmwd]
-```
+    ```sh
+    $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.standby}'
+    [example-vault-1003480066-jzmwd]
+    ```
 
     The setup now contains an active and a standby Vault node.
 
@@ -130,28 +143,24 @@ $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.
 
 In an HA Vault setup, when the active node goes down the standby node takes over the active role and starts serving client requests.
 
-To see how it works, terminate the active node, then create a port forward session between the local machine and the newly activated node.
+To see how it works, terminate the active node, and wait for the standby node to become active.
 
 1. Terminate the active Vault node:
 
-```
-kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services delete po {}
-```
+    ```
+    kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services delete po {}
+    ```
 
     The standby node becomes active.
 
-2. Verify that the node is active:
+2. Verify that the previous standby node is now active:
 
-```
-$ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.active}'
-example-vault-1003480066-jzmwd
-```
+    ```
+    $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.active}'
+    example-vault-1003480066-jzmwd
+    ```
 
-3. Create a new port forward session between the local machine and the new active node.
-
-   See [Initializing a Vault cluster](#initializing-a-vault-cluster) for more information on how to portforward to a sealed node.
-
-   Successful operations indicate that automated failover works as expected.
+Regular vault operations like reading and writing a secret to the active node should now succeed.
 
 ## Failure recovery
 
@@ -165,19 +174,19 @@ To see how it works, perform the following:
 
 2. Verify that a new Vault node is created:
 
-```
-$ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.available}'
-[example-vault-1003480066-jzmwd example-vault-994933690-h066h]
-```
+    ```
+    $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.available}'
+    [example-vault-1003480066-jzmwd example-vault-994933690-h066h]
+    ```
 
 3. Verify that the newly created Vault node is sealed:
 
-```
-$ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.sealed}'
-[example-vault-994933690-h066h]
-```
+    ```
+    $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.sealed}'
+    [example-vault-994933690-h066h]
+    ```
 
-    A new Vault node is created to replace the terminated one. Unseal the node and continue using HA.
+A new Vault node is created to replace the terminated one. Unseal the node and continue using HA.
 
 
 [getting-started]: ../../README.md#getting-started
