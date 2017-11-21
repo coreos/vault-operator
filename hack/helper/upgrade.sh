@@ -10,7 +10,7 @@ set -o pipefail
 : ${KUBE_NS:?"Need to set KUBE_NS"}
 : ${VAULT_CLUSTER_NAME:?"Need to set VAULT_CLUSTER_NAME"}
 : ${UNSEAL_KEY:?"Need to set UNSEAL_KEY"}
-# TODO: Check current version and automatically alternate between the two versions: 0.8.3-0 and 0.8.3-1
+# TODO: Check current version and automatically alternate between the two versions: 0.8.3-0 and 0.9.0-0
 : ${UPGRADE_TO:?"Need to set the vault version to upgrade to UPGRADE_TO"}
 
 RETRY_INTERVAL=5
