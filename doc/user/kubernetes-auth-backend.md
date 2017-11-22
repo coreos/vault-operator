@@ -115,9 +115,9 @@ token_duration                        	1h0m0s
 token_renewable                       	true
 token_policies                        	[default demo-policy]
 token_meta_role                       	"demo-role"
-token_meta_service_account_name       	"demo"
+token_meta_service_account_name       	"default"
 token_meta_service_account_namespace  	"vault-services"
-token_meta_service_account_secret_name	"demo-token-fndln"
+token_meta_service_account_secret_name	"default-token-fndln"
 token_meta_service_account_uid        	"aaf6c23c-b04a-11e7-9aea-0245c85cf1cc"
 ```
 
