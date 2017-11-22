@@ -23,7 +23,7 @@ To enable and configure the auth backend with the necessary roles and policies, 
 1. Configure port forwarding between the local machine and the active Vault node:
 
     ```sh
-    $ kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+    kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
     ```
 
 2. Open a new terminal. Use this terminal for the rest of this guide.
@@ -37,44 +37,54 @@ To enable and configure the auth backend with the necessary roles and policies, 
     export VAULT_TOKEN=<root-token>
     ```
 
+### Set up service account for Vault token review
+
+1. Create the service account `vault-tokenreview`:
+
+```sh
+kubectl -n vault-services create serviceaccount vault-tokenreview
+```
+
+2. Create the ClusterRoleBinding for the `vault-tokenreview` service account to access the k8s TokenReview API:
+
+```sh
+kubectl -n vault-services create -f example/k8s_auth/vault-tokenreview-binding.yaml
+```
+
+3. Fetch the token for the `vault-tokenreview` service account:
+```sh
+SECRET_NAME=$(kubectl -n vault-services get serviceaccount vault-tokenreview -o jsonpath='{.secrets[0].name}')
+TR_ACCOUNT_TOKEN=$(kubectl -n vault-services get secret ${SECRET_NAME} -o jsonpath='{.data.token}' | base64 --decode)
+```
+
 ### Enable and configure the backend
 
 1. Enable the Kubernetes auth backend:
 
     ```sh
-    $ vault auth-enable kubernetes
+    vault auth-enable kubernetes
     ```
 2. Configure the backend with the Kubernetes master server URL and certificate-authority-data.
 
     ```sh
-    $ vault write auth/kubernetes/config kubernetes_host=<server-url> kubernetes_ca_cert=@ca.crt
+    vault write auth/kubernetes/config kubernetes_host=<server-url> kubernetes_ca_cert=@ca.crt token_reviewer_jwt=$TR_ACCOUNT_TOKEN
     ```
 
 ### Create a policy and role
 
 The Kubernetes backend authorizes an entity by granting it a role mapped to a service account. A role is configured with policies which control the entity's access to paths and operations in Vault.
 
-1. Create the following policy file `demo-policy.hcl`:
-
-```sh
-$ cat << EOF > demo-policy.hcl
-path "secret/demo/*" {
-    capabilities = ["create", "read", "update", "delete", "list"]
-}
-EOF
-```
-
-2. Create a new policy `demo-policy` using the policy file `demo-policy.hcl`.
+1. Create a new policy `demo-policy` using example policy file `policy.hcl`.
 
     ```sh
-    $ vault write sys/policy/demo-policy rules=@demo-policy.hcl
+    vault write sys/policy/demo-policy policy=@example/k8s_auth/policy.hcl
     ```
 
-3. Create a new role `demo-role` configured for the service account `demo` and policy `demo-policy`:
+2. Create a new role `demo-role` configured for the service account `default` and policy `demo-policy`:
 
     ```sh
-    $ vault write auth/kubernetes/role/demo-role \
-        bound_service_account_names=demo \
+    vault write auth/kubernetes/role/demo-role \
+        bound_service_account_names=default \
         bound_service_account_namespaces=vault-services \
         policies=demo-policy \
         ttl=1h
@@ -82,49 +92,21 @@ EOF
 
 ## Authenticate requests using the service account token
 
-The backend can now be used to authenticate Vault requests using the service account `demo`.
-
-### Set up service account and RBAC
-
-1. Create the service account `demo`:
-
-```sh
-$ kubectl -n vault-services create serviceaccount demo
-```
-
-2. Create the ClusterRoleBinding for the `demo` service account so that it can be used to access the Token Review API:
-
-```sh
-$ cat <<EOF | kubectl create -f -
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
-metadata:
-  name: demo-tokenreview-binding
-  namespace: vault-services
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: system:auth-delegator
-subjects:
-- kind: ServiceAccount
-  name: demo
-  namespace: vault-services
-EOF
-```
+The backend can now be used to authenticate Vault requests using the service account `default`.
 
 ### Authenticate
 
 Now use the service account token to authenticate for the role `demo-role`
 
-1. Fetch the service account token for the `demo` service account:
+1. Fetch the token for the `default` service account:
 ```sh
-$ SECRET_NAME=$(kubectl -n vault-services get serviceaccount demo -o jsonpath='{.secrets[0].name}')
-$ DEMO_TOKEN=$(kubectl -n vault-services get secret ${SECRET_NAME} -o jsonpath='{.data.token}' | base64 --decode)
+SECRET_NAME=$(kubectl -n vault-services get serviceaccount default -o jsonpath='{.secrets[0].name}')
+DEFAULT_ACCOUNT_TOKEN=$(kubectl -n vault-services get secret ${SECRET_NAME} -o jsonpath='{.data.token}' | base64 --decode)
 ```
 
 2. Log in to the Kubernetes auth backend using the service account token:
 ```sh
-$ vault write auth/kubernetes/login role=demo-role jwt=${DEMO_TOKEN}
+$ vault write auth/kubernetes/login role=demo-role jwt=${DEFAULT_ACCOUNT_TOKEN}
 Key                                   	Value
 ---                                   	-----
 token                                 	74603479-607d-4ab8-a406-d0456d9f3d65
@@ -141,19 +123,21 @@ token_meta_service_account_uid        	"aaf6c23c-b04a-11e7-9aea-0245c85cf1cc"
 
 3. Set the `VAULT_TOKEN` to the value of the key `token` from the output of the last step:
 ```sh
-$ export VAULT_TOKEN=<token>
+export VAULT_TOKEN=74603479-607d-4ab8-a406-d0456d9f3d65
 ```
 
 ### Issue requests
 
 With the above `VAULT_TOKEN` set, the Vault requests will be authenticated according to the role `demo-role` and the policy `demo-policy`.
 
-Confirm that the policy enables secret creation only under the path `secret/demo/` and nowhere else:
+Confirm that the policy enables secret creation only under the path "secret/demo/":
 
 ```sh
 $ vault write secret/demo/foo value=bar
 Success! Data written to: secret/demo/foo
 ```
+
+Reject requests on non-"secret/demo/" path:
 
 ```sh
 $ vault write secret/foo value=bar
@@ -168,8 +152,8 @@ Code: 403. Errors:
 ### Cleanup
 
 ```sh
-$ kubectl -n vault-services delete serviceaccount demo
-$ kubectl -n vault-services delete clusterrolebinding demo-tokenreview-binding
+kubectl -n vault-services delete serviceaccount vault-tokenreview
+kubectl -n vault-services delete clusterrolebinding vault-tokenreview-binding
 ```
 
 
