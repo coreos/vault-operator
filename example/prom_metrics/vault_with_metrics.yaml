@@ -1,0 +1,6 @@
+apiVersion: "vault.security.coreos.com/v1alpha1"
+kind: "VaultService"
+metadata:
+  name: "vault-with-metrics"
+spec:
+  configMapName: vault-metrics-config
