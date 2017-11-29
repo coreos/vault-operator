@@ -65,15 +65,15 @@ spec:
 
 The traffic on the Ingress host `vault.ingress.staging.core-os.net` must reach the Ingress controller in the Tectonic cluster.
 
-To enable that a DNS alias record for `vault.ingress.staging.core-os.net` must be present which redirects traffic to the ELB of the Tectonic cluster.
+To enable this, create a DNS alias record for `vault.ingress.staging.core-os.net` which redirects traffic to the ELB of the Tectonic cluster.
 
 1. Find the DNS name of your Tectonic ELB from the AWS console. The ELB should be named `<tectonic-cluster-name>-con`.
 
-2. Create a record set in the hosted zone for the Ingress host. In this case we create the record set named `vault.ingress.k8s.staging.core-os.net` in the hosted zone `staging.core-os.net`. Choose the type `A` and select Alias as `Yes`. Set the Alias Target to the DNS name of the ELB from the previous step.
+2. Create a record set in the hosted zone for the Ingress host. This example creates the record set named `vault.ingress.k8s.staging.core-os.net` in the hosted zone `staging.core-os.net`. Choose type: `A` and select Alias: `Yes`. Set the Alias Target to the the DNS name of the ELB from the previous step.
 
 ## Access the Vault service through the Ingress host
 
-Your Vault CLI should now be able to successfully interact with the Vault service through Ingress host.
+The Vault CLI should now be able to successfully interact with the Vault service through the Ingress host.
 
 Set the following environment variables to access the Vault service:
 
@@ -84,7 +84,7 @@ VAULT_TOKEN=<root token>
 VAULT_SKIP_VERIFY=true
 ```
 
-To verify the Ingress server certificate first get the CA cert file `vault-client-ca.crt` from the `vault-client-ingress-tls` secret and base64 decode it into a local file, then set the following envs:
+To verify the Ingress server certificate, get the CA cert file `vault-client-ca.crt` from the `vault-client-ingress-tls` secret and base64 decode it into a local file. Then set the following envs:
 
 ```sh
 VAULT_CACERT=<path-to-ca-cert>
@@ -93,5 +93,5 @@ VAULT_SKIP_VERIFY=false
 
 
 [tectonic ingress docs]: https://coreos.com/tectonic/docs/latest/admin/ingress.html
-[create-cluster]: ../../hack/helper/create-cluster.sh
-[tls-gen]: ../../hack/tls-gen.sh
+[create-cluster]: https://github.com/coreos-inc/vault-operator/tree/master/hack/helper/create-cluster.sh
+[tls-gen]: https://github.com/coreos-inc/vault-operator/tree/master/hack/tls-gen.sh
