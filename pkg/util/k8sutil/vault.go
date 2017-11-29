@@ -30,7 +30,13 @@ var (
 	evnVaultRedirectAddr = "VAULT_REDIRECT_ADDR"
 )
 
-const VaultClientPort = 8200
+const (
+	VaultClientPort = 8200
+
+	exporterStatsdPort = 9125
+	exporterPromPort   = 9102
+	exporterImage      = "prom/statsd-exporter:v0.5.0"
+)
 
 // EtcdClientTLSSecretName returns the name of etcd client TLS secret for the given vault name
 func EtcdClientTLSSecretName(vaultName string) string {
@@ -114,6 +120,84 @@ func DeleteEtcdCluster(etcdCRCli etcdCRClient.Interface, v *api.VaultService) er
 	return nil
 }
 
+func vaultContainer(v *api.VaultService) v1.Container {
+	return v1.Container{
+		Name:  "vault",
+		Image: fmt.Sprintf("%s:%s", v.Spec.BaseImage, v.Spec.Version),
+		Command: []string{
+			"/bin/vault",
+			"server",
+			"-config=" + VaultConfigPath,
+		},
+		Env: []v1.EnvVar{
+			{
+				Name:  evnVaultRedirectAddr,
+				Value: VaultServiceURL(v.GetName(), v.GetNamespace()),
+			},
+		},
+		VolumeMounts: []v1.VolumeMount{{
+			Name:      vaultConfigVolName,
+			MountPath: filepath.Dir(VaultConfigPath),
+		}},
+		SecurityContext: &v1.SecurityContext{
+			Capabilities: &v1.Capabilities{
+				// Vault requires mlock syscall to work.
+				// Without this it would fail "Error initializing core: Failed to lock memory: cannot allocate memory"
+				Add: []v1.Capability{"IPC_LOCK"},
+			},
+		},
+		Ports: []v1.ContainerPort{{
+			ContainerPort: int32(VaultClientPort),
+		}},
+		LivenessProbe: &v1.Probe{
+			Handler: v1.Handler{
+				Exec: &v1.ExecAction{
+					Command: []string{
+						"curl",
+						"--connect-timeout", "5",
+						"--max-time", "10",
+						"-k", "-s",
+						fmt.Sprintf("https://localhost:%d/v1/sys/health", VaultClientPort),
+					},
+				},
+			},
+			InitialDelaySeconds: 10,
+			TimeoutSeconds:      10,
+			PeriodSeconds:       60,
+			FailureThreshold:    3,
+		},
+		ReadinessProbe: &v1.Probe{
+			Handler: v1.Handler{
+				HTTPGet: &v1.HTTPGetAction{
+					Path:   "/v1/sys/health",
+					Port:   intstr.FromInt(VaultClientPort),
+					Scheme: v1.URISchemeHTTPS,
+				},
+			},
+			InitialDelaySeconds: 10,
+			TimeoutSeconds:      10,
+			PeriodSeconds:       10,
+			FailureThreshold:    3,
+		},
+	}
+}
+
+func statsdExporterContainer() v1.Container {
+	return v1.Container{
+		Name:  "statsd-exporter",
+		Image: exporterImage,
+		Ports: []v1.ContainerPort{{
+			Name:          "statsd",
+			ContainerPort: exporterStatsdPort,
+			Protocol:      "UDP",
+		}, {
+			Name:          "prometheus",
+			ContainerPort: exporterPromPort,
+			Protocol:      "TCP",
+		}},
+	}
+}
+
 // DeployVault deploys a vault service.
 // DeployVault is a multi-steps process. It creates the deployment, the service and
 // other related Kubernetes objects for Vault. Any intermediate step can fail.
@@ -121,8 +205,6 @@ func DeleteEtcdCluster(etcdCRCli etcdCRClient.Interface, v *api.VaultService) er
 // DeployVault is idempotent. If an object already exists, this function will ignore creating
 // it and return no error. It is safe to retry on this function.
 func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
-	// TODO: set owner ref.
-
 	selector := LabelsForVault(v.GetName())
 
 	podTempl := v1.PodTemplateSpec{
@@ -131,65 +213,7 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 			Labels: selector,
 		},
 		Spec: v1.PodSpec{
-			Containers: []v1.Container{{
-				Name:  "vault",
-				Image: fmt.Sprintf("%s:%s", v.Spec.BaseImage, v.Spec.Version),
-				Command: []string{
-					"/bin/vault",
-					"server",
-					"-config=" + VaultConfigPath,
-				},
-				Env: []v1.EnvVar{
-					{
-						Name:  evnVaultRedirectAddr,
-						Value: VaultServiceURL(v.GetName(), v.GetNamespace()),
-					},
-				},
-				VolumeMounts: []v1.VolumeMount{{
-					Name:      vaultConfigVolName,
-					MountPath: filepath.Dir(VaultConfigPath),
-				}},
-				SecurityContext: &v1.SecurityContext{
-					Capabilities: &v1.Capabilities{
-						// Vault requires mlock syscall to work.
-						// Without this it would fail "Error initializing core: Failed to lock memory: cannot allocate memory"
-						Add: []v1.Capability{"IPC_LOCK"},
-					},
-				},
-				Ports: []v1.ContainerPort{{
-					ContainerPort: int32(VaultClientPort),
-				}},
-				LivenessProbe: &v1.Probe{
-					Handler: v1.Handler{
-						Exec: &v1.ExecAction{
-							Command: []string{
-								"curl",
-								"--connect-timeout", "5",
-								"--max-time", "10",
-								"-k", "-s",
-								fmt.Sprintf("https://localhost:%d/v1/sys/health", VaultClientPort),
-							},
-						},
-					},
-					InitialDelaySeconds: 10,
-					TimeoutSeconds:      10,
-					PeriodSeconds:       60,
-					FailureThreshold:    3,
-				},
-				ReadinessProbe: &v1.Probe{
-					Handler: v1.Handler{
-						HTTPGet: &v1.HTTPGetAction{
-							Path:   "/v1/sys/health",
-							Port:   intstr.FromInt(VaultClientPort),
-							Scheme: v1.URISchemeHTTPS,
-						},
-					},
-					InitialDelaySeconds: 10,
-					TimeoutSeconds:      10,
-					PeriodSeconds:       10,
-					FailureThreshold:    3,
-				},
-			}},
+			Containers: []v1.Container{vaultContainer(v), statsdExporterContainer()},
 			Volumes: []v1.Volume{{
 				Name: vaultConfigVolName,
 				VolumeSource: v1.VolumeSource{
