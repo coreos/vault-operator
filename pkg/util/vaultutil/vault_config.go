@@ -1,6 +1,7 @@
 package vaultutil
 
 import (
+	"bytes"
 	"fmt"
 	"path/filepath"
 
@@ -36,6 +37,17 @@ storage "etcd" {
   sync = "false"
 }
 `
+
+// NewConfigWithTelemetry appends telemetry config to given config data
+func NewConfigWithTelemetry(data string) string {
+	buf := bytes.NewBufferString(data)
+	buf.WriteString(`
+		telemetry {
+			statsd_address = "localhost:9125"
+		}
+		`)
+	return buf.String()
+}
 
 // NewConfigWithEtcd returns the new config data combining
 // original config and new etcd storage section.

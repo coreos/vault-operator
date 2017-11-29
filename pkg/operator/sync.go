@@ -199,6 +199,7 @@ func (v *Vaults) prepareVaultConfig(vr *api.VaultService) error {
 		}
 		cfgData = cm.Data[filepath.Base(k8sutil.VaultConfigPath)]
 	}
+	cfgData = vaultutil.NewConfigWithTelemetry(cfgData)
 	cfgData = vaultutil.NewConfigWithListener(cfgData)
 	cfgData = vaultutil.NewConfigWithEtcd(cfgData, k8sutil.EtcdURLForVault(vr.Name))
 
