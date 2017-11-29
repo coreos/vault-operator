@@ -1,0 +1,39 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: statsd-exporter
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: statsd-exporter
+    spec:
+      containers:
+      - name: statsd-exporter
+        image: prom/statsd-exporter
+        ports:
+        - name: statsd
+          containerPort: 9125
+          protocol: UDP
+        - name: web
+          containerPort: 9102
+          protocol: TCP
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: statsd-exporter
+spec:
+  selector:
+    name: statsd-exporter
+  ports:
+  - name: statsd
+    protocol: UDP
+    port: 9125
+    targetPort: 9125
+  - name: web
+    protocol: TCP
+    port: 9102
+    targetPort: 9102
+
