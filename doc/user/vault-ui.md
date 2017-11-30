@@ -93,8 +93,8 @@ When complete, the Helm installation will provide notes on how to access Vault-U
 With the Ingress configuration, Vault-UI should be accessible at the Ingress host `vault-ui.ingress.staging.core-os.net`. Make sure to set up the DNS record for the Ingress host to make it accessible as described in the [Ingress guide][ingress-dns]. If you are unable to access Vault-UI via Ingress, try accessing it via port forwarding to isolate the issue.
 
 
-[create-cluster]: https://github.com/coreos-inc/vault-operator/tree/master/hack/helper/create-cluster.sh
+[create-cluster]: ../../hack/helper/create-cluster.sh
 [helm-install]: https://github.com/kubernetes/helm/blob/master/docs/install.md
-[ingress-tls]: ingress.html#generate-custom-tls-assets-for-the-ingress-host
-[ingress-dns]: ingress.html#create-dns-record-for-the-ingress-host
+[ingress-tls]: ingress.md#generate-custom-tls-assets-for-the-ingress-host
+[ingress-dns]: ingress.md#create-dns-record-for-the-ingress-host
 [vault-ui]: https://github.com/djenriquez/vault-ui

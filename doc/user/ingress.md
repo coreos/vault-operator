@@ -1,6 +1,6 @@
 # Set up Ingress for Vault Service
 
-This guide shows how to make the Vault service accessible from outside a Kubernetes cluster by setting up an Ingress resource. For more information about Ingress see the [Tectonic Ingress docs][tectonic ingress docs].
+This guide shows how to make the Vault service accessible from outside a Kubernetes cluster by setting up an Ingress resource. For more information about Ingress see the [Tectonic Ingress docs][tectonic-ingress-docs].
 
 Before beginning, create a Vault cluster that is initialized and unsealed. Use the [create-cluster][create-cluster] script for a quick setup.
 
@@ -69,7 +69,7 @@ To enable this, create a DNS alias record for `vault.ingress.staging.core-os.net
 
 1. Find the DNS name of your Tectonic ELB from the AWS console. The ELB should be named `<tectonic-cluster-name>-con`.
 
-2. Create a record set in the hosted zone for the Ingress host. This example creates the record set named `vault.ingress.k8s.staging.core-os.net` in the hosted zone `staging.core-os.net`. Choose type: `A` and select Alias: `Yes`. Set the Alias Target to the the DNS name of the ELB from the previous step.
+2. Create a record set in the hosted zone for the Ingress host. This example creates the record set named `vault.ingress.k8s.staging.core-os.net` in the hosted zone `staging.core-os.net`. Choose type: `A` and select Alias: `Yes`. Set the Alias Target to the DNS name of the ELB from the previous step.
 
 ## Access the Vault service through the Ingress host
 
@@ -92,6 +92,6 @@ VAULT_SKIP_VERIFY=false
 ```
 
 
-[tectonic ingress docs]: https://coreos.com/tectonic/docs/latest/admin/ingress.html
-[create-cluster]: https://github.com/coreos-inc/vault-operator/tree/master/hack/helper/create-cluster.sh
-[tls-gen]: https://github.com/coreos-inc/vault-operator/tree/master/hack/tls-gen.sh
+[tectonic-ingress-docs]: https://coreos.com/tectonic/docs/latest/admin/ingress.html
+[create-cluster]: ../../hack/helper/create-cluster.sh
+[tls-gen]: ../../tls-gen.sh

@@ -92,4 +92,4 @@ vault-server-tls      Opaque                                2         1m
 
 [cfssl]: https://github.com/cloudflare/cfssl#installation
 [jq]: https://stedolan.github.io/jq/download/
-[hack-tls]: https://github.com/coreos-inc/vault-operator/tree/master/hack/tls-gen.sh
+[hack-tls]: ../../hack/tls-gen.sh

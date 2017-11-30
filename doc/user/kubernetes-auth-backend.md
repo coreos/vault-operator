@@ -163,4 +163,4 @@ kubectl -n vault-services delete clusterrolebinding vault-tokenreview-binding
 
 [kubernetes-auth-backend]: https://www.vaultproject.io/docs/auth/kubernetes.html
 [vault-cli-env]: https://www.vaultproject.io/docs/commands/environment.html
-[create-cluster]: https://github.com/coreos-inc/vault-operator/tree/master/hack/helper/create-cluster.sh
+[create-cluster]: ../../hack/helper/create-cluster.sh

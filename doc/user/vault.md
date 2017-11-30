@@ -189,7 +189,7 @@ To see how it works, perform the following:
 A new Vault node is created to replace the terminated one. Unseal the node and continue using HA.
 
 
-[getting-started]: https://github.com/coreos-inc/vault-operator/blob/master/README.md#getting-started
+[getting-started]: ../../README.md#getting-started
 [ha]: https://www.vaultproject.io/docs/concepts/ha.html
 [initialize-vault]: https://www.vaultproject.io/intro/getting-started/deploy.html#initializing-the-vault
 [seal-unseal-vault]: https://www.vaultproject.io/intro/getting-started/deploy.html#seal-unseal

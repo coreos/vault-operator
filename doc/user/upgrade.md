@@ -43,4 +43,4 @@ to step down and exit gracefully. One of the two new version standby nodes will 
 become active.
 
 
-[vault-md]: vault.html
+[vault-md]: vault.md
