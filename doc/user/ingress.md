@@ -94,4 +94,4 @@ VAULT_SKIP_VERIFY=false
 
 [tectonic-ingress-docs]: https://coreos.com/tectonic/docs/latest/admin/ingress.html
 [create-cluster]: ../../hack/helper/create-cluster.sh
-[tls-gen]: ../../tls-gen.sh
+[tls-gen]: ../../hack/tls-gen.sh
