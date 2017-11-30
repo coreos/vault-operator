@@ -1,11 +1,11 @@
 # Set up Vault-UI on Tectonic
 
-[Vault-UI](https://github.com/djenriquez/vault-ui) is an open source project for managing and interacting with Vault through a web UI. Vault itself does not provide a web UI. All interactions are done using either the Vault CLI or REST API calls.
+[Vault-UI][vault-ui] is an open source project for managing and interacting with Vault through a web UI. Vault itself does not provide a web UI; all interactions are through either the Vault CLI or REST API calls.
 
 ### Prerequisites
 
-- Set up an initialized and unsealed Vault cluster. Use the [create-cluster][create-cluster] script for a quick setup.
-- Install and initialize Helm using the [Helm installation instructions][helm-install]
+* Set up an initialized and unsealed Vault cluster. Use the [create-cluster][create-cluster] script for a quick setup.
+* Install and initialize Helm using the [Helm installation instructions][helm-install]
 
 This example assumes a Vault cluster named `example-vault` in the namespace `vault-services`.
 
@@ -13,7 +13,8 @@ This example assumes a Vault cluster named `example-vault` in the namespace `vau
 
 To install Vault-UI, install and configure the Helm chart provided in the Vault-UI repo.
 
-Clone Vault-UI repository:
+Clone the Vault-UI repository:
+
 ```sh
 git clone https://github.com/djenriquez/vault-ui
 ```
@@ -28,7 +29,6 @@ Modify the file `vault-ui/kubernetes/chart/vault-ui/templates/deployment.yaml` t
               value: {{ .Values.vault.auth }}
             - name: NODE_TLS_REJECT_UNAUTHORIZED
               value: '0'
-
 ```
 
 Next modify the file `vault-ui/kubernetes/chart/vault-ui/values.yaml` to configure the way to access the Vault-UI using Ingress, ClusterIP, LoadBalancer, or other access means.
@@ -37,7 +37,7 @@ Next modify the file `vault-ui/kubernetes/chart/vault-ui/values.yaml` to configu
 
 The following example will set up Vault-UI to be accessible at the Ingress host `vault-ui.ingress.staging.core-os.net` in the namespace `vault-services`. Change the Ingress hostname and namespace as needed.
 
-To use Ingress first manually create a TLS certificate that will be used to set up the Ingress resource for Vault-UI, as described in the [Vault TLS setup guide][ingress-tls]:
+To use Ingress, first manually create a TLS certificate that will be used to set up the Ingress resource for Vault-UI, as described in the [Vault TLS setup guide][ingress-tls]:
 
 ```sh
 KUBE_NS=vault-services \
@@ -49,7 +49,7 @@ SERVER_KEY=tls.key \
 hack/tls-gen.sh
 ```
 
-Use the secrets listed above to modify the `vaules.yaml` file:
+Use the secrets listed above to modify the `values.yaml` file:
 
 ```yaml
 replicaCount: 1
@@ -88,12 +88,13 @@ $ helm install . --namespace=vault-services
 
 ## Accessing Vault-UI
 
-After running Helm install it will give you notes on how to access Vault-UI via port-forwarding. If you are unable to access Vault-UI via Ingress you might want to try accessing it via port-forwarding to isolate the issue.
+When complete, the Helm installation will provide notes on how to access Vault-UI using port forwarding.
 
-With the Ingress configuration Vault-UI should be accessible at the Ingress host `vault-ui.ingress.staging.core-os.net`. Make sure to set up the DNS record for the Ingress host to make it accessible as described in the [Ingress setup guide][ingress-dns].
+With the Ingress configuration, Vault-UI should be accessible at the Ingress host `vault-ui.ingress.staging.core-os.net`. Make sure to set up the DNS record for the Ingress host to make it accessible as described in the [Ingress guide][ingress-dns]. If you are unable to access Vault-UI via Ingress, try accessing it via port forwarding to isolate the issue.
 
 
 [create-cluster]: ../../hack/helper/create-cluster.sh
 [helm-install]: https://github.com/kubernetes/helm/blob/master/docs/install.md
-[ingress-tls]: ./ingress.md#generate-custom-tls-assets-for-the-ingress-host
-[ingress-dns]: ./ingress.md#create-dns-record-for-the-ingress-host
+[ingress-tls]: ingress.md#generate-custom-tls-assets-for-the-ingress-host
+[ingress-dns]: ingress.md#create-dns-record-for-the-ingress-host
+[vault-ui]: https://github.com/djenriquez/vault-ui

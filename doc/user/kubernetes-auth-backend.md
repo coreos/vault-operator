@@ -2,9 +2,9 @@
 
 This guide shows a simple example of how to set up and authenticate against the Kubernetes auth backend. For more details consult the Vault documentation on the [Kubernetes Auth Backend][kubernetes-auth-backend].
 
-In this example we will:
-* Setup the Kubernetes auth backend
-* Configure a role for a service account with some policy
+This example will:
+* Set up the Kubernetes auth backend
+* Configure a Role for a service account with some policy
 * Authenticate Vault requests using the service account token
 
 ### Prerequisites
@@ -12,9 +12,9 @@ In this example we will:
 
 ## Kubernetes auth backend setup
 
-Use the [create-cluster.sh][create-cluster] script to initialize and unseal a vault cluster.
+Use the [create-cluster.sh][create-cluster] script to initialize and unseal a Vault cluster.
 
-For this example the Vault cluster is assumed to be running in the namespace `vault-services`. Adjust the commands below as needed for your namespace.
+This example assumes a Vault cluster running in the namespace `vault-services`. Adjust the commands below as needed for your namespace.
 
 ### Configure port forwarding
 
@@ -45,13 +45,14 @@ To enable and configure the auth backend with the necessary roles and policies, 
 kubectl -n vault-services create serviceaccount vault-tokenreview
 ```
 
-2. Create the ClusterRoleBinding for the `vault-tokenreview` service account to access the k8s TokenReview API:
+2. Create the ClusterRoleBinding for the `vault-tokenreview` service account to access the Kubernetes TokenReview API:
 
 ```sh
 kubectl -n vault-services create -f example/k8s_auth/vault-tokenreview-binding.yaml
 ```
 
 3. Fetch the token for the `vault-tokenreview` service account:
+
 ```sh
 SECRET_NAME=$(kubectl -n vault-services get serviceaccount vault-tokenreview -o jsonpath='{.secrets[0].name}')
 TR_ACCOUNT_TOKEN=$(kubectl -n vault-services get secret ${SECRET_NAME} -o jsonpath='{.data.token}' | base64 --decode)
@@ -99,12 +100,14 @@ The backend can now be used to authenticate Vault requests using the service acc
 Now use the service account token to authenticate for the role `demo-role`
 
 1. Fetch the token for the `default` service account:
+
 ```sh
 SECRET_NAME=$(kubectl -n vault-services get serviceaccount default -o jsonpath='{.secrets[0].name}')
 DEFAULT_ACCOUNT_TOKEN=$(kubectl -n vault-services get secret ${SECRET_NAME} -o jsonpath='{.data.token}' | base64 --decode)
 ```
 
 2. Log in to the Kubernetes auth backend using the service account token:
+
 ```sh
 $ vault write auth/kubernetes/login role=demo-role jwt=${DEFAULT_ACCOUNT_TOKEN}
 Key                                   	Value
@@ -122,6 +125,7 @@ token_meta_service_account_uid        	"aaf6c23c-b04a-11e7-9aea-0245c85cf1cc"
 ```
 
 3. Set the `VAULT_TOKEN` to the value of the key `token` from the output of the last step:
+
 ```sh
 export VAULT_TOKEN=74603479-607d-4ab8-a406-d0456d9f3d65
 ```

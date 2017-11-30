@@ -1,8 +1,8 @@
-## Vault TLS setup guide
+# Setting up TLS for Vault
 
 This document describes the two methods to configure TLS on the Vault servers for a Vault cluster.
 
-### Using the default TLS assets
+## Using the default TLS assets
 
 If the TLS assets for a cluster are not specified using the custom resource (CR) specification field, `spec.TLS`, the operator creates a default CA and uses it to generate self-signed certificates for the Vault servers in the cluster.
 
@@ -32,7 +32,7 @@ example-vault-default-vault-client-tls      Opaque                              
 example-vault-default-vault-server-tls      Opaque                                2         1m
 ```
 
-### Using the custom TLS assets
+## Using custom TLS assets
 
 Users may pass in custom TLS assets while creating a cluster. Specify the client and server secrets in the following CR specification fields:
 
@@ -61,7 +61,7 @@ spec:
 
 ## Generating TLS assets
 
-Use the [hack/tls-gen.sh](../../hack/tls-gen.sh) script to generate the necessary TLS assets and bundle them into required secrets.
+Use the [hack/tls-gen.sh][hack-tls] script to generate the necessary TLS assets and bundle them into required secrets.
 
 ### Prerequisites
 
@@ -92,3 +92,4 @@ vault-server-tls      Opaque                                2         1m
 
 [cfssl]: https://github.com/cloudflare/cfssl#installation
 [jq]: https://stedolan.github.io/jq/download/
+[hack-tls]: ../../hack/tls-gen.sh
