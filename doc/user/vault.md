@@ -1,8 +1,8 @@
 # Configuring Vault nodes
 
-This document describes how to access a Vault node deployed by the Vault operator and configure a High Availability (HA) Vault setup.
+This document describes how to access a Vault node deployed by the vault-operator and configure a High Availability (HA) Vault setup.
 
-See [Vault operator][getting-started] for information on managing Vault instances using the Vault Operator.
+See [Vault operator][getting-started] for information on managing Vault instances using the vault-operator.
 
 ## Prerequisites
 
@@ -45,7 +45,7 @@ A response confirms that the Vault CLI is ready to interact with the Vault serve
 
 5. Initialize the Vault server to generate the unseal keys and the root token.
 
-    See [Initializing the Vault][initialize-vault] on how to initialize your vault cluster.
+    See [Initializing the Vault][initialize-vault] on how to initialize a Vault cluster.
 
 ## Unsealing a sealed node
 
@@ -87,7 +87,7 @@ The first node that is unsealed in a multi-node Vault cluster will become the ac
 3. Open a new terminal.
 
 4. Export the following environment for [Vault CLI environment][vault-cli-env].
-    The root token used to authenticate the Vault CLI requests is given below. Replace the `<root-token>` with the root token generated during [Initalization](#initializing-a-vault-cluster).
+    The root token used to authenticate the Vault CLI requests is given below. Replace `<root-token>` with the root token generated during [Initialization](#initializing-a-vault-cluster).
 
     ```sh
     export VAULT_ADDR='https://localhost:8200'
@@ -114,9 +114,9 @@ The first node that is unsealed in a multi-node Vault cluster will become the ac
 
 ## Accessing Vault on Kubernetes
 
-Vault operator creates [Kubernetes services][k8s-services] for accessing Vault deployments.
+Vault-operator creates [Kubernetes services][k8s-services] for accessing Vault deployments.
 
-The service always exposes the active Vault node. It hides failures by switching the service pointer to the current active node when failover occurs.
+The service always exposes the active Vault node. It hides failures by switching the service pointer to the currently active node when failover occurs.
 
 The name and namespace of the service are the same as the Vault resource. For example, if the Vault resource's name is `example-vault`  and the namespace is `vault-services`, the service's name and namespace will also be `example-vault` and `vault-services` respectively.
 
@@ -164,13 +164,13 @@ Regular vault operations like reading and writing a secret to the active node sh
 
 ## Failure recovery
 
-Vault operator recovers any inactive or terminated Vault pods to maintain the size of cluster.
+Vault-operator recovers any inactive or terminated Vault pods to maintain the size of cluster.
 
 To see how it works, perform the following:
 
 1. Ensure that a Vault node is terminated.
 
-   A Vault node has already been terminated in the [Automated failover](#automated-failover) section.
+    Follow the instructions to terminate a Vault node in the [Automated failover](#automated-failover) section.
 
 2. Verify that a new Vault node is created:
 
