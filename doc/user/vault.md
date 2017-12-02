@@ -170,7 +170,7 @@ To see how it works, perform the following:
 
 1. Ensure that a Vault node is terminated.
 
-    If a node has not yet been terminated, follow the instructions in the [Automated failover](#automated-failover) section above.
+   If a node has not yet been terminated, follow the instructions in the [Automated failover](#automated-failover) section above.
 
 2. Verify that a new Vault node is created:
 
