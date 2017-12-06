@@ -34,7 +34,7 @@ cleanup() {
 
 trap cleanup EXIT
 
-glide install --strip-vendor 1>/dev/null
+./hack/update_vendor.sh 1>/dev/null
 
 export OPERATOR_IMAGE=${OPERATOR_IMAGE:-"quay.io/coreos/vault-operator-dev:$UNIQUE_BUILD_NAME"}
 
