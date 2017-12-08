@@ -40,6 +40,18 @@ export OPERATOR_IMAGE=${OPERATOR_IMAGE:-"quay.io/coreos/vault-operator-dev:$UNIQ
 
 print_env_vars
 
+mkdir -p _output/logcollector/logs/
+cp $KUBECONFIG ./_output/logcollector/kubeconfig
+
+# Run logcollector in the background
+gcloud docker -a
+docker run -d --rm \
+    -v "$PWD/_output/logcollector":"/_output/logcollector" \
+    -w "/_output/logcollector" \
+    gcr.io/coreos-k8s-scale-testing/logcollector \
+    logcollector --kubeconfig=/_output/logcollector/kubeconfig --e2e-podname="vault-operator" \
+    --namespace=${TEST_NAMESPACE} --logs-dir="/_output/logcollector/logs"
+
 if "hack/test"; then
 	echo "Success! ==="
 else
