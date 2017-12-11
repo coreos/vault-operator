@@ -28,8 +28,8 @@
 [[projects]]
   name = "github.com/coreos/etcd-operator"
   packages = ["pkg/apis/etcd/v1beta2","pkg/client","pkg/generated/clientset/versioned","pkg/generated/clientset/versioned/scheme","pkg/generated/clientset/versioned/typed/etcd/v1beta2","pkg/util/constants","pkg/util/etcdutil","pkg/util/k8sutil","pkg/util/probe","pkg/util/retryutil"]
-  revision = "3bcbdb19d9a82a48d49f280ba7facb87060d8303"
-  version = "v0.7.0"
+  revision = "ba1ce6e37ec7795c56f2047f3d26597665a05c10"
+  version = "v0.7.2"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -358,6 +358,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f2134f13efb84c1f161d13acfff7daefeae09e377038d93aadff0f3c704abed3"
+  inputs-digest = "2a553beb8082c08a45187c0ebed8cff74d45e299ba96843eb41f436c5c59b880"
   solver-name = "gps-cdcl"
   solver-version = 1
