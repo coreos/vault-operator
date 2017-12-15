@@ -19,7 +19,7 @@ Create the following Vault CR to use as the basis for the upgrade:
 apiVersion: "vault.security.coreos.com/v1alpha1"
 kind: "VaultService"
 metadata:
-  name: "example"
+  name: "example-vault"
 spec:
   nodes: 2
   version: "0.8.3-0"
@@ -30,7 +30,7 @@ After the Vault cluster is deployed and unsealed, there will be one active and o
 Use `kubectl` to upgrade to Vault `0.9.0-0`:
 
 ```
-kubectl -n default get vault example -o yaml | sed 's/version: 0.8.3-0/version: 0.9.0-0/g' | kubectl apply -f -
+kubectl -n default get vault example-vault -o yaml | sed 's/version: 0.8.3-0/version: 0.9.0-0/g' | kubectl apply -f -
 ```
 
 Vault-operator will upgrade all nodes except the active node to keep service availability.

@@ -6,7 +6,7 @@ Before beginning, create a Vault cluster that is initialized and unsealed. Use t
 
 ### Assumptions
 
-* This example assumes a Vault cluster named `example` in the namespace `default` whose service is accessible at `https://example.default.svc:8200` from inside the cluster.
+* This example assumes a Vault cluster named `example-vault` in the namespace `default` whose service is accessible at `https://example-vault.default.svc:8200` from inside the cluster.
 
 * The Ingress hostname used to access the Vault service will be `vault.ingress.staging.core-os.net`.
 
@@ -57,7 +57,7 @@ spec:
         paths:
           - path: /
             backend:
-              serviceName: example
+              serviceName: example-vault
               servicePort: 8200
 ```
 
