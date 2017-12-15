@@ -6,7 +6,7 @@ Before beginning, create a Vault cluster that is initialized and unsealed. Use t
 
 ### Assumptions
 
-* This example assumes a Vault cluster named `example-vault` in the namespace `vault-services` whose service is accessible at `https://example-vault.vault-services.svc:8200` from inside the cluster.
+* This example assumes a Vault cluster named `example` in the namespace `default` whose service is accessible at `https://example.default.svc:8200` from inside the cluster.
 
 * The Ingress hostname used to access the Vault service will be `vault.ingress.staging.core-os.net`.
 
@@ -21,7 +21,7 @@ The Ingress host can be configured with TLS assets for secure access.
 Use the [tls-gen][tls-gen] script to generate the required TLS assets as secrets in the namespace of the Vault cluster:
 
 ```sh
-KUBE_NS=vault-services \
+KUBE_NS=default \
 SERVER_SECRET=vault-server-ingress-tls \
 CLIENT_SECRET=vault-client-ingress-tls \
 SAN_HOSTS="vault.ingress.staging.core-os.net" \
@@ -42,7 +42,7 @@ kind: Ingress
 apiVersion: extensions/v1beta1
 metadata:
   name: vault
-  namespace: vault-services
+  namespace: default
   annotations:
     ingress.kubernetes.io/secure-backends: 'true'
     kubernetes.io/ingress.class: tectonic
@@ -57,7 +57,7 @@ spec:
         paths:
           - path: /
             backend:
-              serviceName: example-vault
+              serviceName: example
               servicePort: 8200
 ```
 

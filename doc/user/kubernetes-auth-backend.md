@@ -14,7 +14,7 @@ This example will:
 
 Use the [create-cluster.sh][create-cluster] script to initialize and unseal a Vault cluster.
 
-This example assumes a Vault cluster running in the namespace `vault-services`. Adjust the commands below as needed for your namespace.
+This example assumes a Vault cluster running in the namespace `default`. Adjust the commands below as needed for your namespace.
 
 ### Configure port forwarding
 
@@ -23,7 +23,7 @@ To enable and configure the auth backend with the necessary roles and policies, 
 1. Configure port forwarding between the local machine and the active Vault node:
 
     ```sh
-    kubectl -n vault-services get vault example-vault -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+    kubectl -n default get vault example -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
     ```
 
 2. Open a new terminal. Use this terminal for the rest of this guide.
@@ -42,20 +42,20 @@ To enable and configure the auth backend with the necessary roles and policies, 
 1. Create the service account `vault-tokenreview`:
 
 ```sh
-kubectl -n vault-services create serviceaccount vault-tokenreview
+kubectl -n default create serviceaccount vault-tokenreview
 ```
 
 2. Create the ClusterRoleBinding for the `vault-tokenreview` service account to access the Kubernetes TokenReview API:
 
 ```sh
-kubectl -n vault-services create -f example/k8s_auth/vault-tokenreview-binding.yaml
+kubectl -n default create -f example/k8s_auth/vault-tokenreview-binding.yaml
 ```
 
 3. Fetch the token for the `vault-tokenreview` service account:
 
 ```sh
-SECRET_NAME=$(kubectl -n vault-services get serviceaccount vault-tokenreview -o jsonpath='{.secrets[0].name}')
-TR_ACCOUNT_TOKEN=$(kubectl -n vault-services get secret ${SECRET_NAME} -o jsonpath='{.data.token}' | base64 --decode)
+SECRET_NAME=$(kubectl -n default get serviceaccount vault-tokenreview -o jsonpath='{.secrets[0].name}')
+TR_ACCOUNT_TOKEN=$(kubectl -n default get secret ${SECRET_NAME} -o jsonpath='{.data.token}' | base64 --decode)
 ```
 
 ### Enable and configure the backend
@@ -86,7 +86,7 @@ The Kubernetes backend authorizes an entity by granting it a role mapped to a se
     ```sh
     vault write auth/kubernetes/role/demo-role \
         bound_service_account_names=default \
-        bound_service_account_namespaces=vault-services \
+        bound_service_account_namespaces=default \
         policies=demo-policy \
         ttl=1h
     ```
@@ -102,8 +102,8 @@ Now use the service account token to authenticate for the role `demo-role`
 1. Fetch the token for the `default` service account:
 
 ```sh
-SECRET_NAME=$(kubectl -n vault-services get serviceaccount default -o jsonpath='{.secrets[0].name}')
-DEFAULT_ACCOUNT_TOKEN=$(kubectl -n vault-services get secret ${SECRET_NAME} -o jsonpath='{.data.token}' | base64 --decode)
+SECRET_NAME=$(kubectl -n default get serviceaccount default -o jsonpath='{.secrets[0].name}')
+DEFAULT_ACCOUNT_TOKEN=$(kubectl -n default get secret ${SECRET_NAME} -o jsonpath='{.data.token}' | base64 --decode)
 ```
 
 2. Log in to the Kubernetes auth backend using the service account token:
@@ -119,7 +119,7 @@ token_renewable                       	true
 token_policies                        	[default demo-policy]
 token_meta_role                       	"demo-role"
 token_meta_service_account_name       	"default"
-token_meta_service_account_namespace  	"vault-services"
+token_meta_service_account_namespace  	"default"
 token_meta_service_account_secret_name	"default-token-fndln"
 token_meta_service_account_uid        	"aaf6c23c-b04a-11e7-9aea-0245c85cf1cc"
 ```
@@ -156,8 +156,8 @@ Code: 403. Errors:
 ### Cleanup
 
 ```sh
-kubectl -n vault-services delete serviceaccount vault-tokenreview
-kubectl -n vault-services delete clusterrolebinding vault-tokenreview-binding
+kubectl -n default delete serviceaccount vault-tokenreview
+kubectl -n default delete clusterrolebinding vault-tokenreview-binding
 ```
 
 
