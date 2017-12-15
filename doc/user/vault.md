@@ -16,7 +16,7 @@ Initialize a new Vault cluster before performing any operations.
 1. Configure port forwarding between the local machine and the first available Vault node:
 
     ```sh
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.available[0]}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+    kubectl -n default get vault example-vault -o jsonpath='{.status.nodes.available[0]}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
     ```
 
 2. Open a new terminal.
@@ -52,7 +52,7 @@ A response confirms that the Vault CLI is ready to interact with the Vault serve
 1. Configure port forwarding between the local machine and the first sealed Vault node:
 
     ```sh
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.sealed[0]}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+    kubectl -n default get vault example-vault -o jsonpath='{.status.nodes.sealed[0]}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
     ```
 
 2. Open a new terminal.
@@ -75,13 +75,13 @@ The first node that is unsealed in a multi-node Vault cluster will become the ac
 1. Check the active Vault node:
 
     ```sh
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.active}'
+    kubectl -n default get vault example-vault -o jsonpath='{.status.nodes.active}'
     ```
 
 2. Configure port forwarding between the local machine and the active Vault node:
 
     ```sh
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+    kubectl -n default get vault example-vault -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
     ```
 
 3. Open a new terminal.
@@ -118,9 +118,9 @@ Vault-operator creates [Kubernetes services][k8s-services] for accessing Vault d
 
 The service always exposes the active Vault node. It hides failures by switching the service pointer to the currently active node when failover occurs.
 
-The name and namespace of the service are the same as the Vault resource. For example, if the Vault resource's name is `example`  and the namespace is `default`, the service's name and namespace will also be `example` and `default` respectively.
+The name and namespace of the service are the same as the Vault resource. For example, if the Vault resource's name is `example-vault`  and the namespace is `default`, the service's name and namespace will also be `example-vault` and `default` respectively.
 
-Applications in the Kubernetes pod network can access the service through `https://example.default.svc:8200`.
+Applications in the Kubernetes pod network can access the service through `https://example-vault.default.svc:8200`.
 
 ## Starting a standby Vault node
 
@@ -133,8 +133,8 @@ A standby Vault node is initialized and unsealed, but does not hold the leader e
 2. Verify that the node becomes standby:
 
     ```sh
-    $ kubectl -n default get vault example -o jsonpath='{.status.nodes.standby}'
-    [example-1003480066-jzmwd]
+    $ kubectl -n default get vault example-vault -o jsonpath='{.status.nodes.standby}'
+    [example-vault-1003480066-jzmwd]
     ```
 
     The setup now contains an active and a standby Vault node.
@@ -148,7 +148,7 @@ To see how it works, terminate the active node, and wait for the standby node to
 1. Terminate the active Vault node:
 
     ```
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services delete po {}
+    kubectl -n default get vault example-vault -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services delete po {}
     ```
 
     The standby node becomes active.
@@ -156,8 +156,8 @@ To see how it works, terminate the active node, and wait for the standby node to
 2. Verify that the previous standby node is now active:
 
     ```
-    $ kubectl -n default get vault example -o jsonpath='{.status.nodes.active}'
-    example-1003480066-jzmwd
+    $ kubectl -n default get vault example-vault -o jsonpath='{.status.nodes.active}'
+    example-vault-1003480066-jzmwd
     ```
 
 Regular vault operations like reading and writing a secret to the active node should now succeed.
@@ -175,15 +175,15 @@ To see how it works, perform the following:
 2. Verify that a new Vault node is created:
 
     ```
-    $ kubectl -n default get vault example -o jsonpath='{.status.nodes.available}'
-    [example-1003480066-jzmwd example-994933690-h066h]
+    $ kubectl -n default get vault example-vault -o jsonpath='{.status.nodes.available}'
+    [example-vault-1003480066-jzmwd example-vault-994933690-h066h]
     ```
 
 3. Verify that the newly created Vault node is sealed:
 
     ```
-    $ kubectl -n default get vault example -o jsonpath='{.status.nodes.sealed}'
-    [example-994933690-h066h]
+    $ kubectl -n default get vault example-vault -o jsonpath='{.status.nodes.sealed}'
+    [example-vault-994933690-h066h]
     ```
 
 A new Vault node is created to replace the terminated one. Unseal the node and continue using HA.
