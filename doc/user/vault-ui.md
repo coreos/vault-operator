@@ -7,7 +7,7 @@
 * Set up an initialized and unsealed Vault cluster. Use the [create-cluster][create-cluster] script for a quick setup.
 * Install and initialize Helm using the [Helm installation instructions][helm-install]
 
-This example assumes a Vault cluster named `example-vault` in the namespace `vault-services`.
+This example assumes a Vault cluster named `example-vault` in the namespace `default`.
 
 ## Install Vault-UI
 
@@ -35,12 +35,12 @@ Next modify the file `vault-ui/kubernetes/chart/vault-ui/values.yaml` to configu
 
 **Configuration for Ingress:**
 
-The following example will set up Vault-UI to be accessible at the Ingress host `vault-ui.ingress.staging.core-os.net` in the namespace `vault-services`. Change the Ingress hostname and namespace as needed.
+The following example will set up Vault-UI to be accessible at the Ingress host `vault-ui.ingress.staging.core-os.net` in the namespace `default`. Change the Ingress hostname and namespace as needed.
 
 To use Ingress, first manually create a TLS certificate that will be used to set up the Ingress resource for Vault-UI, as described in the [Vault TLS setup guide][ingress-tls]:
 
 ```sh
-KUBE_NS=vault-services \
+KUBE_NS=default \
 SERVER_SECRET=vault-ui-server-ingress-tls \
 CLIENT_SECRET=vault-ui-client-ingress-tls \
 SAN_HOSTS="vault-ui.ingress.staging.core-os.net" \
@@ -79,11 +79,11 @@ vault:
   url: https://example-vault:8200
 ```
 
-Use Helm to install Vault-UI within the `vault-services` namespace:
+Use Helm to install Vault-UI within the `default` namespace:
 
 ```sh
 $ cd vault-ui/kubernetes/chart/vault-ui
-$ helm install . --namespace=vault-services
+$ helm install . --namespace=default
 ```
 
 ## Accessing Vault-UI

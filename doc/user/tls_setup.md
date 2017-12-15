@@ -82,8 +82,8 @@ Successful execution generates the required secrets in the desired namespace.
 For example:
 
 ```bash
-$ KUBE_NS=vault-services SERVER_SECRET=vault-server-tls CLIENT_SECRET=vault-client-tls hack/tls-gen.sh
-$ kubectl -n vault-services get secrets
+$ KUBE_NS=default SERVER_SECRET=vault-server-tls CLIENT_SECRET=vault-client-tls hack/tls-gen.sh
+$ kubectl -n default get secrets
 NAME                  TYPE                                  DATA      AGE
 vault-client-tls      Opaque                                1         1m
 vault-server-tls      Opaque                                2         1m
