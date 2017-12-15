@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Usage:
-#   KUBE_NS=vault-services \
+#   KUBE_NS=default \
 #   SERVER_SECRET=vault-server-tls \
 #   CLIENT_SECRET=vault-client-tls \
 #   tls-gen.sh
