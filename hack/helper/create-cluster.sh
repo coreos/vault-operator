@@ -15,7 +15,7 @@ kubectl version
 # Setup vault cluster
 kubectl -n ${KUBE_NS} create -f example/example_vault.yaml
 # TODO: Get cluster name from CR
-VAULT_CLUSTER_NAME="example-vault"
+VAULT_CLUSTER_NAME="example"
 
 # Wait for vault CR to appear
 until kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} > /dev/null 2>&1;

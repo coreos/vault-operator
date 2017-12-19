@@ -7,7 +7,7 @@
 * Set up an initialized and unsealed Vault cluster. Use the [create-cluster][create-cluster] script for a quick setup.
 * Install and initialize Helm using the [Helm installation instructions][helm-install]
 
-This example assumes a Vault cluster named `example-vault` in the namespace `default`.
+This example assumes a Vault cluster named `example` in the namespace `default`.
 
 ## Install Vault-UI
 
@@ -76,7 +76,7 @@ ingress:
 resources: {}
 vault:
   auth: TOKEN
-  url: https://example-vault:8200
+  url: https://example:8200
 ```
 
 Use Helm to install Vault-UI within the `default` namespace:

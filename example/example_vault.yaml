@@ -1,7 +1,7 @@
 apiVersion: "vault.security.coreos.com/v1alpha1"
 kind: "VaultService"
 metadata:
-  name: "example-vault"
+  name: "example"
 spec:
   nodes: 2
   version: "0.9.0-0"

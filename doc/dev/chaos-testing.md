@@ -44,14 +44,14 @@ $ KUBE_NS="chaos" hack/helper/create-cluster.sh
 ```
 Client Version: version.Info{Major:"1", Minor:"7", GitVersion:"v1.7.2", GitCommit:"922a86cfcd65915a9b2f69f3f193b8907d741d9c", GitTreeState:"clean", BuildDate:"2017-07-21T08:23:22Z", GoVersion:"go1.8.3", Compiler:"gc", Platform:"darwin/amd64"}
 Server Version: version.Info{Major:"1", Minor:"7", GitVersion:"v1.7.1+coreos.0", GitCommit:"fdd5383472eb43e60d2222503f03c76445e49899", GitTreeState:"clean", BuildDate:"2017-07-18T19:44:47Z", GoVersion:"go1.8.3", Compiler:"gc", Platform:"linux/amd64"}
-vaultservice "example-vault" created
+vaultservice "example" created
 Waiting for 2 sealed nodes...
 Initializing vault
 
 Unseal key and root token written to _output/init_response.txt
 UNSEAL KEY: VQ/Tc9V73+t5NIPRJ52I5PvZtaN6NseDYxhtZ7kJPPs=
-Unsealing example-vault-1395307387-51tq8
-Unsealing example-vault-1395307387-b4r7k
+Unsealing example-1395307387-51tq8
+Unsealing example-1395307387-b4r7k
 Waiting for active node to show up
 Waiting for active node to show up
 Waiting for active node to show up
@@ -66,24 +66,24 @@ Pass the unseal key and cluster name from the previous step to the script.
 
 ```bash
 $ KUBE_NS="chaos" \
-VAULT_CLUSTER_NAME="example-vault" \
+VAULT_CLUSTER_NAME="example" \
 UNSEAL_KEY="VQ/Tc9V73+t5NIPRJ52I5PvZtaN6NseDYxhtZ7kJPPs=" \
 UPGRADE_TO="0.8.3-1" \
 hack/helper/upgrade.sh
 ```
 ```
 Upgrading vault to 0.8.3-1
-vaultservice "example-vault" configured
+vaultservice "example" configured
 Waiting for 2 sealed nodes after upgrade...
-Unsealing example-vault-4065723276-cv1t3
-Unsealing example-vault-4065723276-h1qn9
+Unsealing example-4065723276-cv1t3
+Unsealing example-4065723276-h1qn9
 Waiting until active node is of new version 0.8.3-1
-Current active node: (example-vault-1395307387-51tq8), version: (0.8.3-0)
-Current active node: (example-vault-1395307387-51tq8), version: (0.8.3-0)
-Current active node: (example-vault-1395307387-51tq8), version: (0.8.3-0)
-Get active pod example-vault-1395307387-51tq8 failed. Retrying.
-Get active pod example-vault-1395307387-51tq8 failed. Retrying.
-Current active node: (example-vault-4065723276-cv1t3), version: (0.8.3-1)
+Current active node: (example-1395307387-51tq8), version: (0.8.3-0)
+Current active node: (example-1395307387-51tq8), version: (0.8.3-0)
+Current active node: (example-1395307387-51tq8), version: (0.8.3-0)
+Get active pod example-1395307387-51tq8 failed. Retrying.
+Get active pod example-1395307387-51tq8 failed. Retrying.
+Current active node: (example-4065723276-cv1t3), version: (0.8.3-1)
 Upgrade and unseal complete!
 ```
 

@@ -109,34 +109,34 @@ In this example, a Vault cluster is configured with two nodes in high availabili
 
     Wait for around 20s.
 
-2. Ensure that `example-vault-...` pods are up:
+2. Ensure that `example-...` pods are up:
 
     ```
     $ kubectl -n default get pods
     NAME                              READY     STATUS    RESTARTS   AGE
     etcd-operator-346152359-34pwm     1/1       Running   0          43m
-    example-vault-1003480066-b757c    0/1       Running   0          36m
-    example-vault-1003480066-jzmwd    0/1       Running   0          36m
-    example-vault-etcd-0000           1/1       Running   0          37m
-    example-vault-etcd-0001           1/1       Running   0          37m
-    example-vault-etcd-0002           1/1       Running   0          36m
+    example-1003480066-b757c    0/1       Running   0          36m
+    example-1003480066-jzmwd    0/1       Running   0          36m
+    example-etcd-0000           1/1       Running   0          37m
+    example-etcd-0001           1/1       Running   0          37m
+    example-etcd-0002           1/1       Running   0          36m
     vault-operator-1388630079-7g04c   1/1       Running   0          37m
     ```
 
 3. Print the Vault pods:
 
     ```
-    $ kubectl -n default get pods -l app=vault,name=example-vault
+    $ kubectl -n default get pods -l app=vault,name=example
     NAME                              READY     STATUS    RESTARTS   AGE
-    example-vault-1003480066-b757c    0/1       Running   0          36m
-    example-vault-1003480066-jzmwd    0/1       Running   0          36m
+    example-1003480066-b757c    0/1       Running   0          36m
+    example-1003480066-jzmwd    0/1       Running   0          36m
     ```
 
 4. Verify that the Vault nodes can be viewed in the "vault" resource status:
 
       ```
-      $ kubectl -n default get vault example-vault -o jsonpath='{.status.nodes.sealed}'
-      [example-vault-1003480066-b757c example-vault-1003480066-jzmwd]
+      $ kubectl -n default get vault example -o jsonpath='{.status.nodes.sealed}'
+      [example-1003480066-b757c example-1003480066-jzmwd]
       ```
 
       Vault is unready because it is uninitialized and sealed.
@@ -152,7 +152,7 @@ The vault-operator runs a [statsd-exporter](https://github.com/prometheus/statsd
 `curl` the `/metrics` endpoint for any available vault pod to get the Prometheus metrics:
 
 ```sh
-$ VPOD=$(kubectl -n default get vault example-vault -o jsonpath='{.status.nodes.available[0]}')
+$ VPOD=$(kubectl -n default get vault example -o jsonpath='{.status.nodes.available[0]}')
 $ kubectl -n default exec -ti ${VPOD} --container=vault -- curl localhost:9102/metrics
 # HELP go_gc_duration_seconds A summary of the GC invocation durations.
 # TYPE go_gc_duration_seconds summary

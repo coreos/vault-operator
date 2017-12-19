@@ -18,7 +18,7 @@ For example, create a Vault cluster with no TLS secrets specified using the foll
 apiVersion: "vault.security.coreos.com/v1alpha1"
 kind: "VaultService"
 metadata:
-  name: example-vault
+  name: example
 spec:
   nodes: 1
 ```
@@ -28,8 +28,8 @@ The following default secrets are generated for the above Vault cluster:
 ```
 $ kubectl get secrets
 NAME                                        TYPE                                  DATA      AGE
-example-vault-default-vault-client-tls      Opaque                                1         1m
-example-vault-default-vault-server-tls      Opaque                                2         1m
+example-default-vault-client-tls      Opaque                                1         1m
+example-default-vault-server-tls      Opaque                                2         1m
 ```
 
 ## Using custom TLS assets
