@@ -90,19 +90,7 @@ func (v *Vaults) syncVault(key string) (err error) {
 		return err
 	}
 	if !exists {
-		logrus.Infof("deleting Vault: %s", key)
-
-		vr, exists := v.toDelete[key]
-		if !exists {
-			return nil
-		}
-		// TODO: Use a custom GC later
-		err = v.deleteVault(vr)
-		if err != nil {
-			return err
-		}
-
-		delete(v.toDelete, key)
+		logrus.Infof("Vault CR (%s) is deleted", key)
 		return nil
 	}
 
@@ -220,31 +208,6 @@ func (v *Vaults) prepareVaultConfig(vr *api.VaultService) error {
 	}
 
 	return nil
-}
-
-// TODO: replace this method with custom or k8s Garbage Collector
-// deleteVault attempts to delete all associated resources with the vault cluster
-func (v *Vaults) deleteVault(vr *api.VaultService) error {
-	err := k8sutil.DestroyVault(v.kubecli, vr)
-	if err != nil {
-		return err
-	}
-	err = k8sutil.DeleteEtcdCluster(v.etcdCRCli, vr)
-	if err != nil {
-		return err
-	}
-	err = v.kubecli.CoreV1().ConfigMaps(vr.Namespace).Delete(
-		k8sutil.ConfigMapNameForVault(vr), nil)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return err
-	}
-	err = v.cleanupEtcdTLSSecrets(vr)
-	if err != nil {
-		return err
-	}
-
-	err = v.cleanupDefaultVaultTLSSecrets(vr)
-	return err
 }
 
 func (v *Vaults) syncUpgrade(vr *api.VaultService, d *appsv1beta1.Deployment) (err error) {
