@@ -56,6 +56,7 @@ func (v *Vaults) onAddVault(obj interface{}) {
 		panic(err)
 	}
 	v.queue.Add(key)
+	logrus.Infof("Vault CR (%s) is created", key)
 }
 
 func (v *Vaults) onUpdateVault(oldObj, newObj interface{}) {
