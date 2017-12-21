@@ -15,7 +15,8 @@ import (
 // WaitForCluster waits for all available nodes of a cluster to appear in the vault CR status
 // Returns the updated vault cluster and the TLS configuration to use for vault clients interacting with the cluster
 func WaitForCluster(t *testing.T, kubeClient kubernetes.Interface, vaultsCRClient versioned.Interface, vaultCR *api.VaultService) (*api.VaultService, *vaultapi.TLSConfig) {
-	vaultCR, err := WaitAvailableVaultsUp(t, vaultsCRClient, int(vaultCR.Spec.Nodes), 6, vaultCR)
+	// Based on local testing, it took about ~50s for a normal deployment to finish.
+	vaultCR, err := WaitAvailableVaultsUp(t, vaultsCRClient, int(vaultCR.Spec.Nodes), 10, vaultCR)
 	if err != nil {
 		t.Fatalf("failed to wait for cluster nodes to become available: %v", err)
 	}
