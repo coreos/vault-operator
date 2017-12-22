@@ -91,6 +91,5 @@ func (v *Vaults) onDeleteVault(obj interface{}) {
 	if err != nil {
 		panic(err)
 	}
-	v.toDelete[key] = vr
 	v.queue.Add(key)
 }

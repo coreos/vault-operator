@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 
-	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/pkg/client"
 	"github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
@@ -22,10 +21,6 @@ type Vaults struct {
 	// cancel their goroutines when they are deleted
 	ctxCancels map[string]context.CancelFunc
 
-	// vault objects that need to be Garbage Collected during sync
-	// saved here since deleted objects are removed from the cache
-	toDelete map[string]*api.VaultService
-
 	// k8s workqueue pattern
 	indexer  cache.Indexer
 	informer cache.Controller
@@ -41,7 +36,6 @@ func New() *Vaults {
 	return &Vaults{
 		namespace:   os.Getenv("MY_POD_NAMESPACE"),
 		ctxCancels:  map[string]context.CancelFunc{},
-		toDelete:    map[string]*api.VaultService{},
 		kubecli:     k8sutil.MustNewKubeClient(),
 		vaultsCRCli: client.MustNewInCluster(),
 		etcdCRCli:   etcdCRClientPkg.MustNewInCluster(),
