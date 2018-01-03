@@ -13,8 +13,7 @@ spec:
     spec:
       containers:
       - name: etcd-restore-operator
-        # TODO: update to v0.7.3 when released
-        image: quay.io/coreos/etcd-operator:v0.7.2
+        image: quay.io/coreos/etcd-operator:v0.8.0
         command:
         - etcd-restore-operator
         - "--create-crd=false"
