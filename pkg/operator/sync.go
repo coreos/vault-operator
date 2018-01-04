@@ -115,22 +115,25 @@ func (v *Vaults) syncVault(key string) (err error) {
 // by preparing the TLS secrets, deploying the etcd and vault cluster,
 // and finally updating the vault deployment if needed.
 func (v *Vaults) reconcileVault(vr *api.VaultService) (err error) {
+	// After first time reconcile, phase will switch to "Running".
+	if vr.Status.Phase == api.ClusterPhaseInitial {
+		err = v.prepareEtcdTLSSecrets(vr)
+		if err != nil {
+			return err
+		}
+		// etcd cluster should only be created in first time reconcile.
+		err = k8sutil.DeployEtcdCluster(v.etcdCRCli, vr)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = v.prepareDefaultVaultTLSSecrets(vr)
 	if err != nil {
 		return err
 	}
 
-	err = v.prepareEtcdTLSSecrets(vr)
-	if err != nil {
-		return err
-	}
-
 	err = v.prepareVaultConfig(vr)
-	if err != nil {
-		return err
-	}
-
-	err = k8sutil.DeployEtcdCluster(v.etcdCRCli, vr)
 	if err != nil {
 		return err
 	}
