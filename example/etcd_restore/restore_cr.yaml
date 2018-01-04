@@ -1,0 +1,15 @@
+apiVersion: "etcd.database.coreos.com/v1beta2"
+kind: "EtcdRestore"
+metadata:
+  # The restore CR name must be the same as spec.etcdCluster.name
+  name: <restore-name>
+spec:
+  etcdCluster:
+    # The namespace is the same as this EtcdRestore CR
+    name: <restore-name>
+  backupStorageType: S3
+  s3:
+    # The format of "path" must be: "<s3-bucket-name>/<path-to-backup-file>"
+    # e.g: "mybucket/etcd.backup"
+    path: <full-s3-path>
+    awsSecret: <aws-secret>
