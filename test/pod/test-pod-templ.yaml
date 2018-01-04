@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: <POD_NAME>
+spec:
+  restartPolicy: Never
+  imagePullSecrets:
+  - name: coreos-pull-secret
+  containers:
+  - name: <POD_NAME>
+    image: <TEST_IMAGE>
+    imagePullPolicy: Always
+    command: ["hack/test2"]
+    resources:
+      requests:
+        cpu: 1
+    env:
+      - name: TEST_NAMESPACE
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.namespace
+      - name: PASSES
+        value: <PASSES>
+      - name: OPERATOR_IMAGE
+        value: <OPERATOR_IMAGE>
+      - name: E2E_TEST_SELECTOR
+        value: <E2E_TEST_SELECTOR>
+      - name: UPGRADE_FROM
+        value: <UPGRADE_FROM>
+      - name: UPGRADE_TO
+        value: <UPGRADE_TO>

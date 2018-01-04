@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+# KUBECONFIG can be an empty string and so needs to be explicitly declared to avoid an unbound variable error
+KUBECONFIG=${KUBECONFIG:-""}
+
+if [ -z "${PASSES-}" ]; then
+	PASSES="e2e"
+fi
+
+function e2e_pass {
+	E2E_TEST_SELECTOR=${E2E_TEST_SELECTOR:-.*}
+	go test "./test/e2e/" -run="$E2E_TEST_SELECTOR" -timeout=30m --race --kubeconfig=${KUBECONFIG} \
+		--namespace=${TEST_NAMESPACE} \
+		--operator-image=${OPERATOR_IMAGE}
+}
+
+function upgrade_pass {
+	go test "./test/e2e/upgradetest" -timeout=30m --race --kubeconfig=${KUBECONFIG} \
+		--namespace=${TEST_NAMESPACE} \
+		--old-vop-image=$UPGRADE_FROM \
+		--new-vop-image=$UPGRADE_TO
+}
+
+for p in $PASSES; do
+	${p}_pass
+done
+
+echo "=== success ==="
+

@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+: ${TEST_NAMESPACE:?"Need to set TEST_NAMESPACE"}
+: ${POD_NAME:?"Need to set POD_NAME"}
+: ${KUBECONFIG:?"Need to set KUBECONFIG"}
+: ${TEST_POD_SPEC:?"Need to set TEST_POD_SPEC"}
+
+# Setup RBAC rules and pull secret
+source hack/ci/utils.sh
+function cleanup {
+    rbac_clusterrolebinding_cleanup
+    pull_secret_cleanup
+    kubectl -n ${TEST_NAMESPACE} delete pod ${POD_NAME}
+}
+trap cleanup EXIT
+if rbac_clusterrolebinding_setup && pull_secret_setup; then
+    echo "RBAC and pull secret setup success! ==="
+else
+    echo "RBAC and pull secret setup fail! ==="
+    exit 1
+fi
+
+# Create test-pod
+kubectl -n ${TEST_NAMESPACE} create -f ${TEST_POD_SPEC}
+
+PHASE_RUNNING="Running"
+PHASE_SUCCEEDED="Succeeded"
+RETRY_INTERVAL=5
+
+# Wait until pod is running or timeout
+echo "Waiting for test-pod to start runnning"
+TIMEOUT=90
+ELAPSED=0
+POD_PHASE=""
+until [ "${POD_PHASE}" == "${PHASE_RUNNING}" ]
+do
+    if [ "${ELAPSED}" -ge "${TIMEOUT}" ]; then
+        echo "Timeout waiting for test-pod ${POD_NAME} to become running"
+        echo "=============="
+        kubectl -n ${TEST_NAMESPACE} describe pod ${POD_NAME}
+        echo "=============="
+        exit 1
+    fi
+    sleep ${RETRY_INTERVAL}
+    ELAPSED=$(( $ELAPSED + $RETRY_INTERVAL ))
+    POD_PHASE=$(kubectl -n ${TEST_NAMESPACE} get pod ${POD_NAME} -o jsonpath='{.status.phase}')
+done
+
+# Print out and save logs to a file until the pod stops running
+echo "collecting logs =========="
+
+DOCKER_REPO_ROOT="/go/src/github.com/coreos-inc/vault-operator"
+mkdir -p _output/logs/
+cp $KUBECONFIG _output/kubeconfig
+
+docker run --rm \
+    -v "$PWD":"$DOCKER_REPO_ROOT" \
+    -w "$DOCKER_REPO_ROOT" \
+    gcr.io/coreos-k8s-scale-testing/logcollector \
+    logcollector --kubeconfig=${DOCKER_REPO_ROOT}/_output/kubeconfig --e2e-podname=${POD_NAME} \
+    --namespace=${TEST_NAMESPACE} --logs-dir="_output/logs/"
+
+# Check for pod success or failure
+POD_PHASE=$(kubectl -n ${TEST_NAMESPACE} get pod ${POD_NAME} -o jsonpath='{.status.phase}')
+if [ "${POD_PHASE}" == "${PHASE_SUCCEEDED}" ]; then
+    echo "e2e tests finished successfully"
+else
+    echo "e2e tests failed"
+    kubectl -n ${TEST_NAMESPACE} describe pod ${POD_NAME}
+    exit 1
+fi

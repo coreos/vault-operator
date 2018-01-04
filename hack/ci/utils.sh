@@ -32,3 +32,25 @@ function rbac_setup() {
     sed "s/<kube-ns>/${TEST_NAMESPACE}/g" example/rbac-template.yaml > example/rbac.yaml
     kubectl -n ${TEST_NAMESPACE} create -f example/rbac.yaml
 }
+
+# This allows the test-pod to create the vault CRD
+function rbac_clusterrolebinding_setup() {
+    cat <<EOF | kubectl create -f -
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: vault-operator-test-pod
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: ${TEST_NAMESPACE}
+roleRef:
+  kind: ClusterRole
+  name: admin
+  apiGroup: rbac.authorization.k8s.io
+EOF
+}
+
+function rbac_clusterrolebinding_cleanup() {
+    kubectl -n ${TEST_NAMESPACE} delete clusterrolebinding vault-operator-test-pod
+}
