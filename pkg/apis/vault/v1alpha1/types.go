@@ -10,6 +10,13 @@ const (
 	defaultVersion = "0.9.0-0"
 )
 
+type ClusterPhase string
+
+const (
+	ClusterPhaseInitial ClusterPhase = ""
+	ClusterPhaseRunning              = "Running"
+)
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type VaultServiceList struct {
@@ -76,6 +83,11 @@ func (v *VaultService) SetDefaults() bool {
 }
 
 type VaultServiceStatus struct {
+	// Phase indicates the state this Vault cluster jumps in.
+	// Phase goes as one way as below:
+	//   Initial -> Running
+	Phase ClusterPhase `json:"phase"`
+
 	// Initialized indicates if the Vault service is initialized.
 	Initialized bool `json:"initialized"`
 

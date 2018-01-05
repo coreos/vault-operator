@@ -20,7 +20,23 @@ import (
 // updates the status resrouce in the vault CR item.
 func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, vr *api.VaultService) {
 	var tlsConfig *vaultapi.TLSConfig
+
+	s := api.VaultServiceStatus{
+		Phase:       api.ClusterPhaseRunning,
+		ServiceName: vr.GetName(),
+		ClientPort:  k8sutil.VaultClientPort,
+	}
+
 	for {
+		// Do not wait to update Phase ASAP.
+		latest, err := vs.updateVaultCRStatus(ctx, vr.GetName(), vr.GetNamespace(), s)
+		if err != nil {
+			logrus.Errorf("failed updating the status for the vault service: %s (%v)", vr.GetName(), err)
+		}
+		if latest != nil {
+			vr = latest
+		}
+
 		select {
 		case err := <-ctx.Done():
 			logrus.Infof("stop monitoring vault (%s), reason: %v", vr.GetName(), err)
@@ -36,20 +52,7 @@ func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, vr *api.VaultServic
 				continue
 			}
 		}
-
-		s := api.VaultServiceStatus{
-			ServiceName: vr.GetName(),
-			ClientPort:  k8sutil.VaultClientPort,
-		}
 		vs.updateLocalVaultCRStatus(ctx, vr, &s, tlsConfig)
-
-		latest, err := vs.updateVaultCRStatus(ctx, vr.GetName(), vr.GetNamespace(), s)
-		if err != nil {
-			logrus.Errorf("failed updating the status for the vault service: %s (%v)", vr.GetName(), err)
-		}
-		if latest != nil {
-			vr = latest
-		}
 	}
 }
 
