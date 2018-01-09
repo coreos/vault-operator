@@ -16,7 +16,7 @@ Initialize a new Vault cluster before performing any operations.
 1. Configure port forwarding between the local machine and the first available Vault node:
 
     ```sh
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.available[0]}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+    kubectl -n default get vault example -o jsonpath='{.status.nodes.available[0]}' | xargs -0 -I {} kubectl -n default port-forward {} 8200
     ```
 
 2. Open a new terminal.
@@ -52,7 +52,7 @@ A response confirms that the Vault CLI is ready to interact with the Vault serve
 1. Configure port forwarding between the local machine and the first sealed Vault node:
 
     ```sh
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.sealed[0]}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+    kubectl -n default get vault example -o jsonpath='{.status.nodes.sealed[0]}' | xargs -0 -I {} kubectl -n default port-forward {} 8200
     ```
 
 2. Open a new terminal.
@@ -81,7 +81,7 @@ The first node that is unsealed in a multi-node Vault cluster will become the ac
 2. Configure port forwarding between the local machine and the active Vault node:
 
     ```sh
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services port-forward {} 8200
+    kubectl -n default get vault example -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n default port-forward {} 8200
     ```
 
 3. Open a new terminal.
@@ -148,7 +148,7 @@ To see how it works, terminate the active node, and wait for the standby node to
 1. Terminate the active Vault node:
 
     ```
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n vault-services delete po {}
+    kubectl -n default get vault example -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n default delete po {}
     ```
 
     The standby node becomes active.
