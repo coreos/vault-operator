@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+export GOROOT="/usr/local/go"
+export PATH=$GOROOT/bin:$PATH
+
+go version
+kubectl version
+
+: ${TEST_NAMESPACE:?"Need to set TEST_NAMESPACE"}
+
+# Default values for e2e and upgrade test envs
+GIT_VERSION=$(git rev-parse HEAD)
+OPERATOR_IMAGE=${OPERATOR_IMAGE:-"quay.io/coreos/vault-operator-dev:${GIT_VERSION}"}
+E2E_TEST_SELECTOR=${E2E_TEST_SELECTOR:-""}
+
+UPGRADE_TEST_SELECTOR=${UPGRADE_TEST_SELECTOR:-""}
+UPGRADE_FROM=${UPGRADE_FROM:-"quay.io/coreos/vault-operator:latest"}
+# Upgrade tests are run per PR so UPGRADE_TO is the current image built for each PR.
+UPGRADE_TO=${UPGRADE_TO:-"$OPERATOR_IMAGE"}
+
+# TODO: Containerize update vendor
+echo "updating vendor.."
+hack/update_vendor.sh 1>/dev/null
+
+# TODO: Containerize operator build
+BUILD_IMAGE=${BUILD_IMAGE:-true}
+if [[ ${BUILD_IMAGE} == "true" ]]; then
+  hack/build
+  IMAGE=${OPERATOR_IMAGE} hack/push
+fi
+
+# Containerize test-pod build
+BUILD_E2E=${BUILD_E2E:-true}
+if [[ ${BUILD_E2E} == "true" ]]; then
+  TEST_IMAGE=${TEST_IMAGE:-"quay.io/coreos/vault-operator-dev:test-pod-${GIT_VERSION}"}
+  TEST_IMAGE=${TEST_IMAGE} test/pod/docker_push
+fi
+
+echo "TEST_NAMESPACE: ${TEST_NAMESPACE}"
+echo "OPERATOR_IMAGE: ${OPERATOR_IMAGE}"
+echo "TEST_IMAGE: ${TEST_IMAGE}"
+
+if [ -z "${PASSES-}" ]; then
+  echo "No PASSES specified. Skipping tests"
+  exit 0
+fi
+
+# Generate test-pod spec
+export TEST_POD_SPEC=${PWD}/test/pod/test-pod-spec.yaml
+export POD_NAME=${POD_NAME:-"e2e-testing"}
+
+sed -e "s|<POD_NAME>|${POD_NAME}|g" \
+    -e "s|<TEST_IMAGE>|${TEST_IMAGE}|g" \
+    -e "s|<PASSES>|${PASSES}|g" \
+    -e "s|<OPERATOR_IMAGE>|${OPERATOR_IMAGE}|g" \
+    -e "s|<E2E_TEST_SELECTOR>|${E2E_TEST_SELECTOR}|g" \
+    -e "s|<UPGRADE_FROM>|${UPGRADE_FROM}|g" \
+    -e "s|<UPGRADE_TO>|${UPGRADE_TO}|g" \
+    test/pod/test-pod-templ.yaml > ${TEST_POD_SPEC}
+
+# Run test-pod
+test/pod/run-test-pod
