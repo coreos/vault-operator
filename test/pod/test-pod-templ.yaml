@@ -10,7 +10,7 @@ spec:
   - name: <POD_NAME>
     image: <TEST_IMAGE>
     imagePullPolicy: Always
-    command: ["hack/test2"]
+    command: ["hack/test"]
     resources:
       requests:
         cpu: 1

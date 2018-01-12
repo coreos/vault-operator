@@ -4,63 +4,23 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+# KUBECONFIG can be an empty string and so needs to be explicitly declared to avoid an unbound variable error
+KUBECONFIG=${KUBECONFIG:-""}
+
 if [ -z "${PASSES-}" ]; then
-	PASSES="build e2e unit"
+	PASSES="e2e"
 fi
 
-function listPkgs() {
-	go list ./cmd/... ./pkg/... | grep -v generated
-}
-
-function build_pass {
-	IMAGE=$OPERATOR_IMAGE hack/build
-	IMAGE=$OPERATOR_IMAGE hack/push
-}
-
-function unit_pass {
-	TEST_PKGS=$(listPkgs)
-	for pkg in $TEST_PKGS
-	do
-		go test $pkg
-	done
-}
-
 function e2e_pass {
-	# Setup test namespace, RBAC rules and pull secret
-	source hack/ci/utils.sh
-	trap cleanup_all EXIT
-	if setup_all ; then
-		echo "Namespace, RBAC and pull secret setup success! ==="
-	else
-		echo "Namespace, RBAC and pull secret setup fail! ==="
-		exit 1
-	fi
-
-	cp ${KUBECONFIG} _output/kubeconfig
-	go test -c "./test/e2e/" --race -o _output/bin/e2e.test
-	docker run --rm \
-	  -v="${PWD}/_output:/e2etest" \
-	  golang:1.9 \
-	  /e2etest/bin/e2e.test -test.timeout=30m --kubeconfig=/e2etest/kubeconfig --operator-image=${OPERATOR_IMAGE} --namespace=${TEST_NAMESPACE}
+	E2E_TEST_SELECTOR=${E2E_TEST_SELECTOR:-.*}
+	go test "./test/e2e/" -run="$E2E_TEST_SELECTOR" -timeout=30m --race --kubeconfig=${KUBECONFIG} \
+		--namespace=${TEST_NAMESPACE} \
+		--operator-image=${OPERATOR_IMAGE}
 }
 
 function upgrade_pass {
-	# Setup test namespace, RBAC rules and pull secret
-	source hack/ci/utils.sh
-	trap cleanup_all EXIT
-	if setup_all ; then
-		echo "Namespace, RBAC and pull secret setup success! ==="
-	else
-		echo "Namespace, RBAC and pull secret setup fail! ==="
-		exit 1
-	fi
-
-	cp ${KUBECONFIG} _output/kubeconfig
-	go test -c "./test/e2e/upgradetest" --race -o _output/bin/upgradetest.test
-	docker run --rm \
-	  -v="${PWD}/_output:/upgradetest" \
-	  golang:1.9 \
-	  /upgradetest/bin/upgradetest.test -test.timeout=30m --kubeconfig=/upgradetest/kubeconfig --namespace=${TEST_NAMESPACE} \
+	go test "./test/e2e/upgradetest" -timeout=30m --race --kubeconfig=${KUBECONFIG} \
+		--namespace=${TEST_NAMESPACE} \
 		--old-vop-image=$UPGRADE_FROM \
 		--new-vop-image=$UPGRADE_TO
 }

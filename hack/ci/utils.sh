@@ -39,7 +39,7 @@ function rbac_clusterrolebinding_setup() {
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: vault-operator-test-pod
+  name: ${TEST_NAMESPACE}-test-pod
 subjects:
 - kind: ServiceAccount
   name: default
@@ -52,5 +52,5 @@ EOF
 }
 
 function rbac_clusterrolebinding_cleanup() {
-    kubectl -n ${TEST_NAMESPACE} delete clusterrolebinding vault-operator-test-pod
+    kubectl -n ${TEST_NAMESPACE} delete clusterrolebinding ${TEST_NAMESPACE}-test-pod
 }
