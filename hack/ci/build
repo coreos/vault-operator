@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+# This script builds the vault-operator's binary
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+mkdir -p _output
+
+DOCKER_REPO_ROOT="/go/src/github.com/coreos-inc/vault-operator"
+
+docker run --rm \
+	-v "$PWD":"$DOCKER_REPO_ROOT" \
+	-w "$DOCKER_REPO_ROOT" \
+	gcr.io/coreos-k8s-scale-testing/etcd-operator-builder \
+	/bin/bash -c "hack/build"
