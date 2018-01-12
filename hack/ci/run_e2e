@@ -22,18 +22,20 @@ UPGRADE_FROM=${UPGRADE_FROM:-"quay.io/coreos/vault-operator:latest"}
 # Upgrade tests are run per PR so UPGRADE_TO is the current image built for each PR.
 UPGRADE_TO=${UPGRADE_TO:-"$OPERATOR_IMAGE"}
 
-# TODO: Containerize update vendor
-echo "updating vendor.."
-hack/update_vendor.sh 1>/dev/null
+function finish {
+  sudo chown -R "$(whoami)" ./
+}
+trap finish EXIT
 
-# TODO: Containerize operator build
+echo "updating vendor.."
+hack/ci/get_dep
+
 BUILD_IMAGE=${BUILD_IMAGE:-true}
 if [[ ${BUILD_IMAGE} == "true" ]]; then
-  hack/build
+  hack/ci/build
   IMAGE=${OPERATOR_IMAGE} hack/push
 fi
 
-# Containerize test-pod build
 BUILD_E2E=${BUILD_E2E:-true}
 if [[ ${BUILD_E2E} == "true" ]]; then
   TEST_IMAGE=${TEST_IMAGE:-"quay.io/coreos/vault-operator-dev:test-pod-${GIT_VERSION}"}
