@@ -56,14 +56,4 @@ spec:
               fieldPath: metadata.name
         - name: SERVICE_ADDR
           value: "etcd-operator:19999"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: etcd-operator
-spec:
-  selector:
-    name: etcd-operator
-  ports:
-  - protocol: TCP
-    port: 19999
+
