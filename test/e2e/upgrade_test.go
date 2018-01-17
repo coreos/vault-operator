@@ -11,7 +11,7 @@ import (
 func TestUpgradeVault(t *testing.T) {
 	f := framework.Global
 	vaultCR := e2eutil.NewCluster("test-vault-", f.Namespace, 2)
-	vaultCR.Spec.Version = "0.8.3-0"
+	vaultCR.Spec.Version = "0.9.1-0"
 	vaultCR, err := e2eutil.CreateCluster(t, f.VaultsCRClient, vaultCR)
 	if err != nil {
 		t.Fatalf("failed to create vault cluster: %v", err)
@@ -57,7 +57,7 @@ func TestUpgradeVault(t *testing.T) {
 	}
 
 	// Upgrade vault version
-	newVersion := "0.9.0-0"
+	newVersion := "0.9.1-1"
 	vaultCR, err = e2eutil.UpdateVersion(t, f.VaultsCRClient, vaultCR, newVersion)
 	if err != nil {
 		t.Fatalf("failed to update vault version: %v", err)

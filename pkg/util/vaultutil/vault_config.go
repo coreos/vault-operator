@@ -38,14 +38,22 @@ storage "etcd" {
 }
 `
 
-// NewConfigWithTelemetry appends telemetry config to given config data
-func NewConfigWithTelemetry(data string) string {
+// NewConfigWithDefaultParams appends to given config data some default params:
+// - telemetry setting
+// - tcp listener
+func NewConfigWithDefaultParams(data string) string {
 	buf := bytes.NewBufferString(data)
 	buf.WriteString(`
 		telemetry {
 			statsd_address = "localhost:9125"
 		}
 		`)
+
+	listenerSection := fmt.Sprintf(listenerFmt,
+		filepath.Join(VaultTLSAssetDir, ServerTLSCertName),
+		filepath.Join(VaultTLSAssetDir, ServerTLSKeyName))
+	buf.WriteString(listenerSection)
+
 	return buf.String()
 }
 
@@ -55,15 +63,6 @@ func NewConfigWithEtcd(data, etcdURL string) string {
 	storageSection := fmt.Sprintf(etcdStorageFmt, etcdURL, filepath.Join(VaultTLSAssetDir, "etcd-client-ca.crt"),
 		filepath.Join(VaultTLSAssetDir, "etcd-client.crt"), filepath.Join(VaultTLSAssetDir, "etcd-client.key"))
 	data = fmt.Sprintf("%s\n%s\n", data, storageSection)
-	return data
-}
-
-// NewConfigWithListener appends the Listener to Vault config data.
-func NewConfigWithListener(data string) string {
-	listenerSection := fmt.Sprintf(listenerFmt,
-		filepath.Join(VaultTLSAssetDir, ServerTLSCertName),
-		filepath.Join(VaultTLSAssetDir, ServerTLSKeyName))
-	data = fmt.Sprintf("%s\n%s\n", data, listenerSection)
 	return data
 }
 
