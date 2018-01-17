@@ -2,13 +2,12 @@
 
 This document describes how to upgrade an HA-enabled Vault cluster.
 Vault operator simulates the suggested upgrade process as recommended
-in official Vault upgrade docs:
-  https://www.vaultproject.io/guides/upgrading/index.html#ha-installations
+in the official Vault documentation for [Upgrading Vault HA Installations][upgrade-ha].
 
 ## Prerequisites
 
 * Before upgrading to a specific version, see the official Vault upgrade docs:
-  https://www.vaultproject.io/guides/upgrading/index.html
+  [https://www.vaultproject.io/guides/upgrading/index.html][upgrade-vault]
 * Read [Configuring Vault nodes][vault-md]
 
 ## Upgrade the Vault nodes
@@ -44,3 +43,5 @@ become active.
 
 
 [vault-md]: vault.md
+[upgrade-ha]: https://www.vaultproject.io/guides/upgrading/index.html#ha-installations
+[upgrade-vault]: https://www.vaultproject.io/guides/upgrading/index.html
