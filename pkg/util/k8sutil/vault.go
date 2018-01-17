@@ -86,6 +86,9 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.Interface, v *api.VaultService) er
 			},
 		},
 	}
+	if v.Spec.Pod != nil {
+		etcdCluster.Spec.Pod.Resources = v.Spec.Pod.Resources
+	}
 	AddOwnerRefToObject(etcdCluster, AsOwner(v))
 	_, err := etcdCRCli.EtcdV1beta2().EtcdClusters(v.Namespace).Create(etcdCluster)
 	if err != nil {
@@ -226,6 +229,9 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 			}},
 		},
 	}
+	if v.Spec.Pod != nil {
+		applyPodPolicy(&podTempl.Spec, v.Spec.Pod)
+	}
 
 	configEtcdBackendTLS(&podTempl, v)
 	configVaultServerTLS(&podTempl, v)
@@ -288,6 +294,16 @@ func UpgradeDeployment(kubecli kubernetes.Interface, vr *api.VaultService, d *ap
 		return fmt.Errorf("failed to upgrade deployment to (%s): %v", vaultImage(vr.Spec), err)
 	}
 	return nil
+}
+
+func applyPodPolicy(s *v1.PodSpec, p *api.PodPolicy) {
+	for i := range s.Containers {
+		s.Containers[i].Resources = p.Resources
+	}
+
+	for i := range s.InitContainers {
+		s.InitContainers[i].Resources = p.Resources
+	}
 }
 
 func vaultImage(vs api.VaultServiceSpec) string {

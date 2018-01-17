@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -46,6 +47,10 @@ type VaultServiceSpec struct {
 	// Version of Vault to be deployed.
 	Version string `json:"version"`
 
+	// Pod defines the policy for pods owned by vault operator.
+	// This field cannot be updated once the CR is created.
+	Pod *PodPolicy `json:"pod,omitempty"`
+
 	// Name of the ConfigMap for Vault's configuration
 	// If this is empty, operator will create a default config for Vault.
 	// If this is not empty, operator will create a new config overwriting
@@ -54,6 +59,12 @@ type VaultServiceSpec struct {
 
 	// TLS policy of vault nodes
 	TLS *TLSPolicy `json:"TLS,omitempty"`
+}
+
+// PodPolicy defines the policy for pods owned by vault operator.
+type PodPolicy struct {
+	// Resources is the resource requirements for the containers.
+	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // SetDefaults sets the default vaules for the vault spec and returns true if the spec was changed
