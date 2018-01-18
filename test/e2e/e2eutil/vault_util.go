@@ -7,10 +7,14 @@ import (
 	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned"
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
+	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
 
 	vaultapi "github.com/hashicorp/vault/api"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
+
+const targetVaultPort = "8200"
 
 // WaitForCluster waits for all available nodes of a cluster to appear in the vault CR status
 // Returns the updated vault cluster and the TLS configuration to use for vault clients interacting with the cluster
@@ -31,9 +35,9 @@ func WaitForCluster(t *testing.T, kubeClient kubernetes.Interface, vaultsCRClien
 // InitializeVault initializes the specified vault cluster and waits for all available nodes to appear as sealed.
 // Requires established portforwarded connections to the vault pods
 // Returns the updated vault cluster and the initialization response which includes the unseal key
-func InitializeVault(t *testing.T, vaultsCRClient versioned.Interface, vault *api.VaultService, conn *Connection) (*api.VaultService, *vaultapi.InitResponse) {
+func InitializeVault(t *testing.T, vaultsCRClient versioned.Interface, vault *api.VaultService, vClient *vaultapi.Client) (*api.VaultService, *vaultapi.InitResponse) {
 	initOpts := &vaultapi.InitRequest{SecretShares: 1, SecretThreshold: 1}
-	initResp, err := conn.VClient.Sys().Init(initOpts)
+	initResp, err := vClient.Sys().Init(initOpts)
 	if err != nil {
 		t.Fatalf("failed to initialize vault: %v", err)
 	}
@@ -46,8 +50,8 @@ func InitializeVault(t *testing.T, vaultsCRClient versioned.Interface, vault *ap
 }
 
 // UnsealVaultNode unseals the specified vault pod by portforwarding to it via its vault client
-func UnsealVaultNode(unsealKey string, conn *Connection) error {
-	unsealResp, err := conn.VClient.Sys().Unseal(unsealKey)
+func UnsealVaultNode(unsealKey string, vClient *vaultapi.Client) error {
+	unsealResp, err := vClient.Sys().Unseal(unsealKey)
 	if err != nil {
 		return fmt.Errorf("failed to unseal vault: %v", err)
 	}
@@ -55,4 +59,17 @@ func UnsealVaultNode(unsealKey string, conn *Connection) error {
 		return fmt.Errorf("failed to unseal vault: unseal response still shows vault as sealed")
 	}
 	return nil
+}
+
+// SetupVaultClient creates a vault client for the specified pod
+func SetupVaultClient(t *testing.T, kubeClient kubernetes.Interface, namespace string, tlsConfig *vaultapi.TLSConfig, podName string) *vaultapi.Client {
+	pod, err := kubeClient.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("fail to get vault pod (%s): %v", podName, err)
+	}
+	vClient, err := vaultutil.NewClient(k8sutil.PodDNSName(*pod), targetVaultPort, tlsConfig)
+	if err != nil {
+		t.Fatalf("failed creating vault client for (localhost:%v): %v", targetVaultPort, err)
+	}
+	return vClient
 }
