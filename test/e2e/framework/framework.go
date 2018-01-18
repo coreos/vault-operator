@@ -45,7 +45,7 @@ type Framework struct {
 func Setup() error {
 	kubeconfig := flag.String("kubeconfig", "", "kube config path, e.g. $HOME/.kube/config")
 	vopImage := flag.String("operator-image", "", "operator image, e.g. quay.io/coreos/vault-operator-dev:latest")
-	eopImage := flag.String("etcd-operator-image", "quay.io/coreos/etcd-operator:v0.8.1", "etcd operator image, e.g. quay.io/coreos/etcd-operator")
+	eopImage := flag.String("etcd-operator-image", "quay.io/coreos/etcd-operator:v0.8.2", "etcd operator image, e.g. quay.io/coreos/etcd-operator")
 	ns := flag.String("namespace", "", "e2e test namespace")
 	flag.Parse()
 
