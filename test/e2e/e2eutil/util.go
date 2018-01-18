@@ -33,12 +33,3 @@ func PodLabelForOperator(name string) map[string]string {
 func LogfWithTimestamp(t *testing.T, format string, args ...interface{}) {
 	t.Log(time.Now(), fmt.Sprintf(format, args...))
 }
-
-// GetConnOrFail returns the portforward connection for the pod if it exists in the map of connections
-func GetConnOrFail(t *testing.T, podName string, conns map[string]*Connection) *Connection {
-	conn, ok := conns[podName]
-	if !ok {
-		t.Fatalf("failed to find vault client for pod (%v)", podName)
-	}
-	return conn
-}
