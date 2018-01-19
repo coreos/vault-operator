@@ -10,6 +10,8 @@ import (
 	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
 	"github.com/coreos-inc/vault-operator/test/e2e/e2eutil"
 
+	etcdclient "github.com/coreos/etcd-operator/pkg/client"
+	etcdversioned "github.com/coreos/etcd-operator/pkg/generated/clientset/versioned"
 	eopK8sutil "github.com/coreos/etcd-operator/pkg/util/k8sutil"
 	"github.com/coreos/etcd-operator/pkg/util/probe"
 	"github.com/sirupsen/logrus"
@@ -36,6 +38,7 @@ type Framework struct {
 	Config         *restclient.Config
 	RESTClient     *restclient.RESTClient
 	VaultsCRClient versioned.Interface
+	EtcdCRClient   etcdversioned.Interface
 	Namespace      string
 	vopImage       string
 	eopImage       string
@@ -62,12 +65,14 @@ func Setup() error {
 		return fmt.Errorf("failed to create kube CRD client: %v", err)
 	}
 	vaultsCRClient := client.MustNew(config)
+	etcdCRClient := etcdclient.MustNew(config)
 
 	Global = &Framework{
 		KubeClient:     kubeClient,
 		crdcli:         crdcli,
 		Config:         config,
 		VaultsCRClient: vaultsCRClient,
+		EtcdCRClient:   etcdCRClient,
 		Namespace:      *ns,
 		vopImage:       *vopImage,
 		eopImage:       *eopImage,
@@ -182,6 +187,38 @@ func (f *Framework) deployEtcdOperatorPod() error {
 						InitialDelaySeconds: 3,
 						PeriodSeconds:       3,
 						FailureThreshold:    3,
+					},
+				},
+				{
+					Name:            "etcd-backup-operator",
+					Image:           f.eopImage,
+					ImagePullPolicy: v1.PullAlways,
+					Command:         []string{"etcd-backup-operator", "--create-crd=false"},
+					Env: []v1.EnvVar{
+						{
+							Name:      "MY_POD_NAMESPACE",
+							ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"}},
+						},
+						{
+							Name:      "MY_POD_NAME",
+							ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"}},
+						},
+					},
+				},
+				{
+					Name:            "etcd-restore-operator",
+					Image:           f.eopImage,
+					ImagePullPolicy: v1.PullAlways,
+					Command:         []string{"etcd-restore-operator", "--create-crd=false"},
+					Env: []v1.EnvVar{
+						{
+							Name:      "MY_POD_NAMESPACE",
+							ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"}},
+						},
+						{
+							Name:      "MY_POD_NAME",
+							ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"}},
+						},
 					},
 				},
 			},
