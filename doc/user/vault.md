@@ -112,6 +112,32 @@ The first node that is unsealed in a multi-node Vault cluster will become the ac
 
     Successful operations indicate that the active Vault node is serving requests.
 
+## Enable audit backend
+
+[File audit backend][file_audit] is the most native experience for Vault in container.
+
+1. Set up port-forward connection to active node and Vault CLI env same as previous section:
+
+    ```sh
+    kubectl -n default get vault example -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n default port-forward {} 8200
+    ```
+
+    Open another terminal and type:
+
+    ```sh
+    export VAULT_ADDR='https://localhost:8200'
+    export VAULT_SKIP_VERIFY="true"
+    export VAULT_TOKEN=<root-token>
+    ```
+
+2. Enable file audit backend and write audit log to standard output:
+
+    ```sh
+    vault audit-enable file file_path=stdout
+    ```
+
+   Then use docker/Kubernetes log collector to save logs and view later.
+
 ## Accessing Vault on Kubernetes
 
 Vault-operator creates [Kubernetes services][k8s-services] for accessing Vault deployments.
@@ -188,7 +214,6 @@ To see how it works, perform the following:
 
 A new Vault node is created to replace the terminated one. Unseal the node and continue using HA.
 
-
 [getting-started]: ../../README.md#getting-started
 [ha]: https://www.vaultproject.io/docs/concepts/ha.html
 [initialize-vault]: https://www.vaultproject.io/intro/getting-started/deploy.html#initializing-the-vault
@@ -197,3 +222,4 @@ A new Vault node is created to replace the terminated one. Unseal the node and c
 [vault-cli]: https://www.vaultproject.io/docs/install/index.html
 [vault-cli-env]: https://www.vaultproject.io/docs/commands/environment.html
 [k8s-services]: https://kubernetes.io/docs/concepts/services-networking/service/
+[file_audit]:https://www.vaultproject.io/docs/audit/file.html
