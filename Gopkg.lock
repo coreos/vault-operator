@@ -20,6 +20,12 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
+  name = "github.com/aws/aws-sdk-go"
+  packages = ["aws","aws/awserr","aws/awsutil","aws/client","aws/client/metadata","aws/credentials","aws/endpoints","aws/request","aws/signer/v4","internal/shareddefaults","private/protocol","private/protocol/query","private/protocol/query/queryutil","private/protocol/rest","private/protocol/restxml","private/protocol/xml/xmlutil","service/s3"]
+  revision = "b0e76431638de15ec1e6be51b6f745e1f2134fde"
+  version = "v1.12.63"
+
+[[projects]]
   name = "github.com/coreos/etcd"
   packages = ["auth/authpb","clientv3","etcdserver/api/v3rpc/rpctypes","etcdserver/etcdserverpb","mvcc/mvccpb","pkg/tlsutil","pkg/transport"]
   revision = "1e1dbb23924672c6cd72c62ee0db2b45f778da71"
@@ -27,9 +33,9 @@
 
 [[projects]]
   name = "github.com/coreos/etcd-operator"
-  packages = ["pkg/apis/etcd/v1beta2","pkg/client","pkg/generated/clientset/versioned","pkg/generated/clientset/versioned/scheme","pkg/generated/clientset/versioned/typed/etcd/v1beta2","pkg/util/constants","pkg/util/etcdutil","pkg/util/k8sutil","pkg/util/probe","pkg/util/retryutil"]
-  revision = "14aa69c28665d5b4f5bd7d1f1a794d03fe5f17ca"
-  version = "v0.8.0"
+  packages = ["pkg/apis/etcd/v1beta2","pkg/client","pkg/generated/clientset/versioned","pkg/generated/clientset/versioned/scheme","pkg/generated/clientset/versioned/typed/etcd/v1beta2","pkg/util","pkg/util/constants","pkg/util/etcdutil","pkg/util/k8sutil","pkg/util/probe","pkg/util/retryutil","test/e2e/e2eutil"]
+  revision = "0f552a6b781e207adaa245a7e287e64585f91a36"
+  version = "v0.8.2"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -60,6 +66,12 @@
   packages = ["."]
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
   version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/go-ini/ini"
+  packages = ["."]
+  revision = "32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a"
+  version = "v1.32.0"
 
 [[projects]]
   branch = "master"
@@ -192,6 +204,11 @@
   packages = ["."]
   revision = "7fe0c75c13abdee74b09fcacef5ea1c6bba6a874"
   version = "0.2.4"
+
+[[projects]]
+  name = "github.com/jmespath/go-jmespath"
+  packages = ["."]
+  revision = "0b12d6b5"
 
 [[projects]]
   name = "github.com/json-iterator/go"
@@ -352,6 +369,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3a70f331ae4f0329d52d6f5ec89c7567f3df7655cc52f34ede5b3c4ffe6c3fc9"
+  inputs-digest = "05c830cde4dbbbe09ff1d18408a8386c79f2fc22bb7f1c048def42da5e1a1e36"
   solver-name = "gps-cdcl"
   solver-version = 1
