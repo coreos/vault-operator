@@ -37,3 +37,7 @@ function setup_all_crds() {
     kubectl create -f example/vault_crd.yaml 2>/dev/null || :
     kubectl create -f example/etcd_crds.yaml 2>/dev/null || :
 }
+
+function copy_pull_secret() {
+    kubectl get secrets -n tectonic-system -o yaml coreos-pull-secret | sed "s|tectonic-system|${TEST_NAMESPACE}|g" | kubectl create -f -
+}
