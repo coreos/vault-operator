@@ -11,6 +11,8 @@ go version
 kubectl version
 
 : ${TEST_NAMESPACE:?"Need to set TEST_NAMESPACE"}
+: ${TEST_S3_BUCKET:?"Need to set TEST_S3_BUCKET"}
+: ${TEST_AWS_SECRET:?"Need to set TEST_AWS_SECRET"}
 
 # Default values for e2e and upgrade test envs
 GIT_VERSION=$(git rev-parse HEAD)
@@ -59,6 +61,8 @@ sed -e "s|<POD_NAME>|${POD_NAME}|g" \
     -e "s|<TEST_IMAGE>|${TEST_IMAGE}|g" \
     -e "s|<PASSES>|${PASSES}|g" \
     -e "s|<OPERATOR_IMAGE>|${OPERATOR_IMAGE}|g" \
+    -e "s|<TEST_AWS_SECRET>|${TEST_AWS_SECRET}|g" \
+    -e "s|<TEST_S3_BUCKET>|${TEST_S3_BUCKET}|g" \
     -e "s|<E2E_TEST_SELECTOR>|${E2E_TEST_SELECTOR}|g" \
     -e "s|<UPGRADE_FROM>|${UPGRADE_FROM}|g" \
     -e "s|<UPGRADE_TO>|${UPGRADE_TO}|g" \

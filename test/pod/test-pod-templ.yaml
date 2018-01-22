@@ -25,6 +25,10 @@ spec:
         value: <OPERATOR_IMAGE>
       - name: E2E_TEST_SELECTOR
         value: <E2E_TEST_SELECTOR>
+      - name: TEST_AWS_SECRET
+        value: <TEST_AWS_SECRET>
+      - name: TEST_S3_BUCKET
+        value: <TEST_S3_BUCKET>
       - name: UPGRADE_FROM
         value: <UPGRADE_FROM>
       - name: UPGRADE_TO
