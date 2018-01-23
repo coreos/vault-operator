@@ -24,6 +24,10 @@ UPGRADE_FROM=${UPGRADE_FROM:-"quay.io/coreos/vault-operator:latest"}
 # Upgrade tests are run per PR so UPGRADE_TO is the current image built for each PR.
 UPGRADE_TO=${UPGRADE_TO:-"$OPERATOR_IMAGE"}
 
+# Create all CRDs
+source hack/ci/utils.sh
+setup_all_crds
+
 function finish {
   sudo chown -R "$(whoami)" ./
 }
