@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o pipefail
+
+KUBECONFIG=${KUBECONFIG:-"/kubeconfig"}
+
+# Use prebuilt operator and test-pod images
+export OPERATOR_IMAGE="quay.io/coreos/vault-operator-dev:master"
+export TEST_IMAGE="quay.io/coreos/vault-operator-dev:test-pod-master"
+export PASSES="e2e"
+
+kubectl version
+kubectl get nodes
+
+# Create test namespace
+export TEST_NAMESPACE=$(cat <<EOF | kubectl create -f - | awk '{print $2}' | tr -d '"'
+apiVersion: v1
+kind: Namespace
+metadata:
+  generateName: vault-operator-test-
+EOF
+)
+
+echo "TEST_NAMESPACE: ${TEST_NAMESPACE}"
+echo "OPERATOR_IMAGE: ${OPERATOR_IMAGE}"
+echo "TEST_POD_IMAGE: ${TEST_IMAGE}"
+
+# Setup CRDs, RBAC rules, pull secret
+source hack/ci/utils.sh
+setup_all_crds
+function cleanup {
+    kubectl delete namespace $TEST_NAMESPACE || :
+    rbac_cleanup
+}
+trap cleanup EXIT
+if rbac_setup && copy_pull_secret; then
+    echo "RBAC and pull secret setup success! ==="
+else
+    echo "RBAC and pull secret setup fail! ==="
+    exit 1
+fi
+
+# Create aws secret
+export TEST_AWS_SECRET="aws"
+export TEST_S3_BUCKET="jenkins-testing-operator"
+AWS_DIR=${AWS_DIR:-"/aws"}
+kubectl -n $TEST_NAMESPACE create secret generic $TEST_AWS_SECRET --from-file=$AWS_DIR/credentials --from-file=$AWS_DIR/config
+
+# Generate test-pod spec
+export TEST_POD_SPEC=${PWD}/test/pod/test-pod-spec.yaml
+export POD_NAME=${POD_NAME:-"e2e-testing"}
+
+sed -e "s|<POD_NAME>|${POD_NAME}|g" \
+    -e "s|<TEST_IMAGE>|${TEST_IMAGE}|g" \
+    -e "s|<PASSES>|${PASSES}|g" \
+    -e "s|<OPERATOR_IMAGE>|${OPERATOR_IMAGE}|g" \
+    -e "s|<TEST_AWS_SECRET>|${TEST_AWS_SECRET}|g" \
+    -e "s|<TEST_S3_BUCKET>|${TEST_S3_BUCKET}|g" \
+    -e "s|<E2E_TEST_SELECTOR>|${E2E_TEST_SELECTOR}|g" \
+    -e "s|<UPGRADE_FROM>|${UPGRADE_FROM}|g" \
+    -e "s|<UPGRADE_TO>|${UPGRADE_TO}|g" \
+    test/pod/test-pod-templ.yaml > ${TEST_POD_SPEC}
+
+# Create test-pod
+kubectl -n ${TEST_NAMESPACE} create -f ${TEST_POD_SPEC}
+
+PHASE_RUNNING="Running"
+PHASE_SUCCEEDED="Succeeded"
+RETRY_INTERVAL=5
+
+# Wait until pod is running or timeout
+echo "Waiting for test-pod to start runnning"
+TIMEOUT=90
+ELAPSED=0
+POD_PHASE=""
+until [[ "${POD_PHASE}" == "${PHASE_RUNNING}" ]]
+do
+    if [ "${ELAPSED}" -ge "${TIMEOUT}" ]; then
+        echo "Timeout waiting for test-pod ${POD_NAME} to become running"
+        echo "=============="
+        kubectl -n ${TEST_NAMESPACE} describe pod ${POD_NAME}
+        echo "=============="
+        exit 1
+    fi
+    sleep ${RETRY_INTERVAL}
+    ELAPSED=$(( $ELAPSED + $RETRY_INTERVAL ))
+    POD_PHASE=$(kubectl -n ${TEST_NAMESPACE} get pod ${POD_NAME} -o jsonpath='{.status.phase}')
+done
+
+echo "collecting test logs..."
+mkdir -p /out
+kubectl -n ${TEST_NAMESPACE} logs ${POD_NAME} -f 2>&1 | tee /out/e2e-testing.log
+
+POD_PHASE=$(kubectl -n ${TEST_NAMESPACE} get pod ${POD_NAME} -o jsonpath='{.status.phase}')
+if [[ "${POD_PHASE}" == "${PHASE_SUCCEEDED}" ]]; then
+    echo "e2e tests finished successfully"
+else
+    echo "e2e tests failed"
+    kubectl -n ${TEST_NAMESPACE} describe pod ${POD_NAME}
+    exit 1
+fi
