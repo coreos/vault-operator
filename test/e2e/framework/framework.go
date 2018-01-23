@@ -101,10 +101,6 @@ func (f *Framework) setup() error {
 		return fmt.Errorf("failed to setup etcd operator: %v", err)
 	}
 
-	err := k8sutil.CreateVaultCRD(f.crdcli)
-	if err != nil {
-		return fmt.Errorf("failed to setup vault operator: %v", err)
-	}
 	if err := f.deployVaultOperatorPod(); err != nil {
 		return fmt.Errorf("failed to setup vault operator: %v", err)
 	}

@@ -12,12 +12,12 @@ set -o pipefail
 # Setup RBAC rules and pull secret
 source hack/ci/utils.sh
 function cleanup {
-    rbac_clusterrolebinding_cleanup
+    rbac_cleanup
     pull_secret_cleanup
     kubectl -n ${TEST_NAMESPACE} delete pod ${POD_NAME}
 }
 trap cleanup EXIT
-if rbac_clusterrolebinding_setup && pull_secret_setup; then
+if rbac_setup && pull_secret_setup; then
     echo "RBAC and pull secret setup success! ==="
 else
     echo "RBAC and pull secret setup fail! ==="
