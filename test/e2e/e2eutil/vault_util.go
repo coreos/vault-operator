@@ -2,6 +2,7 @@ package e2eutil
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
@@ -72,4 +73,68 @@ func SetupVaultClient(t *testing.T, kubeClient kubernetes.Interface, namespace s
 		t.Fatalf("failed creating vault client for (localhost:%v): %v", targetVaultPort, err)
 	}
 	return vClient
+}
+
+// SetupUnsealedVaultCluster initializes a vault cluster and unseals the 1st vault node.
+func SetupUnsealedVaultCluster(t *testing.T, kubeClient kubernetes.Interface, vaultsCRClient versioned.Interface, namespace string) (*api.VaultService, *vaultapi.TLSConfig, string) {
+	vaultCR, err := CreateCluster(t, vaultsCRClient, NewCluster("test-vault-", namespace, 2))
+	if err != nil {
+		t.Fatalf("failed to create vault cluster: %v", err)
+	}
+
+	vaultCR, tlsConfig := WaitForCluster(t, kubeClient, vaultsCRClient, vaultCR)
+
+	// Init vault via the first available node
+	podName := vaultCR.Status.Nodes.Available[0]
+	vClient := SetupVaultClient(t, kubeClient, namespace, tlsConfig, podName)
+	vaultCR, initResp := InitializeVault(t, vaultsCRClient, vaultCR, vClient)
+
+	// Unseal the 1st vault node and wait for it to become active
+	podName = vaultCR.Status.Nodes.Sealed[0]
+	vClient = SetupVaultClient(t, kubeClient, namespace, tlsConfig, podName)
+	if err := UnsealVaultNode(initResp.Keys[0], vClient); err != nil {
+		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
+	}
+	vaultCR, err = WaitActiveVaultsUp(t, vaultsCRClient, 6, vaultCR)
+	if err != nil {
+		t.Fatalf("failed to wait for any node to become active: %v", err)
+	}
+
+	return vaultCR, tlsConfig, initResp.RootToken
+}
+
+// WriteSecretData writes secret data into vault.
+func WriteSecretData(t *testing.T, vaultCR *api.VaultService, kubeClient kubernetes.Interface, tlsConfig *vaultapi.TLSConfig, rootToken, namespace string) (*vaultapi.Client, string, map[string]interface{}, string) {
+	// Write secret to active node
+	podName := vaultCR.Status.Nodes.Active
+	vClient := SetupVaultClient(t, kubeClient, namespace, tlsConfig, podName)
+	vClient.SetToken(rootToken)
+
+	keyPath := "secret/login"
+	data := &SampleSecret{Username: "user", Password: "pass"}
+	// TODO: print secret data.
+	secretData, err := MapObjectToArbitraryData(data)
+	if err != nil {
+		t.Fatalf("failed to create secret data: %v", err)
+	}
+
+	_, err = vClient.Logical().Write(keyPath, secretData)
+	if err != nil {
+		t.Fatalf("failed to write secret (%v) to vault node (%v): %v", keyPath, podName, err)
+	}
+	return vClient, keyPath, secretData, podName
+}
+
+// VerifySecretData gets secret of the "keyPath" and compares it against the given secretData.
+func VerifySecretData(t *testing.T, vClient *vaultapi.Client, secretData map[string]interface{}, keyPath, podName string) {
+	// Read secret back from active node
+	secret, err := vClient.Logical().Read(keyPath)
+	if err != nil {
+		t.Fatalf("failed to read secret(%v) from vault node (%v): %v", keyPath, podName, err)
+	}
+
+	if !reflect.DeepEqual(secret.Data, secretData) {
+		// TODO: Print out secrets
+		t.Fatal("Read secret data is not the same as write secret")
+	}
 }
