@@ -9,12 +9,9 @@ This example will:
 
 ### Prerequisites
 * Tectonic 1.7+
+* Before beginning, create the [example][example_vault] Vault cluster that is initialized and unsealed.
 
 ## Kubernetes auth backend setup
-
-Use the [create-cluster.sh][create-cluster] script to initialize and unseal a Vault cluster.
-
-This example assumes a Vault cluster running in the namespace `default`. Adjust the commands below as needed for your namespace.
 
 ### Configure port forwarding
 
@@ -163,4 +160,4 @@ kubectl -n default delete clusterrolebinding vault-tokenreview-binding
 
 [kubernetes-auth-backend]: https://www.vaultproject.io/docs/auth/kubernetes.html
 [vault-cli-env]: https://www.vaultproject.io/docs/commands/environment.html
-[create-cluster]: ../../hack/helper/create-cluster.sh
+[example_vault]:./example_vault.yaml

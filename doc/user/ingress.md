@@ -2,11 +2,9 @@
 
 This guide shows how to make the Vault service accessible from outside a Kubernetes cluster by setting up an Ingress resource. For more information about Ingress see the [Tectonic Ingress docs][tectonic-ingress-docs].
 
-Before beginning, create a Vault cluster that is initialized and unsealed. Use the [create-cluster][create-cluster] script for a quick setup.
-
 ### Assumptions
 
-* This example assumes a Vault cluster named `example` in the namespace `default` whose service is accessible at `https://example.default.svc:8200` from inside the cluster.
+* Before beginning, create the [example][example_vault] Vault cluster that is initialized and unsealed.
 
 * The Ingress hostname used to access the Vault service will be `vault.ingress.staging.core-os.net`.
 
@@ -93,5 +91,5 @@ VAULT_SKIP_VERIFY=false
 
 
 [tectonic-ingress-docs]: https://coreos.com/tectonic/docs/latest/admin/ingress.html
-[create-cluster]: ../../hack/helper/create-cluster.sh
 [tls-gen]: ../../hack/tls-gen.sh
+[example_vault]:./example_vault.yaml

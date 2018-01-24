@@ -1,13 +1,11 @@
-# Configuring Vault nodes
+# Initialize and Unseal a Vault Cluster
 
-This document describes how to access a Vault node deployed by the vault-operator and configure a High Availability (HA) Vault setup.
-
-See [Vault operator][getting-started] for information on managing Vault instances using the vault-operator.
+This document describes how to initialize, unseal, and access the Vault service.
 
 ## Prerequisites
 
 * [Vault Commands (CLI)][vault-cli] installed
-* [Vault operator][getting-started] configured
+* Before beginning, create the [example][example_vault] Vault cluster.
 
 ## Initializing a Vault cluster
 
@@ -214,7 +212,6 @@ To see how it works, perform the following:
 
 A new Vault node is created to replace the terminated one. Unseal the node and continue using HA.
 
-[getting-started]: ../../README.md#getting-started
 [ha]: https://www.vaultproject.io/docs/concepts/ha.html
 [initialize-vault]: https://www.vaultproject.io/intro/getting-started/deploy.html#initializing-the-vault
 [seal-unseal-vault]: https://www.vaultproject.io/intro/getting-started/deploy.html#seal-unseal
@@ -223,3 +220,4 @@ A new Vault node is created to replace the terminated one. Unseal the node and c
 [vault-cli-env]: https://www.vaultproject.io/docs/commands/environment.html
 [k8s-services]: https://kubernetes.io/docs/concepts/services-networking/service/
 [file_audit]:https://www.vaultproject.io/docs/audit/file.html
+[example_vault]:./example_vault.yaml

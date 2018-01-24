@@ -4,10 +4,8 @@
 
 ### Prerequisites
 
-* Set up an initialized and unsealed Vault cluster. Use the [create-cluster][create-cluster] script for a quick setup.
+* Before beginning, create the [example][example_vault] Vault cluster that is initialized and unsealed.
 * Install and initialize Helm using the [Helm installation instructions][helm-install]
-
-This example assumes a Vault cluster named `example` in the namespace `default`.
 
 ## Install Vault-UI
 
@@ -93,8 +91,8 @@ When complete, the Helm installation will provide notes on how to access Vault-U
 With the Ingress configuration, Vault-UI should be accessible at the Ingress host `vault-ui.ingress.staging.core-os.net`. Make sure to set up the DNS record for the Ingress host to make it accessible as described in the [Ingress guide][ingress-dns]. If you are unable to access Vault-UI via Ingress, try accessing it via port forwarding to isolate the issue.
 
 
-[create-cluster]: ../../hack/helper/create-cluster.sh
 [helm-install]: https://github.com/kubernetes/helm/blob/master/docs/install.md
 [ingress-tls]: ingress.md#generate-custom-tls-assets-for-the-ingress-host
 [ingress-dns]: ingress.md#create-dns-record-for-the-ingress-host
 [vault-ui]: https://github.com/djenriquez/vault-ui
+[example_vault]:./example_vault.yaml
