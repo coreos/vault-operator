@@ -112,10 +112,9 @@ func WriteSecretData(t *testing.T, vaultCR *api.VaultService, kubeClient kuberne
 
 	keyPath := "secret/login"
 	data := &SampleSecret{Username: "user", Password: "pass"}
-	// TODO: print secret data.
 	secretData, err := MapObjectToArbitraryData(data)
 	if err != nil {
-		t.Fatalf("failed to create secret data: %v", err)
+		t.Fatalf("failed to create secret data (%+v): %v", data, err)
 	}
 
 	_, err = vClient.Logical().Write(keyPath, secretData)
@@ -134,7 +133,6 @@ func VerifySecretData(t *testing.T, vClient *vaultapi.Client, secretData map[str
 	}
 
 	if !reflect.DeepEqual(secret.Data, secretData) {
-		// TODO: Print out secrets
-		t.Fatal("Read secret data is not the same as write secret")
+		t.Fatalf("Read secret data (%+v) is not the same as written secret (%+v)", secret.Data, secretData)
 	}
 }
