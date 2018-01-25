@@ -82,9 +82,9 @@ Wait until the etcd pods for vault's etcd cluster `example-etcd` are running aga
 ```sh
 $ kubectl get pods -l app=etcd
 NAME                READY     STATUS    RESTARTS   AGE
-example-etcd-0000   1/1       Running   0          2m
-example-etcd-0001   1/1       Running   0          2m
-example-etcd-0002   1/1       Running   0          2m
+example-etcd-gxkmr9ql7z   1/1       Running   0          2m
+example-etcd-m6g62x6mwc   1/1       Running   0          2m
+example-etcd-rqk62l46kw   1/1       Running   0          2m
 ```
 
 ## Verify restored etcd cluster
