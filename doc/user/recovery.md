@@ -7,23 +7,7 @@ The etcd restore operator can then be used to restore Vault to a previous state 
 ## Prerequisite
 
 * [Vault Commands (CLI)][vault-cli] installed
-
-## Create a Vault cluster
-
-Use the Tectonic console to enable the Vault Open Cloud Service for the `default` namespace. This will setup the vault, etcd, etcd backup and etcd restore operators in that namespace.
-
-Next create a Vault cluster by clicking `Create Vault Service` under the `Available Applications` tab. Use the following spec to create the cluster in the `default` namespace:
-
-```yaml
-apiVersion: vault.security.coreos.com/v1alpha1
-kind: VaultService
-metadata:
-  name: example
-  namespace: default
-spec:
-  nodes: 2
-  version: 0.9.0-0
-```
+* Before beginning, create the [example][example_vault] Vault cluster that is initialized and unsealed.
 
 ## Write a secret
 
@@ -122,10 +106,10 @@ value           	bar
 ```
 
 [set_aws]:https://github.com/coreos/etcd-operator/blob/master/doc/user/walkthrough/backup-operator.md#setup-aws-secret
-[config_rbac]:https://github.com/coreos-inc/vault-operator#configuring-rbac
 [vault_write]:https://github.com/coreos-inc/vault-operator/blob/master/doc/user/vault.md#writing-secrets-to-the-active-node
 [vault_unseal]:https://github.com/coreos-inc/vault-operator/blob/master/doc/user/vault.md#unsealing-a-sealed-node
 [vault_init]:https://github.com/coreos-inc/vault-operator/blob/master/doc/user/vault.md#initializing-a-vault-cluster
 [vault_configured]:https://github.com/coreos-inc/vault-operator/blob/master/README.md#getting-started
 [readme]:https://github.com/coreos-inc/vault-operator/blob/master/README.md
 [vault-cli]: https://www.vaultproject.io/docs/install/index.html
+[example_vault]:./example_vault.yaml
