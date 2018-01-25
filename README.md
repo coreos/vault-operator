@@ -117,9 +117,9 @@ In this example, a Vault cluster is configured with two nodes in high availabili
     etcd-operator-346152359-34pwm     1/1       Running   0          43m
     example-1003480066-b757c    0/1       Running   0          36m
     example-1003480066-jzmwd    0/1       Running   0          36m
-    example-etcd-0000           1/1       Running   0          37m
-    example-etcd-0001           1/1       Running   0          37m
-    example-etcd-0002           1/1       Running   0          36m
+    example-etcd-gxkmr9ql7z           1/1       Running   0          37m
+    example-etcd-m6g62x6mwc           1/1       Running   0          37m
+    example-etcd-rqk62l46kw           1/1       Running   0          36m
     vault-operator-1388630079-7g04c   1/1       Running   0          37m
     ```
 
