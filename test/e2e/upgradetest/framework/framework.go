@@ -44,7 +44,7 @@ func Setup() error {
 	kubeconfig := flag.String("kubeconfig", "", "kube config path, e.g. $HOME/.kube/config")
 	oldVOPImage := flag.String("old-vop-image", "", "operator image, e.g. quay.io/coreos/vault-operator-dev:latest")
 	newVOPImage := flag.String("new-vop-image", "", "operator image, e.g. quay.io/coreos/vault-operator-dev:master")
-	eopImage := flag.String("etcd-operator-image", "quay.io/coreos/etcd-operator:v0.8.2", "etcd operator image, e.g. quay.io/coreos/etcd-operator")
+	eopImage := flag.String("etcd-operator-image", "quay.io/coreos/etcd-operator:v0.8.3", "etcd operator image, e.g. quay.io/coreos/etcd-operator")
 	ns := flag.String("namespace", "", "e2e test namespace")
 	flag.Parse()
 
