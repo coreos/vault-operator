@@ -34,8 +34,8 @@
 [[projects]]
   name = "github.com/coreos/etcd-operator"
   packages = ["pkg/apis/etcd/v1beta2","pkg/client","pkg/generated/clientset/versioned","pkg/generated/clientset/versioned/scheme","pkg/generated/clientset/versioned/typed/etcd/v1beta2","pkg/util","pkg/util/constants","pkg/util/etcdutil","pkg/util/k8sutil","pkg/util/probe","pkg/util/retryutil","test/e2e/e2eutil"]
-  revision = "0f552a6b781e207adaa245a7e287e64585f91a36"
-  version = "v0.8.2"
+  revision = "85c37511b1293a530ab98c0118e117a30ad0fe26"
+  version = "v0.8.3"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -351,7 +351,7 @@
 [[projects]]
   branch = "release-1.8"
   name = "k8s.io/apimachinery"
-  packages = ["pkg/api/equality","pkg/api/errors","pkg/api/meta","pkg/api/resource","pkg/apis/meta/internalversion","pkg/apis/meta/v1","pkg/apis/meta/v1/unstructured","pkg/apis/meta/v1alpha1","pkg/conversion","pkg/conversion/queryparams","pkg/conversion/unstructured","pkg/fields","pkg/labels","pkg/runtime","pkg/runtime/schema","pkg/runtime/serializer","pkg/runtime/serializer/json","pkg/runtime/serializer/protobuf","pkg/runtime/serializer/recognizer","pkg/runtime/serializer/streaming","pkg/runtime/serializer/versioning","pkg/selection","pkg/types","pkg/util/cache","pkg/util/clock","pkg/util/diff","pkg/util/errors","pkg/util/framer","pkg/util/intstr","pkg/util/json","pkg/util/mergepatch","pkg/util/net","pkg/util/runtime","pkg/util/sets","pkg/util/strategicpatch","pkg/util/validation","pkg/util/validation/field","pkg/util/wait","pkg/util/yaml","pkg/version","pkg/watch","third_party/forked/golang/json","third_party/forked/golang/reflect"]
+  packages = ["pkg/api/equality","pkg/api/errors","pkg/api/meta","pkg/api/resource","pkg/apis/meta/internalversion","pkg/apis/meta/v1","pkg/apis/meta/v1/unstructured","pkg/apis/meta/v1alpha1","pkg/conversion","pkg/conversion/queryparams","pkg/conversion/unstructured","pkg/fields","pkg/labels","pkg/runtime","pkg/runtime/schema","pkg/runtime/serializer","pkg/runtime/serializer/json","pkg/runtime/serializer/protobuf","pkg/runtime/serializer/recognizer","pkg/runtime/serializer/streaming","pkg/runtime/serializer/versioning","pkg/selection","pkg/types","pkg/util/cache","pkg/util/clock","pkg/util/diff","pkg/util/errors","pkg/util/framer","pkg/util/intstr","pkg/util/json","pkg/util/mergepatch","pkg/util/net","pkg/util/rand","pkg/util/runtime","pkg/util/sets","pkg/util/strategicpatch","pkg/util/validation","pkg/util/validation/field","pkg/util/wait","pkg/util/yaml","pkg/version","pkg/watch","third_party/forked/golang/json","third_party/forked/golang/reflect"]
   revision = "019ae5ada31de202164b118aee88ee2d14075c31"
 
 [[projects]]
@@ -369,6 +369,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "05c830cde4dbbbe09ff1d18408a8386c79f2fc22bb7f1c048def42da5e1a1e36"
+  inputs-digest = "fe829f2cdb7732914b0e23710d1aa01a8416cad3d1b7f39cc1e628b71d1bde9a"
   solver-name = "gps-cdcl"
   solver-version = 1
