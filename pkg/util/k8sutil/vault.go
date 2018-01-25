@@ -272,11 +272,18 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 		},
 		Spec: v1.ServiceSpec{
 			Selector: selector,
-			Ports: []v1.ServicePort{{
-				Name:     "vault",
-				Protocol: v1.ProtocolTCP,
-				Port:     VaultClientPort,
-			}},
+			Ports: []v1.ServicePort{
+				{
+					Name:     "vault",
+					Protocol: v1.ProtocolTCP,
+					Port:     VaultClientPort,
+				},
+				{
+					Name:     "prometheus",
+					Protocol: v1.ProtocolTCP,
+					Port:     exporterPromPort,
+				},
+			},
 		},
 	}
 	AddOwnerRefToObject(svc, AsOwner(v))
