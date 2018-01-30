@@ -20,6 +20,7 @@ const (
 var listenerFmt = `
 listener "tcp" {
   address     = "0.0.0.0:8200"
+  cluster_address = "0.0.0.0:8201"
   tls_cert_file = "%s"
   tls_key_file  = "%s"
 }
@@ -30,7 +31,6 @@ storage "etcd" {
   address = "%s"
   etcd_api = "v3"
   ha_enabled = "true"
-  disable_clustering = "true"
   tls_ca_file = "%s"
   tls_cert_file = "%s"
   tls_key_file = "%s"
@@ -44,10 +44,10 @@ storage "etcd" {
 func NewConfigWithDefaultParams(data string) string {
 	buf := bytes.NewBufferString(data)
 	buf.WriteString(`
-		telemetry {
-			statsd_address = "localhost:9125"
-		}
-		`)
+telemetry {
+	statsd_address = "localhost:9125"
+}
+`)
 
 	listenerSection := fmt.Sprintf(listenerFmt,
 		filepath.Join(VaultTLSAssetDir, ServerTLSCertName),
@@ -62,7 +62,7 @@ func NewConfigWithDefaultParams(data string) string {
 func NewConfigWithEtcd(data, etcdURL string) string {
 	storageSection := fmt.Sprintf(etcdStorageFmt, etcdURL, filepath.Join(VaultTLSAssetDir, "etcd-client-ca.crt"),
 		filepath.Join(VaultTLSAssetDir, "etcd-client.crt"), filepath.Join(VaultTLSAssetDir, "etcd-client.key"))
-	data = fmt.Sprintf("%s\n%s\n", data, storageSection)
+	data = fmt.Sprintf("%s%s", data, storageSection)
 	return data
 }
 

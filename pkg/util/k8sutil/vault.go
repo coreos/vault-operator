@@ -27,11 +27,15 @@ var (
 
 	vaultTLSAssetVolume  = "vault-tls-secret"
 	vaultConfigVolName   = "vault-config"
-	evnVaultRedirectAddr = "VAULT_REDIRECT_ADDR"
+	evnVaultRedirectAddr = "VAULT_API_ADDR"
+	evnVaultClusterAddr  = "VAULT_CLUSTER_ADDR"
 )
 
 const (
-	VaultClientPort = 8200
+	VaultClientPort      = 8200
+	vaultClusterPort     = 8201
+	vaultClientPortName  = "vault-client"
+	vaultClusterPortName = "vault-cluster"
 
 	exporterStatsdPort = 9125
 	exporterPromPort   = 9102
@@ -135,7 +139,11 @@ func vaultContainer(v *api.VaultService) v1.Container {
 		Env: []v1.EnvVar{
 			{
 				Name:  evnVaultRedirectAddr,
-				Value: VaultServiceURL(v.GetName(), v.GetNamespace()),
+				Value: VaultServiceURL(v.GetName(), v.GetNamespace(), VaultClientPort),
+			},
+			{
+				Name:  evnVaultClusterAddr,
+				Value: VaultServiceURL(v.GetName(), v.GetNamespace(), vaultClusterPort),
 			},
 		},
 		VolumeMounts: []v1.VolumeMount{{
@@ -150,7 +158,11 @@ func vaultContainer(v *api.VaultService) v1.Container {
 			},
 		},
 		Ports: []v1.ContainerPort{{
+			Name:          vaultClientPortName,
 			ContainerPort: int32(VaultClientPort),
+		}, {
+			Name:          vaultClusterPortName,
+			ContainerPort: int32(vaultClusterPort),
 		}},
 		LivenessProbe: &v1.Probe{
 			Handler: v1.Handler{
@@ -274,9 +286,14 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 			Selector: selector,
 			Ports: []v1.ServicePort{
 				{
-					Name:     "vault",
+					Name:     vaultClientPortName,
 					Protocol: v1.ProtocolTCP,
 					Port:     VaultClientPort,
+				},
+				{
+					Name:     vaultClusterPortName,
+					Protocol: v1.ProtocolTCP,
+					Port:     vaultClusterPort,
 				},
 				{
 					Name:     "prometheus",
@@ -375,8 +392,8 @@ func ConfigMapNameForVault(v *api.VaultService) string {
 }
 
 // VaultServiceURL returns the DNS record of the vault service in the given namespace.
-func VaultServiceURL(name, namespace string) string {
-	return fmt.Sprintf("https://%s.%s.svc:%v", name, namespace, VaultClientPort)
+func VaultServiceURL(name, namespace string, port int) string {
+	return fmt.Sprintf("https://%s.%s.svc:%d", name, namespace, port)
 }
 
 // DestroyVault destroys a vault service.
