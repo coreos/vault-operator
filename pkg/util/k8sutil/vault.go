@@ -183,10 +183,16 @@ func vaultContainer(v *api.VaultService) v1.Container {
 		},
 		ReadinessProbe: &v1.Probe{
 			Handler: v1.Handler{
-				HTTPGet: &v1.HTTPGetAction{
-					Path:   "/v1/sys/health",
-					Port:   intstr.FromInt(VaultClientPort),
-					Scheme: v1.URISchemeHTTPS,
+				Exec: &v1.ExecAction{
+					Command: []string{
+						"/bin/sh", "-ec",
+						fmt.Sprintf(`
+httpcode=$(curl --write-out %%\{http_code\} --connect-timeout 5 -k -s --output /dev/null https://localhost:%d/v1/sys/health)
+if [ "${httpcode}" != "200" ] && [ "${httpcode}" != "429"  ] ; then
+  exit 1
+fi
+`, VaultClientPort),
+					},
 				},
 			},
 			InitialDelaySeconds: 10,
