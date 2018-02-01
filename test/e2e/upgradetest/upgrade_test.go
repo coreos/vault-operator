@@ -43,13 +43,13 @@ func TestUpgradeAndScaleVault(t *testing.T) {
 	}(vaultCR)
 	vaultCR, tlsConfig := e2eutil.WaitForCluster(t, f.KubeClient, f.VaultsCRClient, vaultCR)
 
-	// Init vault via the first available node
-	podName := vaultCR.Status.Nodes.Available[0]
+	// Init vault via the first sealed node
+	podName := vaultCR.Status.VaultStatus.Sealed[0]
 	vClient := e2eutil.SetupVaultClient(t, f.KubeClient, f.Namespace, tlsConfig, podName)
 	vaultCR, initResp := e2eutil.InitializeVault(t, f.VaultsCRClient, vaultCR, vClient)
 
 	// Unseal the vault node and wait for it to become active
-	podName = vaultCR.Status.Nodes.Sealed[0]
+	podName = vaultCR.Status.VaultStatus.Sealed[0]
 	vClient = e2eutil.SetupVaultClient(t, f.KubeClient, f.Namespace, tlsConfig, podName)
 	if err := e2eutil.UnsealVaultNode(initResp.Keys[0], vClient); err != nil {
 		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
@@ -75,7 +75,7 @@ func TestUpgradeAndScaleVault(t *testing.T) {
 		t.Fatalf("failed to wait for vault nodes to become sealed: %v", err)
 	}
 
-	podName = vaultCR.Status.Nodes.Sealed[0]
+	podName = vaultCR.Status.VaultStatus.Sealed[0]
 	// Unseal the new node and wait for it to become standby
 	vClient = e2eutil.SetupVaultClient(t, f.KubeClient, f.Namespace, tlsConfig, podName)
 	if err := e2eutil.UnsealVaultNode(initResp.Keys[0], vClient); err != nil {

@@ -234,22 +234,16 @@ func (v *Vaults) syncUpgrade(vr *api.VaultService, d *appsv1beta1.Deployment) (e
 	// 1. check standby == updated
 	// 2. check Available - Updated == Active
 	readyToTriggerStepdown := func() bool {
-		if len(vr.Status.Nodes.Active) == 0 {
+		if len(vr.Status.VaultStatus.Active) == 0 {
 			return false
 		}
 
-		if !reflect.DeepEqual(vr.Status.Nodes.Standby, vr.Status.Nodes.Updated) {
+		if !reflect.DeepEqual(vr.Status.VaultStatus.Standby, vr.Status.UpdatedNodes) {
 			return false
 		}
 
-		ava := vr.Status.Nodes.Available
-		for i := range ava {
-			if ava[i] == vr.Status.Nodes.Active {
-				ava = append(ava[:i], ava[i+1:]...)
-				break
-			}
-		}
-		if !reflect.DeepEqual(ava, vr.Status.Nodes.Updated) {
+		ava := append(vr.Status.VaultStatus.Standby, vr.Status.VaultStatus.Sealed...)
+		if !reflect.DeepEqual(ava, vr.Status.UpdatedNodes) {
 			return false
 		}
 		return true
@@ -259,9 +253,9 @@ func (v *Vaults) syncUpgrade(vr *api.VaultService, d *appsv1beta1.Deployment) (e
 		// This will send SIGTERM to the active Vault pod. It should release HA lock and exit properly.
 		// If it failed for some reason, kubelet will send SIGKILL after default grace period (30s) eventually.
 		// It take longer but the the lock will get released eventually on failure case.
-		err = v.kubecli.CoreV1().Pods(vr.Namespace).Delete(vr.Status.Nodes.Active, nil)
+		err = v.kubecli.CoreV1().Pods(vr.Namespace).Delete(vr.Status.VaultStatus.Active, nil)
 		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("step down: failed to delete active Vault pod (%s): %v", vr.Status.Nodes.Active, err)
+			return fmt.Errorf("step down: failed to delete active Vault pod (%s): %v", vr.Status.VaultStatus.Active, err)
 		}
 	}
 

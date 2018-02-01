@@ -109,20 +109,19 @@ type VaultServiceStatus struct {
 	// It's the same on client LB service and vault nodes.
 	ClientPort int `json:"clientPort,omitempty"`
 
-	// Nodes represents the vault nodes grouped by their status
-	Nodes Nodes `json:"nodes"`
+	// VaultStatus is the set of Vault node specific statuses: Active, Standby, and Sealed
+	VaultStatus VaultStatus `json:"vaultStatus,omitempty"`
+
+	// PodNames of updated Vault nodes. Updated means the Vault container image version
+	// matches the spec's version.
+	UpdatedNodes []string `json:"updatedNodes,omitempty"`
 }
 
-type Nodes struct {
-	// PodNames of available nodes.
-	// Avaliable node is a running Vault pod, but not necessarily unsealed and ready
-	// to serve requests.
-	Available []string `json:"available,omitempty"`
-
-	// PodNames of the active Vault node. Active node is unsealed.
+type VaultStatus struct {
+	// PodName of the active Vault node. Active node is unsealed.
 	// Only active node can serve requests.
 	// Vault service only points to the active node.
-	Active string `json:"active"`
+	Active string `json:"active,omitempty"`
 
 	// PodNames of the standby Vault nodes. Standby nodes are unsealed.
 	// Standby nodes do not process requests, and instead redirect to the active Vault.
@@ -131,10 +130,6 @@ type Nodes struct {
 	// PodNames of Sealed Vault nodes. Sealed nodes MUST be manually unsealed to
 	// become standby or leader.
 	Sealed []string `json:"sealed,omitempty"`
-
-	// PodNames of updated Vault nodes. Updated means the Vault container image version
-	// matches the spec's version.
-	Updated []string `json:"updated,omitempty"`
 }
 
 // DefaultVaultClientTLSSecretName returns the name of the default vault client TLS secret
