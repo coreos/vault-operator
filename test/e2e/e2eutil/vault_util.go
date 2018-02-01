@@ -84,13 +84,13 @@ func SetupUnsealedVaultCluster(t *testing.T, kubeClient kubernetes.Interface, va
 
 	vaultCR, tlsConfig := WaitForCluster(t, kubeClient, vaultsCRClient, vaultCR)
 
-	// Init vault via the first available node
-	podName := vaultCR.Status.Nodes.Available[0]
+	// Init vault via the first sealed node
+	podName := vaultCR.Status.VaultStatus.Sealed[0]
 	vClient := SetupVaultClient(t, kubeClient, namespace, tlsConfig, podName)
 	vaultCR, initResp := InitializeVault(t, vaultsCRClient, vaultCR, vClient)
 
 	// Unseal the 1st vault node and wait for it to become active
-	podName = vaultCR.Status.Nodes.Sealed[0]
+	podName = vaultCR.Status.VaultStatus.Sealed[0]
 	vClient = SetupVaultClient(t, kubeClient, namespace, tlsConfig, podName)
 	if err := UnsealVaultNode(initResp.Keys[0], vClient); err != nil {
 		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
@@ -106,7 +106,7 @@ func SetupUnsealedVaultCluster(t *testing.T, kubeClient kubernetes.Interface, va
 // WriteSecretData writes secret data into vault.
 func WriteSecretData(t *testing.T, vaultCR *api.VaultService, kubeClient kubernetes.Interface, tlsConfig *vaultapi.TLSConfig, rootToken, namespace string) (*vaultapi.Client, string, map[string]interface{}, string) {
 	// Write secret to active node
-	podName := vaultCR.Status.Nodes.Active
+	podName := vaultCR.Status.VaultStatus.Active
 	vClient := SetupVaultClient(t, kubeClient, namespace, tlsConfig, podName)
 	vClient.SetToken(rootToken)
 

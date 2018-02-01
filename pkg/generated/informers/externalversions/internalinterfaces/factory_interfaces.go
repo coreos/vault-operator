@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The vault-operator Authors
+Copyright 2018 The vault-operator Authors
 
 Commercial software license.
 */

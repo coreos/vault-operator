@@ -166,7 +166,7 @@ func verifyRestoredVault(t *testing.T, vaultCR *api.VaultService, secretData map
 		t.Fatalf("failed to wait for any node to become active: %v", err)
 	}
 
-	podName := vaultCR.Status.Nodes.Active
+	podName := vaultCR.Status.VaultStatus.Active
 	vClient := e2eutil.SetupVaultClient(t, f.KubeClient, f.Namespace, tlsConfig, podName)
 	vClient.SetToken(rootToken)
 	e2eutil.VerifySecretData(t, vClient, secretData, keyPath, podName)

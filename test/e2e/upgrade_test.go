@@ -23,13 +23,13 @@ func TestUpgradeVault(t *testing.T) {
 	}(vaultCR)
 	vaultCR, tlsConfig := e2eutil.WaitForCluster(t, f.KubeClient, f.VaultsCRClient, vaultCR)
 
-	// Initialize vault via the 1st available node
-	podName := vaultCR.Status.Nodes.Available[0]
+	// Initialize vault via the 1st sealed node
+	podName := vaultCR.Status.VaultStatus.Sealed[0]
 	vClient := e2eutil.SetupVaultClient(t, f.KubeClient, f.Namespace, tlsConfig, podName)
 	vaultCR, initResp := e2eutil.InitializeVault(t, f.VaultsCRClient, vaultCR, vClient)
 
 	// Unseal the 1st vault node and wait for it to become active
-	podName = vaultCR.Status.Nodes.Sealed[0]
+	podName = vaultCR.Status.VaultStatus.Sealed[0]
 	vClient = e2eutil.SetupVaultClient(t, f.KubeClient, f.Namespace, tlsConfig, podName)
 	if err := e2eutil.UnsealVaultNode(initResp.Keys[0], vClient); err != nil {
 		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
@@ -40,7 +40,7 @@ func TestUpgradeVault(t *testing.T) {
 	}
 
 	// Unseal the 2nd vault node and wait for it to become standby
-	podName = vaultCR.Status.Nodes.Sealed[0]
+	podName = vaultCR.Status.VaultStatus.Sealed[0]
 	vClient = e2eutil.SetupVaultClient(t, f.KubeClient, f.Namespace, tlsConfig, podName)
 	if err = e2eutil.UnsealVaultNode(initResp.Keys[0], vClient); err != nil {
 		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
@@ -63,18 +63,18 @@ func TestUpgradeVault(t *testing.T) {
 		t.Fatalf("failed to wait for updated sealed vault nodes: %v", err)
 	}
 
-	podName = vaultCR.Status.Nodes.Sealed[0]
+	podName = vaultCR.Status.VaultStatus.Sealed[0]
 	vClient = e2eutil.SetupVaultClient(t, f.KubeClient, f.Namespace, tlsConfig, podName)
 	if err = e2eutil.UnsealVaultNode(initResp.Keys[0], vClient); err != nil {
 		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
 	}
-	podName = vaultCR.Status.Nodes.Sealed[1]
+	podName = vaultCR.Status.VaultStatus.Sealed[1]
 	vClient = e2eutil.SetupVaultClient(t, f.KubeClient, f.Namespace, tlsConfig, podName)
 	if err = e2eutil.UnsealVaultNode(initResp.Keys[0], vClient); err != nil {
 		t.Fatalf("failed to unseal vault node(%v): %v", podName, err)
 	}
 
-	upgradedNodes := vaultCR.Status.Nodes.Sealed
+	upgradedNodes := vaultCR.Status.VaultStatus.Sealed
 
 	// Check that the active node is one of the newly unsealed nodes
 	vaultCR, err = e2eutil.WaitUntilActiveIsFrom(t, f.VaultsCRClient, 6, vaultCR, upgradedNodes...)
@@ -95,11 +95,11 @@ func TestUpgradeVault(t *testing.T) {
 	}
 
 	// Check that 1 active and 1 standby are of the updated version
-	err = e2eutil.CheckVersionReached(t, f.KubeClient, newVersion, 6, vaultCR, vaultCR.Status.Nodes.Active)
+	err = e2eutil.CheckVersionReached(t, f.KubeClient, newVersion, 6, vaultCR, vaultCR.Status.VaultStatus.Active)
 	if err != nil {
 		t.Fatalf("failed to wait for active node to become updated: %v", err)
 	}
-	err = e2eutil.CheckVersionReached(t, f.KubeClient, newVersion, 6, vaultCR, vaultCR.Status.Nodes.Standby...)
+	err = e2eutil.CheckVersionReached(t, f.KubeClient, newVersion, 6, vaultCR, vaultCR.Status.VaultStatus.Standby...)
 	if err != nil {
 		t.Fatalf("failed to wait for standby nodes to become updated: %v", err)
 	}

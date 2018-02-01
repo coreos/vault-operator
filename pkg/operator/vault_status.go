@@ -69,7 +69,6 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, vr *api.VaultSer
 	}
 
 	var sealNodes []string
-	var available []string
 	var standByNodes []string
 	var updated []string
 	inited := false
@@ -96,14 +95,13 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, vr *api.VaultSer
 
 		changed = true
 
-		available = append(available, p.GetName())
 		if k8sutil.IsVaultVersionMatch(p.Spec, vr.Spec) {
 			updated = append(updated, p.GetName())
 		}
 
 		// TODO: add to vaultutil?
 		if hr.Initialized && !hr.Sealed && !hr.Standby {
-			s.Nodes.Active = p.GetName()
+			s.VaultStatus.Active = p.GetName()
 		}
 		if hr.Initialized && !hr.Sealed && hr.Standby {
 			standByNodes = append(standByNodes, p.GetName())
@@ -120,11 +118,10 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, vr *api.VaultSer
 		return
 	}
 
-	s.Nodes.Available = available
-	s.Nodes.Standby = standByNodes
-	s.Nodes.Sealed = sealNodes
+	s.VaultStatus.Standby = standByNodes
+	s.VaultStatus.Sealed = sealNodes
 	s.Initialized = inited
-	s.Nodes.Updated = updated
+	s.UpdatedNodes = updated
 }
 
 // updateVaultCRStatus updates the status field of the Vault CR.
