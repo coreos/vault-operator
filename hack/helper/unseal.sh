@@ -12,7 +12,7 @@ set -o pipefail
 : ${UNSEAL_KEY:?"Need to set UNSEAL_KEY"}
 
 # Get all sealed nodes
-SEALED_NODES=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.nodes.sealed}' | sed 's/^.\(.*\).$/\1/' )
+SEALED_NODES=$(kubectl -n ${KUBE_NS} get vault ${VAULT_CLUSTER_NAME} -o jsonpath='{.status.vaultStatus.sealed}' | sed 's/^.\(.*\).$/\1/' )
 if [ "${SEALED_NODES}" == "nil" ]; then
     echo "No sealed nodes found"
     exit 0

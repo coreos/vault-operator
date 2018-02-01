@@ -11,10 +11,10 @@ This document describes how to initialize, unseal, and access the Vault service.
 
 Initialize a new Vault cluster before performing any operations.
 
-1. Configure port forwarding between the local machine and the first available Vault node:
+1. Configure port forwarding between the local machine and the first sealed Vault node:
 
     ```sh
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.available[0]}' | xargs -0 -I {} kubectl -n default port-forward {} 8200
+    kubectl -n default get vault example -o jsonpath='{.status.vaultStatus.sealed[0]}' | xargs -0 -I {} kubectl -n default port-forward {} 8200
     ```
 
 2. Open a new terminal.
@@ -50,7 +50,7 @@ A response confirms that the Vault CLI is ready to interact with the Vault serve
 1. Configure port forwarding between the local machine and the first sealed Vault node:
 
     ```sh
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.sealed[0]}' | xargs -0 -I {} kubectl -n default port-forward {} 8200
+    kubectl -n default get vault example -o jsonpath='{.status.vaultStatus.sealed[0]}' | xargs -0 -I {} kubectl -n default port-forward {} 8200
     ```
 
 2. Open a new terminal.
@@ -73,13 +73,13 @@ The first node that is unsealed in a multi-node Vault cluster will become the ac
 1. Check the active Vault node:
 
     ```sh
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.active}'
+    kubectl -n default get vault example -o jsonpath='{.status.vaultStatus.active}'
     ```
 
 2. Configure port forwarding between the local machine and the active Vault node:
 
     ```sh
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n default port-forward {} 8200
+    kubectl -n default get vault example -o jsonpath='{.status.vaultStatus.active}' | xargs -0 -I {} kubectl -n default port-forward {} 8200
     ```
 
 3. Open a new terminal.
@@ -117,7 +117,7 @@ The first node that is unsealed in a multi-node Vault cluster will become the ac
 1. Set up port-forward connection to active node and Vault CLI env same as previous section:
 
     ```sh
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n default port-forward {} 8200
+    kubectl -n default get vault example -o jsonpath='{.status.vaultStatus.active}' | xargs -0 -I {} kubectl -n default port-forward {} 8200
     ```
 
     Open another terminal and type:
@@ -157,7 +157,7 @@ A standby Vault node is initialized and unsealed, but does not hold the leader e
 2. Verify that the node becomes standby:
 
     ```sh
-    $ kubectl -n default get vault example -o jsonpath='{.status.nodes.standby}'
+    $ kubectl -n default get vault example -o jsonpath='{.status.vaultStatus.standby}'
     [example-1003480066-jzmwd]
     ```
 
@@ -172,7 +172,7 @@ To see how it works, terminate the active node, and wait for the standby node to
 1. Terminate the active Vault node:
 
     ```
-    kubectl -n default get vault example -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl -n default delete po {}
+    kubectl -n default get vault example -o jsonpath='{.status.vaultStatus.active}' | xargs -0 -I {} kubectl -n default delete po {}
     ```
 
     The standby node becomes active.
@@ -180,7 +180,7 @@ To see how it works, terminate the active node, and wait for the standby node to
 2. Verify that the previous standby node is now active:
 
     ```
-    $ kubectl -n default get vault example -o jsonpath='{.status.nodes.active}'
+    $ kubectl -n default get vault example -o jsonpath='{.status.vaultStatus.active}'
     example-1003480066-jzmwd
     ```
 
@@ -196,17 +196,10 @@ To see how it works, perform the following:
 
    If a node has not yet been terminated, follow the instructions in the [Automated failover](#automated-failover) section above.
 
-2. Verify that a new Vault node is created:
+2. Verify that the newly sealed Vault node is created:
 
     ```
-    $ kubectl -n default get vault example -o jsonpath='{.status.nodes.available}'
-    [example-1003480066-jzmwd example-994933690-h066h]
-    ```
-
-3. Verify that the newly created Vault node is sealed:
-
-    ```
-    $ kubectl -n default get vault example -o jsonpath='{.status.nodes.sealed}'
+    $ kubectl -n default get vault example -o jsonpath='{.status.vaultStatus.sealed}'
     [example-994933690-h066h]
     ```
 

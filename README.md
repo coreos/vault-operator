@@ -135,7 +135,7 @@ In this example, a Vault cluster is configured with two nodes in high availabili
 4. Verify that the Vault nodes can be viewed in the "vault" resource status:
 
       ```
-      $ kubectl -n default get vault example -o jsonpath='{.status.nodes.sealed}'
+      $ kubectl -n default get vault example -o jsonpath='{.status.vaultStatus.sealed}'
       [example-1003480066-b757c example-1003480066-jzmwd]
       ```
 
@@ -149,10 +149,10 @@ By default the vault-operator will configure each vault pod to publish [statsd](
 
 The vault-operator runs a [statsd-exporter](https://github.com/prometheus/statsd_exporter) container inside each vault pod to convert and expose those metrics in the format for Prometheus.
 
-`curl` the `/metrics` endpoint for any available vault pod to get the Prometheus metrics:
+`curl` the `/metrics` endpoint for any vault pod to get the Prometheus metrics:
 
 ```sh
-$ VPOD=$(kubectl -n default get vault example -o jsonpath='{.status.nodes.available[0]}')
+$ VPOD=$(kubectl -n default get vault example -o jsonpath='{.status.vaultStatus.active}')
 $ kubectl -n default exec -ti ${VPOD} --container=vault -- curl localhost:9102/metrics
 # HELP go_gc_duration_seconds A summary of the GC invocation durations.
 # TYPE go_gc_duration_seconds summary
