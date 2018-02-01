@@ -42,7 +42,7 @@ func InitializeVault(t *testing.T, vaultsCRClient versioned.Interface, vault *ap
 	if err != nil {
 		t.Fatalf("failed to initialize vault: %v", err)
 	}
-	// Wait until initialized nodes to be reflected on status.nodes.Sealed
+	// Wait until initialized nodes to be reflected on status.vaultStatus.Sealed
 	vault, err = WaitSealedVaultsUp(t, vaultsCRClient, int(vault.Spec.Nodes), 6, vault)
 	if err != nil {
 		t.Fatalf("failed to wait for vault nodes to become sealed: %v", err)

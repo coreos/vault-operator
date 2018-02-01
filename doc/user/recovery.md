@@ -92,7 +92,7 @@ example-etcd-rqk62l46kw   1/1       Running   0          2m
 Configure port forwarding between the local machine and the active Vault node:
 
 ```sh
-kubectl get vault example -o jsonpath='{.status.nodes.active}' | xargs -0 -I {} kubectl port-forward {} 8200
+kubectl get vault example -o jsonpath='{.status.vaultStatus.active}' | xargs -0 -I {} kubectl port-forward {} 8200
 ```
 
 In a separate terminal, verify that vault can retrieve the secret `secret/foo value=bar`:
