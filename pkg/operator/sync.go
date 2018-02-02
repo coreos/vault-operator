@@ -15,7 +15,6 @@ import (
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 const (
@@ -94,9 +93,7 @@ func (v *Vaults) syncVault(key string) (err error) {
 		return nil
 	}
 
-	// TODO: use deepcopy-gen
-	cobj, err := scheme.Scheme.DeepCopy(obj)
-	vr := cobj.(*api.VaultService)
+	vr := obj.(*api.VaultService).DeepCopy()
 
 	// Simulate initializer.
 	// TODO: remove this when we have initializers for Vault CR.
