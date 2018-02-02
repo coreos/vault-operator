@@ -143,28 +143,7 @@ In this example, a Vault cluster is configured with two nodes in high availabili
 
 For information on using the deployed Vault, see [vault.md](./doc/user/vault.md) .
 
-#### Monitoring with Prometheus
-
-By default the vault-operator will configure each vault pod to publish [statsd](https://www.vaultproject.io/docs/configuration/telemetry.html) metrics.
-
-The vault-operator runs a [statsd-exporter](https://github.com/prometheus/statsd_exporter) container inside each vault pod to convert and expose those metrics in the format for Prometheus.
-
-`curl` the `/metrics` endpoint for any vault pod to get the Prometheus metrics:
-
-```sh
-$ VPOD=$(kubectl -n default get vault example -o jsonpath='{.status.vaultStatus.active}')
-$ kubectl -n default exec -ti ${VPOD} --container=vault -- curl localhost:9102/metrics
-# HELP go_gc_duration_seconds A summary of the GC invocation durations.
-# TYPE go_gc_duration_seconds summary
-go_gc_duration_seconds{quantile="0"} 2.7675e-05
-go_gc_duration_seconds{quantile="0.25"} 5.5892e-05
-go_gc_duration_seconds{quantile="0.5"} 5.7992e-05
-go_gc_duration_seconds{quantile="0.75"} 7.804e-05
-go_gc_duration_seconds{quantile="1"} 0.000185847
-go_gc_duration_seconds_sum 0.000660497
-go_gc_duration_seconds_count 9
-. . .
-```
+Consult the [monitoring guide](./doc/user/monitoring.md) on how to monitor and alert on a Vault cluster with Prometheus.
 
 ### Uninstalling Vault operator
 
