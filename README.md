@@ -8,7 +8,7 @@ An example namespace, `default`, is used in this document.
 
 ## Prerequisites
 
-* [Tectonic 1.7+](https://coreos.com/tectonic) is installed
+* [Tectonic 1.8+](https://coreos.com/tectonic) is installed
 * `kubectl` is installed
 
 ## Getting Started
