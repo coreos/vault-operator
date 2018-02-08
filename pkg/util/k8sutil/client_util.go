@@ -3,11 +3,14 @@ package k8sutil
 import (
 	"net"
 	"os"
+	"time"
 
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
+
+const defaultKubeAPIRequestTimeout = 30 * time.Second
 
 func MustNewKubeExtClient() apiextensionsclient.Interface {
 	cfg, err := InClusterConfig()
@@ -38,5 +41,13 @@ func InClusterConfig() (*rest.Config, error) {
 	if len(os.Getenv("KUBERNETES_SERVICE_PORT")) == 0 {
 		os.Setenv("KUBERNETES_SERVICE_PORT", "443")
 	}
-	return rest.InClusterConfig()
+
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	// Set a reasonable default request timeout
+	cfg.Timeout = defaultKubeAPIRequestTimeout
+	return cfg, nil
 }
