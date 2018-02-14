@@ -19,6 +19,7 @@ git clone https://github.com/djenriquez/vault-ui
 
 Modify the file `vault-ui/kubernetes/chart/vault-ui/templates/deployment.yaml` to add the `NODE_TLS_REJECT_UNAUTHORIZED` environment variable to allow self-signed HTTPS certificates.
 
+<!-- {% raw %} -->
 ```sh
         env:
             - name: VAULT_URL_DEFAULT
@@ -28,6 +29,7 @@ Modify the file `vault-ui/kubernetes/chart/vault-ui/templates/deployment.yaml` t
             - name: NODE_TLS_REJECT_UNAUTHORIZED
               value: '0'
 ```
+<!-- {% endraw %} -->
 
 Next modify the file `vault-ui/kubernetes/chart/vault-ui/values.yaml` to configure the way to access the Vault-UI using Ingress, ClusterIP, LoadBalancer, or other access means.
 
