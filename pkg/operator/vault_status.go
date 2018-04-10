@@ -30,9 +30,9 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-// monitorAndUpdateStaus monitors the vault service and replicas statuses, and
-// updates the status resrouce in the vault CR item.
-func (vs *Vaults) monitorAndUpdateStaus(ctx context.Context, vr *api.VaultService) {
+// monitorAndUpdateStatus monitors the vault service and replicas statuses, and
+// updates the status resource in the vault CR item.
+func (vs *Vaults) monitorAndUpdateStatus(ctx context.Context, vr *api.VaultService) {
 	var tlsConfig *vaultapi.TLSConfig
 
 	s := api.VaultServiceStatus{

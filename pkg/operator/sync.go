@@ -180,7 +180,7 @@ func (v *Vaults) reconcileVault(vr *api.VaultService) (err error) {
 	if _, ok := v.ctxCancels[vr.Name]; !ok {
 		ctx, cancel := context.WithCancel(context.Background())
 		v.ctxCancels[vr.Name] = cancel
-		go v.monitorAndUpdateStaus(ctx, vr)
+		go v.monitorAndUpdateStatus(ctx, vr)
 	}
 
 	return nil
