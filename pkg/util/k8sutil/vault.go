@@ -253,11 +253,6 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 					},
 				},
 			}},
-			SecurityContext: &v1.PodSecurityContext{
-				RunAsUser:    func(i int64) *int64 { return &i }(9000),
-				RunAsNonRoot: func(b bool) *bool { return &b }(true),
-				FSGroup:      func(i int64) *int64 { return &i }(9000),
-			},
 		},
 	}
 	if v.Spec.Pod != nil {
