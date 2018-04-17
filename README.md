@@ -124,9 +124,13 @@ In this example, a Vault cluster is configured with two nodes in high availabili
 
       Vault is unready because it is uninitialized and sealed.
 
-For information on using the deployed Vault, see [vault.md](./doc/user/vault.md) .
+### Using the Vault cluster
+
+For information on using the deployed Vault cluster, see the [Vault usage guide](./doc/user/vault.md).
 
 Consult the [monitoring guide](./doc/user/monitoring.md) on how to monitor and alert on a Vault cluster with Prometheus.
+
+See the [recovery guide](./doc/user/recovery.md) on how to backup and restore Vault cluster data using the etcd opeartor
 
 ### Uninstalling Vault operator
 

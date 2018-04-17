@@ -1,6 +1,6 @@
-# Initialize and Unseal a Vault Cluster
+# Vault Usage Guide
 
-This document describes how to initialize, unseal, and access the Vault service.
+This document describes how to initialize, unseal, and interact with a deployed Vault cluster.
 
 ## Prerequisites
 
