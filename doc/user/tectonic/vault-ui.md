@@ -1,3 +1,5 @@
+> Note: This guide assumes the use of a [Tectonic][tectonic] cluster.
+
 # Set up Vault-UI on Tectonic
 
 [Vault-UI][vault-ui] is an open source project for managing and interacting with Vault through a web UI. Vault itself does not provide a web UI; all interactions are through either the Vault CLI or REST API calls.
@@ -97,4 +99,4 @@ With the Ingress configuration, Vault-UI should be accessible at the Ingress hos
 [ingress-tls]: ingress.md#generate-custom-tls-assets-for-the-ingress-host
 [ingress-dns]: ingress.md#create-dns-record-for-the-ingress-host
 [vault-ui]: https://github.com/djenriquez/vault-ui
-[example_vault]:./example_vault.yaml
+[example_vault]:../example_vault.yaml

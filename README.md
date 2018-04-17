@@ -1,36 +1,21 @@
 # Vault Operator
 
-An operator to create and manage Vault instances for Kubernetes clusters on Tectonic. Vault instances created by the Vault operator are highly available and support automatic failover and upgrade.
+### Project status: beta
+The basic features have been completed, and while no breaking API changes are currently planned, the API can change in a backwards incompatible way before the project is declared stable.
 
-For an overview of the resources created by the vault operator see the [resource labels and ownership](doc/user/resource_labels_and_ownership.md) doc.
+## Overview
+The Vault operator deploys and manages [Vault][vault] clusters on Kubernetes. Vault instances created by the Vault operator are highly available and support automatic failover and upgrade.
 
-An example namespace, `default`, is used in this document.
-
-## Prerequisites
-
-* [Tectonic 1.8+](https://coreos.com/tectonic) is installed
-* `kubectl` is installed
 
 ## Getting Started
 
-Verify `kubectl` is configured to use a 1.7+ Kubernetes cluster:
+### Prerequisites
 
-```sh
-$ kubectl version | grep "Server Version"
-Server Version: version.Info{Major:"1", Minor:"7", GitVersion:"v1.7.1+coreos.0", GitCommit:"fdd5383472eb43e60d2222503f03c76445e49899", GitTreeState:"clean", BuildDate:"2017-07-18T19:44:47Z", GoVersion:"go1.8.3", Compiler:"gc", Platform:"linux/amd64"}
-```
-
-### Creating a namespace
-
-Create the namespace `default`:
-
-```
-kubectl create namespace default
-```
+- Kubernetes 1.8+
 
 ### Configuring RBAC
 
-By default, the Vault operator has no privilege to access any resources in Tectonic. Configure RBAC rules to grant access to the Vault operator.
+Configure RBAC rules to grant access to the Vault operator.
 
 1. Generate a RBAC yaml file from the template given in the repository:
 
@@ -50,27 +35,25 @@ By default, the Vault operator has no privilege to access any resources in Tecto
 
 ### Deploying the etcd operator
 
-The Vault operator employs etcd operator to deploy an etcd cluster as the storage backend. There is no etcd operator installed by default.
-Deploy one into the `default` namespace:
+The Vault operator employs the [etcd operator][etcd-operator] to deploy an etcd cluster as the storage backend.
 
-```sh
-kubectl -n default create -f example/etcd-operator-deploy.yaml
-```
+1. Create the etcd operator Custom Resource Definitions (CRD):
+
+    ```
+    kubectl create -f ./example/etcd_crds.yaml
+    ``` 
+2. Deploy the etcd operator:
+
+    ```sh
+    kubectl -n default create -f example/etcd-operator-deploy.yaml
+    ```
 
 ### Deploying the Vault operator
 
-Create Vault Custom Resource Definition (CRD):
-
-```
-kubectl create -f ./example/vault_crd.yaml
-```
-
-Vault operator image is private. Use "quay.io" pull secret to get the image.
-
-1. Create pull secret from the existing `coreos-pull-secret`:
+1. Create the Vault CRD:
 
     ```
-    kubectl get secrets -n tectonic-system -o yaml coreos-pull-secret | sed 's/tectonic-system/default/g' | kubectl create -f -
+    kubectl create -f ./example/vault_crd.yaml
     ```
 
 2. Deploy the Vault operator:
@@ -162,3 +145,6 @@ Consult the [monitoring guide](./doc/user/monitoring.md) on how to monitor and a
     kubectl -n default delete secret coreos-pull-secret
     kubectl -n default delete -f example/rbac.yaml
     ```
+
+[vault]: https://www.vaultproject.io/
+[etcd-operator]: https://github.com/coreos/etcd-operator/

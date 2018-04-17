@@ -59,6 +59,9 @@ spec:
   type: ClusterIP
   ...
 ```
+The above service can be scraped to consume the Prometheus metrics for the Vault cluster.
+
+Consult the [Prometheus operator][prometheus-operator] docs on how to setup and configure Prometheus with a `ServiceMonitor` to consume the metrics for a target service.
 
 A `ServiceMonitor` with the following spec can be created to describe the above Vault service as target for Prometheus.
 
@@ -80,8 +83,6 @@ spec:
       path: /metrics
       port: prometheus
 ```
-
-Consult the [tectonic application monitoring][application-monitoring] and [Prometheus operator][prometheus-operator] docs on how to setup and configure Prometheus with a `ServiceMonitor` to consume the metrics for a target service.
 
 ## Alerting Rules
 
@@ -128,7 +129,6 @@ annotations:
 
 The above queries and parameters of the alert rules should be tuned for your particular use case. Read more on [Prometheus queries][prometheus-queries] and [alerting rules][alerting-rules] to learn how to write the alerting rules as needed.
 
-[application-monitoring]: https://coreos.com/tectonic/docs/latest/tectonic-prometheus-operator/user-guides/application-monitoring.html
 [prometheus-operator]: https://coreos.com/operators/prometheus/docs/latest/user-guides/getting-started.html
 [telemetry]: https://www.vaultproject.io/docs/internals/telemetry.html
 [statsd]: https://www.vaultproject.io/docs/configuration/telemetry.html
