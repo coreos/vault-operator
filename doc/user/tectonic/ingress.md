@@ -1,3 +1,5 @@
+> Note: This guide assumes the use of a [Tectonic][tectonic] cluster that has an ingress controller already setup. More general instructions for setting up Ingress will be added soon.
+
 # Set up Ingress for Vault Service
 
 This guide shows how to make the Vault service accessible from outside a Kubernetes cluster by setting up an Ingress resource. For more information about Ingress see the [Tectonic Ingress docs][tectonic-ingress-docs].
@@ -91,5 +93,6 @@ VAULT_SKIP_VERIFY=false
 
 
 [tectonic-ingress-docs]: https://coreos.com/tectonic/docs/latest/admin/ingress.html
-[tls-gen]: ../../hack/tls-gen.sh
-[example_vault]:./example_vault.yaml
+[tls-gen]: ../../../hack/tls-gen.sh
+[example_vault]:../example_vault.yaml
+[tectonic]: https://coreos.com/tectonic

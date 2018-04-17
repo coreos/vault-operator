@@ -21,5 +21,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+      # TODO: Remove when image repository is made public
       imagePullSecrets:
       - name: coreos-pull-secret

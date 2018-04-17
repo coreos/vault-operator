@@ -8,7 +8,7 @@ This example will:
 * Authenticate Vault requests using the service account token
 
 ### Prerequisites
-* Tectonic 1.7+
+* Kubernetes 1.8+
 * Before beginning, create the [example][example_vault] Vault cluster that is initialized and unsealed.
 
 ## Kubernetes auth backend setup
