@@ -4,8 +4,6 @@ metadata:
   name: <POD_NAME>
 spec:
   restartPolicy: Never
-  imagePullSecrets:
-  - name: coreos-pull-secret
   containers:
   - name: <POD_NAME>
     image: <TEST_IMAGE>
