@@ -40,7 +40,7 @@ The Vault operator employs the [etcd operator][etcd-operator] to deploy an etcd 
 1. Create the etcd operator Custom Resource Definitions (CRD):
 
     ```
-    kubectl create -f ./example/etcd_crds.yaml
+    kubectl create -f example/etcd_crds.yaml
     ``` 
 2. Deploy the etcd operator:
 
@@ -53,7 +53,7 @@ The Vault operator employs the [etcd operator][etcd-operator] to deploy an etcd 
 1. Create the Vault CRD:
 
     ```
-    kubectl create -f ./example/vault_crd.yaml
+    kubectl create -f example/vault_crd.yaml
     ```
 
 2. Deploy the Vault operator:

@@ -5,7 +5,7 @@ This document describes how to initialize, unseal, and interact with a deployed 
 ## Prerequisites
 
 * [Vault Commands (CLI)][vault-cli] installed
-* Before beginning, create the [example][example_vault] Vault cluster.
+* Before beginning, create the [example][example_vault] Vault cluster
 
 ## Initializing a Vault cluster
 
