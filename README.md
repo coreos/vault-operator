@@ -15,22 +15,7 @@ The Vault operator deploys and manages [Vault][vault] clusters on Kubernetes. Va
 
 ### Configuring RBAC
 
-Configure RBAC rules to grant access to the Vault operator.
-
-1. Generate a RBAC yaml file from the template given in the repository:
-
-    ```sh
-    sed 's/<kube-ns>/default/g' example/rbac-template.yaml > example/rbac.yaml
-    ```
-
-2. Create the RBAC role:
-
-    ```sh
-    kubectl -n default create -f example/rbac.yaml
-    ```
-
-    The RBAC rule grants the `default` service account in the `default` namespace
-    access to all resources under `default` namespace, but not outside.
+Consult the [RBAC guide](./doc/user/rbac.md) on how to configure RBAC for the Vault operator.
 
 
 ### Deploying the etcd operator
