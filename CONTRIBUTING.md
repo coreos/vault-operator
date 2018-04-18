@@ -4,12 +4,13 @@ vault-operator is Apache 2.0 licensed and accepts contributions via GitHub pull 
 
 # Email and Chat
 
-- TODO
+- Email: [coreos-dev](https://groups.google.com/forum/#!forum/coreos-dev)
+- IRC: #coreos IRC channel on freenode.org
 
 ## Getting started
 
 - Fork the repository on GitHub
-- TODO: Add build instructions 
+- See the [developer guide](./doc/dev/developer_guide.md) for build instructions
 
 ## Reporting bugs and creating issues
 
