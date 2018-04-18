@@ -146,7 +146,6 @@ See the [recovery guide](./doc/user/recovery.md) on how to backup and restore Va
 
     ```
     kubectl -n default delete deploy vault-operator etcd-operator
-    kubectl -n default delete secret coreos-pull-secret
     kubectl -n default delete -f example/rbac.yaml
     ```
 
