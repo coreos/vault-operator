@@ -146,9 +146,6 @@ func (f *Framework) deployVaultOperatorPod() error {
 					},
 				},
 			}},
-			ImagePullSecrets: []v1.LocalObjectReference{{
-				Name: "coreos-pull-secret",
-			}},
 		},
 	}
 

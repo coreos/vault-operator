@@ -146,9 +146,6 @@ func (f *Framework) CreateOperatorDeployment(name string) error {
 							FailureThreshold:    3,
 						},
 					}},
-					ImagePullSecrets: []v1.LocalObjectReference{{
-						Name: "coreos-pull-secret",
-					}},
 				},
 			},
 		},
