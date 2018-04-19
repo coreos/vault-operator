@@ -17,10 +17,10 @@
 package v1alpha1
 
 import (
-	vault_v1alpha1 "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
-	versioned "github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned"
-	internalinterfaces "github.com/coreos-inc/vault-operator/pkg/generated/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/coreos-inc/vault-operator/pkg/generated/listers/vault/v1alpha1"
+	vault_v1alpha1 "github.com/coreos/vault-operator/pkg/apis/vault/v1alpha1"
+	versioned "github.com/coreos/vault-operator/pkg/generated/clientset/versioned"
+	internalinterfaces "github.com/coreos/vault-operator/pkg/generated/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/coreos/vault-operator/pkg/generated/listers/vault/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

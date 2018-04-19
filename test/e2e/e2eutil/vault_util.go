@@ -19,10 +19,10 @@ import (
 	"reflect"
 	"testing"
 
-	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
-	"github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned"
-	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
-	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
+	api "github.com/coreos/vault-operator/pkg/apis/vault/v1alpha1"
+	"github.com/coreos/vault-operator/pkg/generated/clientset/versioned"
+	"github.com/coreos/vault-operator/pkg/util/k8sutil"
+	"github.com/coreos/vault-operator/pkg/util/vaultutil"
 
 	vaultapi "github.com/hashicorp/vault/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

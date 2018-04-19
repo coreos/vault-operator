@@ -19,9 +19,9 @@ import (
 	"math/rand"
 	"testing"
 
-	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
-	"github.com/coreos-inc/vault-operator/test/e2e/e2eutil"
-	"github.com/coreos-inc/vault-operator/test/e2e/upgradetest/framework"
+	api "github.com/coreos/vault-operator/pkg/apis/vault/v1alpha1"
+	"github.com/coreos/vault-operator/test/e2e/e2eutil"
+	"github.com/coreos/vault-operator/test/e2e/upgradetest/framework"
 )
 
 func newOperatorName() string {

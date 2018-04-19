@@ -106,10 +106,10 @@ value           	bar
 ```
 
 [set_aws]:https://github.com/coreos/etcd-operator/blob/master/doc/user/walkthrough/backup-operator.md#setup-aws-secret
-[vault_write]:https://github.com/coreos-inc/vault-operator/blob/master/doc/user/vault.md#writing-secrets-to-the-active-node
-[vault_unseal]:https://github.com/coreos-inc/vault-operator/blob/master/doc/user/vault.md#unsealing-a-sealed-node
-[vault_init]:https://github.com/coreos-inc/vault-operator/blob/master/doc/user/vault.md#initializing-a-vault-cluster
-[vault_configured]:https://github.com/coreos-inc/vault-operator/blob/master/README.md#getting-started
-[readme]:https://github.com/coreos-inc/vault-operator/blob/master/README.md
+[vault_write]:https://github.com/coreos/vault-operator/blob/master/doc/user/vault.md#writing-secrets-to-the-active-node
+[vault_unseal]:https://github.com/coreos/vault-operator/blob/master/doc/user/vault.md#unsealing-a-sealed-node
+[vault_init]:https://github.com/coreos/vault-operator/blob/master/doc/user/vault.md#initializing-a-vault-cluster
+[vault_configured]:https://github.com/coreos/vault-operator/blob/master/README.md#getting-started
+[readme]:https://github.com/coreos/vault-operator/blob/master/README.md
 [vault-cli]: https://www.vaultproject.io/docs/install/index.html
 [example_vault]:./example_vault.yaml

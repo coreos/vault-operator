@@ -19,9 +19,9 @@ import (
 	"reflect"
 	"time"
 
-	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
-	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
-	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
+	api "github.com/coreos/vault-operator/pkg/apis/vault/v1alpha1"
+	"github.com/coreos/vault-operator/pkg/util/k8sutil"
+	"github.com/coreos/vault-operator/pkg/util/vaultutil"
 
 	vaultapi "github.com/hashicorp/vault/api"
 	"github.com/sirupsen/logrus"

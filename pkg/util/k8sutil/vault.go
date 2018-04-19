@@ -20,8 +20,8 @@ import (
 	"path/filepath"
 	"time"
 
-	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
-	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
+	api "github.com/coreos/vault-operator/pkg/apis/vault/v1alpha1"
+	"github.com/coreos/vault-operator/pkg/util/vaultutil"
 
 	etcdCRAPI "github.com/coreos/etcd-operator/pkg/apis/etcd/v1beta2"
 	etcdCRClient "github.com/coreos/etcd-operator/pkg/generated/clientset/versioned"

@@ -19,10 +19,10 @@ import (
 	"crypto/x509"
 	"fmt"
 
-	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
-	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
-	"github.com/coreos-inc/vault-operator/pkg/util/tlsutil"
-	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
+	api "github.com/coreos/vault-operator/pkg/apis/vault/v1alpha1"
+	"github.com/coreos/vault-operator/pkg/util/k8sutil"
+	"github.com/coreos/vault-operator/pkg/util/tlsutil"
+	"github.com/coreos/vault-operator/pkg/util/vaultutil"
 
 	"k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

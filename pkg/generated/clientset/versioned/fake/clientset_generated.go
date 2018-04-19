@@ -15,9 +15,9 @@
 package fake
 
 import (
-	clientset "github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned"
-	vaultv1alpha1 "github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned/typed/vault/v1alpha1"
-	fakevaultv1alpha1 "github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned/typed/vault/v1alpha1/fake"
+	clientset "github.com/coreos/vault-operator/pkg/generated/clientset/versioned"
+	vaultv1alpha1 "github.com/coreos/vault-operator/pkg/generated/clientset/versioned/typed/vault/v1alpha1"
+	fakevaultv1alpha1 "github.com/coreos/vault-operator/pkg/generated/clientset/versioned/typed/vault/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

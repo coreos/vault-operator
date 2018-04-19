@@ -17,8 +17,8 @@
 package vault
 
 import (
-	internalinterfaces "github.com/coreos-inc/vault-operator/pkg/generated/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/coreos-inc/vault-operator/pkg/generated/informers/externalversions/vault/v1alpha1"
+	internalinterfaces "github.com/coreos/vault-operator/pkg/generated/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/coreos/vault-operator/pkg/generated/informers/externalversions/vault/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.
