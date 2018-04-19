@@ -47,75 +47,89 @@ The Vault operator employs the [etcd operator][etcd-operator] to deploy an etcd 
     kubectl -n default create -f example/deployment.yaml
     ```
 
-    Wait for 10s until the Vault operator is up and running.
-
 3. Verify that the operators are running:    
 
       ```
       $ kubectl -n default get deploy
       NAME             DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-      etcd-operator    1         1         1            1           1d
-      vault-operator   1         1         1            0           6s
+      etcd-operator    1         1         1            1           5m
+      vault-operator   1         1         1            1           5m
       ```
 
 
-### Deploying Vault
+### Deploying a Vault cluster
 
-#### Configuring TLS secrets
+A Vault cluster can be deployed by creating a `VaultService` Custom Resource(CR). For each Vault cluster the Vault operator will also create an etcd cluster for the storage backend.
 
-In this example, the Vault operator configures a default TLS setup for all the Vault pods in the cluster. For an overview of the default TLS configuration or how to specify specify custom TLS assets see the [TLS setup guide](doc/user/tls_setup.md).
-
-#### Submitting Vault Custom Resource
-
-In this example, a Vault cluster is configured with two nodes in high availability mode.
-
-1. Create a Vault custom resource:
+1. Create a Vault CR that deploys a 2 node Vault cluster in high availablilty mode:
 
     ```
     kubectl -n default create -f example/example_vault.yaml
     ```
 
-    Wait for around 20s.
-
-2. Ensure that `example-...` pods are up:
+2. Wait until the `example-...` pods for the etcd and Vault cluster are up:
 
     ```
     $ kubectl -n default get pods
     NAME                              READY     STATUS    RESTARTS   AGE
-    etcd-operator-346152359-34pwm     1/1       Running   0          43m
-    example-1003480066-b757c    0/1       Running   0          36m
-    example-1003480066-jzmwd    0/1       Running   0          36m
-    example-etcd-gxkmr9ql7z           1/1       Running   0          37m
-    example-etcd-m6g62x6mwc           1/1       Running   0          37m
-    example-etcd-rqk62l46kw           1/1       Running   0          36m
-    vault-operator-1388630079-7g04c   1/1       Running   0          37m
+    etcd-operator-78899f87f6-qdn5h    3/3       Running   0          10m
+    example-7678c8f49c-kfx2w          1/2       Running   0          2m
+    example-7678c8f49c-pqrj8          1/2       Running   0          2m
+    example-etcd-7lpjg7n76d           1/1       Running   0          2m
+    example-etcd-dhxrksssgx           1/1       Running   0          2m
+    example-etcd-s7mzhffz92           1/1       Running   0          2m
+    vault-operator-5976f74f84-pxkf6   1/1       Running   0          10m
     ```
 
-3. Print the Vault pods:
+3. Get the Vault pods:
 
     ```
-    $ kubectl -n default get pods -l app=vault,name=example
-    NAME                              READY     STATUS    RESTARTS   AGE
-    example-1003480066-b757c    0/1       Running   0          36m
-    example-1003480066-jzmwd    0/1       Running   0          36m
+    $ kubectl -n default get pods -l app=vault,vault_cluster=example
+    NAME                       READY     STATUS    RESTARTS   AGE
+    example-7678c8f49c-kfx2w   1/2       Running   0          2m
+    example-7678c8f49c-pqrj8   1/2       Running   0          2m
     ```
 
-4. Verify that the Vault nodes can be viewed in the "vault" resource status:
+4. Check the Vault CR status:
 
-      ```
-      $ kubectl -n default get vault example -o jsonpath='{.status.vaultStatus.sealed}'
-      [example-1003480066-b757c example-1003480066-jzmwd]
-      ```
+    ```
+    $ kubectl -n default get vault example -o yaml
+    apiVersion: vault.security.coreos.com/v1alpha1
+    kind: VaultService
+    metadata:
+        name: example
+        namespace: default
+        ...
+    spec:
+        nodes: 2
+        version: 0.9.1-0
+        ...
+    status:
+        initialized: false
+        phase: Running
+        updatedNodes:
+        - example-7678c8f49c-kfx2w
+        - example-7678c8f49c-pqrj8
+        vaultStatus:
+            active: ""
+            sealed:
+            - example-7678c8f49c-kfx2w
+            - example-7678c8f49c-pqrj8
+            standby: null
+        ...
+    ```
 
-      Vault is unready because it is uninitialized and sealed.
+    The Vault CR status shows the cluster is currently uninitialized and sealed.
 
 ### Using the Vault cluster
 
-For information on using the deployed Vault cluster, see the [Vault usage guide](./doc/user/vault.md).
+See the [Vault usage guide](./doc/user/vault.md) on how to initialize, unseal, and use the deployed Vault cluster.
 
 Consult the [monitoring guide](./doc/user/monitoring.md) on how to monitor and alert on a Vault cluster with Prometheus.
 
 See the [recovery guide](./doc/user/recovery.md) on how to backup and restore Vault cluster data using the etcd opeartor
+
+For an overview of the default TLS configuration or how to specify custom TLS assets for a Vault cluster see the [TLS setup guide](doc/user/tls_setup.md).
 
 ### Uninstalling Vault operator
 
