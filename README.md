@@ -119,15 +119,13 @@ See the [recovery guide](./doc/user/recovery.md) on how to backup and restore Va
 
 ### Uninstalling Vault operator
 
-1. Delete the Vault resource and configuration:
+1. Delete the Vault custom resource:
 
     ```
     kubectl -n default delete -f example/example_vault.yaml
     ```
 
-2. Wait for around 20s to make sure etcd and Vault pods are deleted.
-
-3. Delete operators and other resources:
+2. Delete the operators and other resources:
 
     ```
     kubectl -n default delete deploy vault-operator etcd-operator
