@@ -21,7 +21,7 @@ fi
 
 GIT_SHA=`git rev-parse --short HEAD || echo "GitNotFound"`
 
-gitHash="github.com/coreos-inc/vault-operator/version.GitSHA=${GIT_SHA}"
+gitHash="github.com/coreos/vault-operator/version.GitSHA=${GIT_SHA}"
 
 go_ldflags="-X ${gitHash}"
 

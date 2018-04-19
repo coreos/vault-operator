@@ -8,7 +8,7 @@ set -o pipefail
 
 mkdir -p _output
 
-DOCKER_REPO_ROOT="/go/src/github.com/coreos-inc/vault-operator"
+DOCKER_REPO_ROOT="/go/src/github.com/coreos/vault-operator"
 
 docker run --rm \
 	-v "$PWD":"$DOCKER_REPO_ROOT" \

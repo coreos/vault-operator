@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"time"
 
-	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
-	"github.com/coreos-inc/vault-operator/pkg/util/probe"
+	api "github.com/coreos/vault-operator/pkg/apis/vault/v1alpha1"
+	"github.com/coreos/vault-operator/pkg/util/probe"
 	"github.com/sirupsen/logrus"
 
 	"k8s.io/apimachinery/pkg/fields"

@@ -18,5 +18,5 @@ It may be worthwhile to read [Elika Etemad’s article on filing good bug report
 
 We might ask for further information to locate a bug. A duplicated bug report will be closed.
 
-[vault-operator-issue]: https://github.com/coreos-inc/vault-operator/issues/new
+[vault-operator-issue]: https://github.com/coreos/vault-operator/issues/new
 [filing-good-bugs]: http://fantasai.inkedblade.net/style/talks/filing-good-bugs/

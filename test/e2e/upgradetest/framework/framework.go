@@ -18,11 +18,11 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/coreos-inc/vault-operator/pkg/client"
-	"github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned"
-	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
-	"github.com/coreos-inc/vault-operator/pkg/util/probe"
-	"github.com/coreos-inc/vault-operator/test/e2e/e2eutil"
+	"github.com/coreos/vault-operator/pkg/client"
+	"github.com/coreos/vault-operator/pkg/generated/clientset/versioned"
+	"github.com/coreos/vault-operator/pkg/util/k8sutil"
+	"github.com/coreos/vault-operator/pkg/util/probe"
+	"github.com/coreos/vault-operator/test/e2e/e2eutil"
 
 	eopk8sutil "github.com/coreos/etcd-operator/pkg/util/k8sutil"
 	"github.com/sirupsen/logrus"

@@ -15,7 +15,7 @@
 package e2eutil
 
 import (
-	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
+	api "github.com/coreos/vault-operator/pkg/apis/vault/v1alpha1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

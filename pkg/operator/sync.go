@@ -20,9 +20,9 @@ import (
 	"path/filepath"
 	"reflect"
 
-	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
-	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
-	"github.com/coreos-inc/vault-operator/pkg/util/vaultutil"
+	api "github.com/coreos/vault-operator/pkg/apis/vault/v1alpha1"
+	"github.com/coreos/vault-operator/pkg/util/k8sutil"
+	"github.com/coreos/vault-operator/pkg/util/vaultutil"
 
 	"github.com/sirupsen/logrus"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"

@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
-	api "github.com/coreos-inc/vault-operator/pkg/apis/vault/v1alpha1"
-	"github.com/coreos-inc/vault-operator/pkg/generated/clientset/versioned"
-	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
+	api "github.com/coreos/vault-operator/pkg/apis/vault/v1alpha1"
+	"github.com/coreos/vault-operator/pkg/generated/clientset/versioned"
+	"github.com/coreos/vault-operator/pkg/util/k8sutil"
 
 	"github.com/coreos/etcd-operator/pkg/util/retryutil"
 	"k8s.io/api/core/v1"

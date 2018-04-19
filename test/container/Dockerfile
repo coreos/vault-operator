@@ -6,12 +6,12 @@ RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.8.2/bi
     && chmod +x ./kubectl \
     && mv ./kubectl /usr/local/bin/kubectl
 
-ADD ./ /go/src/github.com/coreos-inc/vault-operator
+ADD ./ /go/src/github.com/coreos/vault-operator
 
 # Bake in aws creds for jenkins role
 ADD ./_test/aws /aws
 
-WORKDIR /go/src/github.com/coreos-inc/vault-operator
+WORKDIR /go/src/github.com/coreos/vault-operator
 
 RUN rm -rf _output _test .git .gitignore
 

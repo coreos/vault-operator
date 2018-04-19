@@ -53,7 +53,7 @@ done
 # Print out and save logs to a file until the pod stops running
 echo "collecting logs =========="
 
-DOCKER_REPO_ROOT="/go/src/github.com/coreos-inc/vault-operator"
+DOCKER_REPO_ROOT="/go/src/github.com/coreos/vault-operator"
 mkdir -p _output/logs/
 cp $KUBECONFIG _output/kubeconfig
 

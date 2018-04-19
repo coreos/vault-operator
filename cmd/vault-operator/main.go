@@ -21,10 +21,10 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/coreos-inc/vault-operator/pkg/operator"
-	"github.com/coreos-inc/vault-operator/pkg/util/k8sutil"
-	"github.com/coreos-inc/vault-operator/pkg/util/probe"
-	"github.com/coreos-inc/vault-operator/version"
+	"github.com/coreos/vault-operator/pkg/operator"
+	"github.com/coreos/vault-operator/pkg/util/k8sutil"
+	"github.com/coreos/vault-operator/pkg/util/probe"
+	"github.com/coreos/vault-operator/version"
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
