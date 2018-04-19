@@ -29,7 +29,7 @@ function pull_secret_setup {
 }
 
 function rbac_setup() {
-    sed "s/<kube-ns>/${TEST_NAMESPACE}/g" example/rbac-template.yaml > example/rbac.yaml
+    sed -e "s/<namespace>/${TEST_NAMESPACE}/g" -e "s/<service-account>/default/g" example/rbac-template.yaml > example/rbac.yaml
     kubectl -n ${TEST_NAMESPACE} create -f example/rbac.yaml
 }
 
