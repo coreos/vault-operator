@@ -7,6 +7,8 @@ set -o pipefail
 export GOROOT="/usr/local/go"
 export PATH=$GOROOT/bin:$PATH
 
+echo "Running e2e tests "
+
 go version
 kubectl version
 
