@@ -97,6 +97,11 @@ func Setup() error {
 
 // Teardown removes the vault-operator deployment and waits for its termination
 func Teardown() error {
+	// Skip the operators teardown if either image is not specified
+	if len(Global.vopImage) == 0 || len(Global.eopImage) == 0 {
+		return nil
+	}
+
 	err := Global.KubeClient.CoreV1().Pods(Global.Namespace).Delete(vaultOperatorName, k8sutil.CascadeDeleteBackground())
 	if err != nil {
 		return fmt.Errorf("failed to delete pod: %v", err)
@@ -111,6 +116,11 @@ func Teardown() error {
 }
 
 func (f *Framework) setup() error {
+	// Skip the operators setup if either image is not specified
+	if len(Global.vopImage) == 0 || len(Global.eopImage) == 0 {
+		return nil
+	}
+
 	if err := f.deployEtcdOperatorPod(); err != nil {
 		return fmt.Errorf("failed to setup etcd operator: %v", err)
 	}
