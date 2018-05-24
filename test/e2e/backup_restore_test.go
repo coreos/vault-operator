@@ -76,7 +76,7 @@ func createBackup(t *testing.T, vaultCR *api.VaultService, etcdClusterName, s3Pa
 	if err != nil {
 		t.Fatalf("failed to get endpoints: %v", err)
 	}
-	backupCR := eope2eutil.NewS3Backup(endpoints, etcdClusterName, s3Path, os.Getenv("TEST_AWS_SECRET"), k8sutil.EtcdClientTLSSecretName(vaultCR.Name))
+	backupCR := eope2eutil.NewS3Backup(endpoints, etcdClusterName, s3Path, os.Getenv(awsEnv), k8sutil.EtcdClientTLSSecretName(vaultCR.Name))
 	eb, err := f.EtcdCRClient.EtcdV1beta2().EtcdBackups(f.Namespace).Create(backupCR)
 	if err != nil {
 		t.Fatalf("failed to create etcd backup cr: %v", err)
@@ -127,7 +127,7 @@ func killEtcdCluster(t *testing.T, etcdClusterName string) {
 // restoreEtcdCluster restores an etcd cluster with name "etcdClusterName" from a backup saved on "s3Path".
 func restoreEtcdCluster(t *testing.T, s3Path, etcdClusterName string) {
 	f := framework.Global
-	restoreSource := eopapi.RestoreSource{S3: eope2eutil.NewS3RestoreSource(s3Path, os.Getenv("TEST_AWS_SECRET"))}
+	restoreSource := eopapi.RestoreSource{S3: eope2eutil.NewS3RestoreSource(s3Path, os.Getenv(awsEnv))}
 	er := eope2eutil.NewEtcdRestore(etcdClusterName, 3, restoreSource, eopapi.BackupStorageTypeS3)
 	er, err := f.EtcdCRClient.EtcdV1beta2().EtcdRestores(f.Namespace).Create(er)
 	if err != nil {
@@ -186,9 +186,23 @@ func verifyRestoredVault(t *testing.T, vaultCR *api.VaultService, secretData map
 	e2eutil.VerifySecretData(t, vClient, secretData, keyPath, podName)
 }
 
+const (
+	// Env specifying S3 bucket name
+	s3Env = "TEST_S3_BUCKET"
+	// Env specifying aws credentials secret name
+	awsEnv = "TEST_AWS_SECRET"
+)
+
 func TestBackupRestoreOnVault(t *testing.T) {
+	if len(os.Getenv(s3Env)) == 0 {
+		t.Skipf("S3 bucket name env (%s) not set", s3Env)
+	}
+	if len(os.Getenv(awsEnv)) == 0 {
+		t.Skipf("AWS credentials secret name env (%s) not set", awsEnv)
+	}
+
 	f := framework.Global
-	s3Path := path.Join(os.Getenv("TEST_S3_BUCKET"), "jenkins", strconv.Itoa(int(rand.Uint64())), time.Now().Format(time.RFC3339), "etcd.backup")
+	s3Path := path.Join(os.Getenv(s3Env), "jenkins", strconv.Itoa(int(rand.Uint64())), time.Now().Format(time.RFC3339), "etcd.backup")
 
 	vaultCR, tlsConfig, rootToken := e2eutil.SetupUnsealedVaultCluster(t, f.KubeClient, f.VaultsCRClient, f.Namespace)
 	defer func(vaultCR *api.VaultService) {
