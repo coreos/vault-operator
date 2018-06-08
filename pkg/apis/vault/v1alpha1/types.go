@@ -73,6 +73,9 @@ type VaultServiceSpec struct {
 
 	// TLS policy of vault nodes
 	TLS *TLSPolicy `json:"TLS,omitempty"`
+
+	// service account
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 // PodPolicy defines the policy for pods owned by vault operator.
