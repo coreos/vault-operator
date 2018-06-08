@@ -74,7 +74,8 @@ type VaultServiceSpec struct {
 	// TLS policy of vault nodes
 	TLS *TLSPolicy `json:"TLS,omitempty"`
 
-	// service account
+	// Service Account
+	// Default: default
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
@@ -105,6 +106,10 @@ func (v *VaultService) SetDefaults() bool {
 			ServerSecret: DefaultVaultServerTLSSecretName(v.Name),
 			ClientSecret: DefaultVaultClientTLSSecretName(v.Name),
 		}}
+		changed = true
+	}
+	if len(vs.ServiceAccountName) == 0{
+		vs.ServiceAccountName = "default"
 		changed = true
 	}
 	return changed
