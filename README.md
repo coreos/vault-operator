@@ -133,17 +133,24 @@ For an overview of the default TLS configuration or how to specify custom TLS as
 
 ### Uninstalling Vault operator
 
-1. Delete the Vault custom resource:
+1. Delete the Vault Service:
 
     ```
     kubectl -n default delete -f example/example_vault.yaml
     ```
 
-2. Delete the operators and other resources:
+2. Delete the operators and rbac:
 
     ```
     kubectl -n default delete deploy vault-operator etcd-operator
     kubectl -n default delete -f example/rbac.yaml
+    ```
+
+2. Delete the CRDs:
+
+    ```
+    kubectl -n default delete -f example/vault_crd.yaml
+    kubectl -n default delete -f example/etcd_crds.yaml
     ```
 
 [vault]: https://www.vaultproject.io/
