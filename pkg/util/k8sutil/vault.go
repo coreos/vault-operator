@@ -242,6 +242,7 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 			Labels: selector,
 		},
 		Spec: v1.PodSpec{
+			ServiceAccountName: v.Spec.ServiceAccountName,
 			Containers: []v1.Container{vaultContainer(v), statsdExporterContainer()},
 			Volumes: []v1.Volume{{
 				Name: vaultConfigVolName,

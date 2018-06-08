@@ -73,6 +73,10 @@ type VaultServiceSpec struct {
 
 	// TLS policy of vault nodes
 	TLS *TLSPolicy `json:"TLS,omitempty"`
+
+	// Service Account
+	// Default: default
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 // PodPolicy defines the policy for pods owned by vault operator.
@@ -102,6 +106,10 @@ func (v *VaultService) SetDefaults() bool {
 			ServerSecret: DefaultVaultServerTLSSecretName(v.Name),
 			ClientSecret: DefaultVaultClientTLSSecretName(v.Name),
 		}}
+		changed = true
+	}
+	if len(vs.ServiceAccountName) == 0{
+		vs.ServiceAccountName = "default"
 		changed = true
 	}
 	return changed
