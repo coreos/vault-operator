@@ -131,7 +131,7 @@ The first node that is unsealed in a multi-node Vault cluster will become the ac
 2. Enable file audit backend and write audit log to standard output:
 
     ```sh
-    vault audit-enable file file_path=stdout
+    vault audit enable file file_path=stdout
     ```
 
    Then use docker/Kubernetes log collector to save logs and view later.
