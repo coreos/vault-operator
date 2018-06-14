@@ -4,4 +4,4 @@ metadata:
   name: "example"
 spec:
   nodes: 2
-  version: "0.9.1-0"
+  version: "0.10.2"

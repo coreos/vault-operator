@@ -146,9 +146,9 @@ func vaultContainer(v *api.VaultService) v1.Container {
 		Name:  "vault",
 		Image: fmt.Sprintf("%s:%s", v.Spec.BaseImage, v.Spec.Version),
 		Command: []string{
-			"/bin/vault",
-			"server",
-			"-config=" + VaultConfigPath,
+			"sh",
+			"-c",
+			"setcap cap_ipc_lock=+ep /bin/vault && apk --no-cache add curl && exec /bin/vault server -config=" + VaultConfigPath,
 		},
 		Env: []v1.EnvVar{
 			{
