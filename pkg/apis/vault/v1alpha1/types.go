@@ -20,9 +20,9 @@ import (
 )
 
 const (
-	defaultBaseImage = "quay.io/coreos/vault"
+	defaultBaseImage = "vault"
 	// version format is "<upstream-version>-<our-version>"
-	defaultVersion = "0.9.1-0"
+	defaultVersion = "0.10.2"
 )
 
 type ClusterPhase string
