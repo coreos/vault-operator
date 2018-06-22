@@ -53,7 +53,7 @@ const (
 
 	exporterStatsdPort = 9125
 	exporterPromPort   = 9102
-	exporterImage      = "prom/statsd-exporter:v0.5.0"
+	exporterImage      = "prom/statsd-exporter:v0.6.0"
 )
 
 // EtcdClientTLSSecretName returns the name of etcd client TLS secret for the given vault name
