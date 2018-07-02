@@ -33,6 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 var (
@@ -75,34 +76,78 @@ func EtcdPeerTLSSecretName(vaultName string) string {
 // waits for all of its members to be ready.
 func DeployEtcdCluster(etcdCRCli etcdCRClient.Interface, v *api.VaultService) error {
 	size := 3
-	etcdCluster := &etcdCRAPI.EtcdCluster{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       etcdCRAPI.EtcdClusterResourceKind,
-			APIVersion: etcdCRAPI.SchemeGroupVersion.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      EtcdNameForVault(v.Name),
-			Namespace: v.Namespace,
-			Labels:    LabelsForVault(v.Name),
-		},
-		Spec: etcdCRAPI.ClusterSpec{
-			Size: size,
-			TLS: &etcdCRAPI.TLSPolicy{
-				Static: &etcdCRAPI.StaticTLS{
-					Member: &etcdCRAPI.MemberSecret{
-						PeerSecret:   EtcdPeerTLSSecretName(v.Name),
-						ServerSecret: EtcdServerTLSSecretName(v.Name),
+	pvcSize := v.Spec.ETCDPVC
+	etcdCluster := &etcdCRAPI.EtcdCluster{}
+
+	if len(pvcSize) > 0 { // If length of pvc size is > 0, deploy ETCD Cluster with PVCs
+		etcdCluster = &etcdCRAPI.EtcdCluster{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       etcdCRAPI.EtcdClusterResourceKind,
+				APIVersion: etcdCRAPI.SchemeGroupVersion.String(),
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      EtcdNameForVault(v.Name),
+				Namespace: v.Namespace,
+				Labels:    LabelsForVault(v.Name),
+			},
+			Spec: etcdCRAPI.ClusterSpec{
+				Size: size,
+				TLS: &etcdCRAPI.TLSPolicy{
+					Static: &etcdCRAPI.StaticTLS{
+						Member: &etcdCRAPI.MemberSecret{
+							PeerSecret:   EtcdPeerTLSSecretName(v.Name),
+							ServerSecret: EtcdServerTLSSecretName(v.Name),
+						},
+						OperatorSecret: EtcdClientTLSSecretName(v.Name),
 					},
-					OperatorSecret: EtcdClientTLSSecretName(v.Name),
+				},
+				Pod: &etcdCRAPI.PodPolicy{
+					EtcdEnv: []v1.EnvVar{{
+						Name:  "ETCD_AUTO_COMPACTION_RETENTION",
+						Value: "1",
+					}},
+					PersistentVolumeClaimSpec: &v1.PersistentVolumeClaimSpec{
+						AccessModes: []v1.PersistentVolumeAccessMode{"ReadWriteOnce"},
+						Resources: struct {
+							Limits   v1.ResourceList
+							Requests v1.ResourceList
+						}{Limits: nil, Requests: map[v1.ResourceName]resource.Quantity{
+							"storage": {nil, nil, pvcSize, resource.DecimalSI,},
+						}},
+					},
 				},
 			},
-			Pod: &etcdCRAPI.PodPolicy{
-				EtcdEnv: []v1.EnvVar{{
-					Name:  "ETCD_AUTO_COMPACTION_RETENTION",
-					Value: "1",
-				}},
+		}
+	} else { // Otherwise, if pvc size is not > 0, don't PVC back the ETCD Cluster
+		etcdCluster = &etcdCRAPI.EtcdCluster{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       etcdCRAPI.EtcdClusterResourceKind,
+				APIVersion: etcdCRAPI.SchemeGroupVersion.String(),
 			},
-		},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      EtcdNameForVault(v.Name),
+				Namespace: v.Namespace,
+				Labels:    LabelsForVault(v.Name),
+			},
+			Spec: etcdCRAPI.ClusterSpec{
+				Size: size,
+				TLS: &etcdCRAPI.TLSPolicy{
+					Static: &etcdCRAPI.StaticTLS{
+						Member: &etcdCRAPI.MemberSecret{
+							PeerSecret:   EtcdPeerTLSSecretName(v.Name),
+							ServerSecret: EtcdServerTLSSecretName(v.Name),
+						},
+						OperatorSecret: EtcdClientTLSSecretName(v.Name),
+					},
+				},
+				Pod: &etcdCRAPI.PodPolicy{
+					EtcdEnv: []v1.EnvVar{{
+						Name:  "ETCD_AUTO_COMPACTION_RETENTION",
+						Value: "1",
+					}},
+				},
+			},
+		}
 	}
 	if v.Spec.Pod != nil {
 		etcdCluster.Spec.Pod.Resources = v.Spec.Pod.Resources
