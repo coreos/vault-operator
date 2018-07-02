@@ -118,7 +118,7 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.Interface, v *api.VaultService) er
 				},
 			},
 		}
-	} else { // Otherwise, if pvc size is not > 0, don't PVC back the ETCD Cluster
+	} else { // Otherwise, deploy default etcd cluster with no PVCs (ephemeral)
 		etcdCluster = &etcdCRAPI.EtcdCluster{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       etcdCRAPI.EtcdClusterResourceKind,
