@@ -33,7 +33,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 var (
@@ -76,11 +75,10 @@ func EtcdPeerTLSSecretName(vaultName string) string {
 // waits for all of its members to be ready.
 func DeployEtcdCluster(etcdCRCli etcdCRClient.Interface, v *api.VaultService) error {
 	size := 3
-	pvcSize := v.Spec.ETCDPVC
 	etcdCluster := &etcdCRAPI.EtcdCluster{}
 
-	if len(pvcSize) > 0 { // If length of pvc size is > 0, deploy ETCD Cluster with PVCs
-		etcdCluster = &etcdCRAPI.EtcdCluster{
+	if v.Spec.PersistentVolumeClaimSpec != nil { // If a PersistentVolumeClaimSpec is made in the vault manifest
+		etcdCluster = &etcdCRAPI.EtcdCluster{ // Deploy the etcd Cluster with the PVC spec
 			TypeMeta: metav1.TypeMeta{
 				Kind:       etcdCRAPI.EtcdClusterResourceKind,
 				APIVersion: etcdCRAPI.SchemeGroupVersion.String(),
@@ -106,15 +104,7 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.Interface, v *api.VaultService) er
 						Name:  "ETCD_AUTO_COMPACTION_RETENTION",
 						Value: "1",
 					}},
-					PersistentVolumeClaimSpec: &v1.PersistentVolumeClaimSpec{
-						AccessModes: []v1.PersistentVolumeAccessMode{"ReadWriteOnce"},
-						Resources: struct {
-							Limits   v1.ResourceList
-							Requests v1.ResourceList
-						}{Limits: nil, Requests: map[v1.ResourceName]resource.Quantity{
-							"storage": {nil, nil, pvcSize, resource.DecimalSI,},
-						}},
-					},
+					PersistentVolumeClaimSpec: v.Spec.PersistentVolumeClaimSpec,
 				},
 			},
 		}

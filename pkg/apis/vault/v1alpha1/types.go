@@ -74,8 +74,8 @@ type VaultServiceSpec struct {
 	// TLS policy of vault nodes
 	TLS *TLSPolicy `json:"TLS,omitempty"`
 
-	// ETCD PVC
-	ETCDPVC string `json:"etcdPVC,omitempty"`
+	// PersistentVolumeClaimSpec for the ETCD Cluster
+	PersistentVolumeClaimSpec *v1.PersistentVolumeClaimSpec `json:"PersistentVolumeClaimSpec,omitempty"`
 }
 
 // PodPolicy defines the policy for pods owned by vault operator.
