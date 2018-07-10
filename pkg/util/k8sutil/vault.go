@@ -186,7 +186,7 @@ func vaultContainer(v *api.VaultService) v1.Container {
 						"--connect-timeout", "5",
 						"--max-time", "10",
 						"-k", "-s",
-						fmt.Sprintf("https://localhost:%d/v1/sys/health", VaultClientPort),
+						fmt.Sprintf("https://localhost:%d/v1/sys/health?standbyok=true", VaultClientPort),
 					},
 				},
 			},
@@ -198,7 +198,7 @@ func vaultContainer(v *api.VaultService) v1.Container {
 		ReadinessProbe: &v1.Probe{
 			Handler: v1.Handler{
 				HTTPGet: &v1.HTTPGetAction{
-					Path:   "/v1/sys/health",
+					Path:   "/v1/sys/health?standbyok=true",
 					Port:   intstr.FromInt(VaultClientPort),
 					Scheme: v1.URISchemeHTTPS,
 				},
