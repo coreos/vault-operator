@@ -127,7 +127,7 @@ See the [Vault usage guide](./doc/user/vault.md) on how to initialize, unseal, a
 
 Consult the [monitoring guide](./doc/user/monitoring.md) on how to monitor and alert on a Vault cluster with Prometheus.
 
-See the [recovery guide](./doc/user/recovery.md) on how to backup and restore Vault cluster data using the etcd opeartor
+See the [recovery guide](./doc/user/recovery.md) on how to backup and restore Vault cluster data using the etcd operator.
 
 For an overview of the default TLS configuration or how to specify custom TLS assets for a Vault cluster see the [TLS setup guide](doc/user/tls_setup.md).
 
