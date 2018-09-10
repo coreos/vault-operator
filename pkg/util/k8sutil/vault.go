@@ -104,6 +104,12 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.Interface, v *api.VaultService) er
 			},
 		},
 	}
+	
+	// Allow custom etcd image to be used in cases where default quay.io/coreos/etcd is not usable.
+	if v.Spec.EtcdRepository != nil {
+		etcdCluster.Spec.Repository = v.Spec.EtcdRepository	
+	}
+	
 	if v.Spec.Pod != nil {
 		etcdCluster.Spec.Pod.Resources = v.Spec.Pod.Resources
 	}

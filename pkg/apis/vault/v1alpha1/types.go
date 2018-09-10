@@ -57,6 +57,9 @@ type VaultServiceSpec struct {
 
 	// Base image to use for a Vault deployment.
 	BaseImage string `json:"baseImage"`
+	
+	// custom etcd image to use instead of 'quay.io/coreos/etcd'
+	EtcdRepository string `json: "etcdRepository"`
 
 	// Version of Vault to be deployed.
 	Version string `json:"version"`
