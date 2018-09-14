@@ -95,6 +95,16 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, vr *api.VaultSer
 			continue
 		}
 
+		// Make a note of any updated pod, even if it's not healthy.
+		// This ensures that `Vaults.syncUpgrade()` doesn't lose track of
+		// unhealthy, but already updated nodes.  (Otherwise, an already
+		// updated, active, but unhealthy node could mistakenly be killed to
+		// "complete" an update.)
+		// This alone does not indicate the pods have "changed".
+		if k8sutil.IsVaultVersionMatch(p.Spec, vr.Spec) {
+			updated = append(updated, p.GetName())
+		}
+
 		vapi, err := vaultutil.NewClient(k8sutil.PodDNSName(p), "8200", tlsConfig)
 		if err != nil {
 			logrus.Errorf("failed to update vault replica status: failed creating client for the vault pod (%s/%s): %v", namespace, p.GetName(), err)
@@ -108,10 +118,6 @@ func (vs *Vaults) updateLocalVaultCRStatus(ctx context.Context, vr *api.VaultSer
 		}
 
 		changed = true
-
-		if k8sutil.IsVaultVersionMatch(p.Spec, vr.Spec) {
-			updated = append(updated, p.GetName())
-		}
 
 		// TODO: add to vaultutil?
 		if hr.Initialized && !hr.Sealed && !hr.Standby {
