@@ -242,8 +242,9 @@ func (v *Vaults) syncUpgrade(vr *api.VaultService, d *appsv1beta1.Deployment) (e
 	// If there is one active node belonging to the old version, and all other nodes are
 	// standby and uptodate, then trigger step-down on active node.
 	// It maps to the following conditions on Status:
-	// 1. check standby == updated
-	// 2. check Available - Updated == Active
+	// 1. check there is an active node (deployment will update non-active nodes)
+	// 2. check standby == updated (ensure new active node will be updated)
+	// 3. ensure there are no sealed nodes (don't seal because of update)
 	readyToTriggerStepdown := func() bool {
 		if len(vr.Status.VaultStatus.Active) == 0 {
 			return false
@@ -253,14 +254,14 @@ func (v *Vaults) syncUpgrade(vr *api.VaultService, d *appsv1beta1.Deployment) (e
 			return false
 		}
 
-		ava := append(vr.Status.VaultStatus.Standby, vr.Status.VaultStatus.Sealed...)
-		if !reflect.DeepEqual(ava, vr.Status.UpdatedNodes) {
+		if len(vr.Status.VaultStatus.Sealed) != 0 {
 			return false
 		}
 		return true
 	}()
 
 	if readyToTriggerStepdown {
+		logrus.Infof("Deleting active Vault pod (%s) to complete upgrade", vr.Status.VaultStatus.Active)
 		// This will send SIGTERM to the active Vault pod. It should release HA lock and exit properly.
 		// If it failed for some reason, kubelet will send SIGKILL after default grace period (30s) eventually.
 		// It take longer but the the lock will get released eventually on failure case.
