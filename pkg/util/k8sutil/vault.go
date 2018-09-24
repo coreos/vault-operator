@@ -39,10 +39,13 @@ var (
 	// VaultConfigPath is the path that vault pod uses to read config from
 	VaultConfigPath = "/run/vault/config/vault.hcl"
 
-	vaultTLSAssetVolume  = "vault-tls-secret"
-	vaultConfigVolName   = "vault-config"
-	envVaultRedirectAddr = "VAULT_API_ADDR"
-	envVaultClusterAddr  = "VAULT_CLUSTER_ADDR"
+	vaultTLSAssetVolume       = "vault-tls-secret"
+	vaultClientTLSAssetVolume = "vault-client-tls-secret"
+	vaultConfigVolName        = "vault-config"
+	envVaultAddr              = "VAULT_ADDR"
+	envVaultRedirectAddr      = "VAULT_API_ADDR"
+	envVaultClusterAddr       = "VAULT_CLUSTER_ADDR"
+	envVaultCacert            = "VAULT_CACERT"
 )
 
 const (
@@ -51,9 +54,12 @@ const (
 	vaultClientPortName  = "vault-client"
 	vaultClusterPortName = "vault-cluster"
 
-	exporterStatsdPort = 9125
-	exporterPromPort   = 9102
-	exporterImage      = "prom/statsd-exporter:v0.5.0"
+	statsdExporterStatsdPort = 9125
+	statsdExporterPromPort   = 9102
+	statsdExporterImage      = "prom/statsd-exporter:v0.5.0"
+
+	vaultExporterPromPort = 9410
+	vaultExporterImage    = "grapeshot/vault_exporter:v0.1.1"
 )
 
 // EtcdClientTLSSecretName returns the name of etcd client TLS secret for the given vault name
@@ -214,14 +220,41 @@ func vaultContainer(v *api.VaultService) v1.Container {
 func statsdExporterContainer() v1.Container {
 	return v1.Container{
 		Name:  "statsd-exporter",
-		Image: exporterImage,
+		Image: statsdExporterImage,
 		Ports: []v1.ContainerPort{{
 			Name:          "statsd",
-			ContainerPort: exporterStatsdPort,
+			ContainerPort: statsdExporterStatsdPort,
 			Protocol:      "UDP",
 		}, {
 			Name:          "prometheus",
-			ContainerPort: exporterPromPort,
+			ContainerPort: statsdExporterPromPort,
+			Protocol:      "TCP",
+		}},
+	}
+}
+
+func vaultExporterContainer() v1.Container {
+	return v1.Container{
+		Name:  "vault-exporter",
+		Image: vaultExporterImage,
+		Env: []v1.EnvVar{
+			{
+				Name:  envVaultAddr,
+				Value: fmt.Sprintf("https://localhost:%d", VaultClientPort),
+			},
+			{
+				Name:  envVaultCacert,
+				Value: filepath.Join(vaultutil.VaultTLSAssetDir, api.CATLSCertName),
+			},
+		},
+		VolumeMounts: []v1.VolumeMount{{
+			Name:      vaultClientTLSAssetVolume,
+			ReadOnly:  true,
+			MountPath: vaultutil.VaultTLSAssetDir,
+		}},
+		Ports: []v1.ContainerPort{{
+			Name:          "status",
+			ContainerPort: vaultExporterPromPort,
 			Protocol:      "TCP",
 		}},
 	}
@@ -242,7 +275,7 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 			Labels: selector,
 		},
 		Spec: v1.PodSpec{
-			Containers: []v1.Container{vaultContainer(v), statsdExporterContainer()},
+			Containers: []v1.Container{vaultContainer(v), statsdExporterContainer(), vaultExporterContainer()},
 			Volumes: []v1.Volume{{
 				Name: vaultConfigVolName,
 				VolumeSource: v1.VolumeSource{
@@ -261,6 +294,7 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 
 	configEtcdBackendTLS(&podTempl, v)
 	configVaultServerTLS(&podTempl, v)
+	configVaultClientTLS(&podTempl, v)
 
 	d := &appsv1beta1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -307,7 +341,12 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 				{
 					Name:     "prometheus",
 					Protocol: v1.ProtocolTCP,
-					Port:     exporterPromPort,
+					Port:     statsdExporterPromPort,
+				},
+				{
+					Name:     "status",
+					Protocol: v1.ProtocolTCP,
+					Port:     vaultExporterPromPort,
 				},
 			},
 		},
@@ -480,4 +519,16 @@ func configVaultServerTLS(pt *v1.PodTemplateSpec, v *api.VaultService) {
 		},
 	}
 	pt.Spec.Volumes[1].VolumeSource.Projected.Sources = append(pt.Spec.Volumes[1].VolumeSource.Projected.Sources, serverTLSVolume)
+}
+
+// configVaultClientTLS mounts the volume containing the vault client TLS assets for the vault-exporter pod
+func configVaultClientTLS(pt *v1.PodTemplateSpec, v *api.VaultService) {
+	pt.Spec.Volumes = append(pt.Spec.Volumes, v1.Volume{
+		Name: vaultClientTLSAssetVolume,
+		VolumeSource: v1.VolumeSource{
+			Secret: &v1.SecretVolumeSource{
+				SecretName: v.Spec.TLS.Static.ClientSecret,
+			},
+		},
+	})
 }
