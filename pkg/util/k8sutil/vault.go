@@ -41,8 +41,8 @@ var (
 
 	vaultTLSAssetVolume  = "vault-tls-secret"
 	vaultConfigVolName   = "vault-config"
-	evnVaultRedirectAddr = "VAULT_API_ADDR"
-	evnVaultClusterAddr  = "VAULT_CLUSTER_ADDR"
+	envVaultRedirectAddr = "VAULT_API_ADDR"
+	envVaultClusterAddr  = "VAULT_CLUSTER_ADDR"
 )
 
 const (
@@ -152,11 +152,11 @@ func vaultContainer(v *api.VaultService) v1.Container {
 		},
 		Env: []v1.EnvVar{
 			{
-				Name:  evnVaultRedirectAddr,
+				Name:  envVaultRedirectAddr,
 				Value: VaultServiceURL(v.GetName(), v.GetNamespace(), VaultClientPort),
 			},
 			{
-				Name:  evnVaultClusterAddr,
+				Name:  envVaultClusterAddr,
 				Value: VaultServiceURL(v.GetName(), v.GetNamespace(), vaultClusterPort),
 			},
 		},
