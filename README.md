@@ -11,12 +11,9 @@ The Vault operator deploys and manages [Vault][vault] clusters on Kubernetes. Va
 
 ### Prerequisites
 
-- Kubernetes 1.8+
-
-### Configuring RBAC
-
-Consult the [RBAC guide](./doc/user/rbac.md) on how to configure RBAC for the Vault operator.
-
+- Kubernetes 1.8+ (openshift > 3.7)
+- RBAC that allows your default service account in the namespace you are running to get endpoints from the kube api.
+  Consult the [RBAC guide](./doc/user/rbac.md) on how to configure RBAC for the Vault operator.
 
 ### Deploying the etcd operator
 
