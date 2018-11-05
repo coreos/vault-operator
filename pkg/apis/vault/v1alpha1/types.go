@@ -79,6 +79,14 @@ type VaultServiceSpec struct {
 type PodPolicy struct {
 	// Resources is the resource requirements for the containers.
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
+
+	// NodeSelector specifies a map of key-value pairs. For the pod to be eligible
+	// to run on a node, the node must have each of the indicated key-value pairs as
+	// labels.
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// Tolerations specifies the pod's tolerations.
+	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 }
 
 // SetDefaults sets the default vaules for the vault spec and returns true if the spec was changed

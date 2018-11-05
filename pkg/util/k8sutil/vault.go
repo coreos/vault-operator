@@ -104,9 +104,11 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.Interface, v *api.VaultService) er
 			},
 		},
 	}
+
 	if v.Spec.Pod != nil {
-		etcdCluster.Spec.Pod.Resources = v.Spec.Pod.Resources
+		applyPodPolicyForEtcdCluster(v.Spec.Pod, &etcdCluster.Spec)
 	}
+
 	AddOwnerRefToObject(etcdCluster, AsOwner(v))
 	_, err := etcdCRCli.EtcdV1beta2().EtcdClusters(v.Namespace).Create(etcdCluster)
 	if err != nil {
@@ -130,6 +132,12 @@ func DeployEtcdCluster(etcdCRCli etcdCRClient.Interface, v *api.VaultService) er
 		return fmt.Errorf("deploy etcd cluster failed: %v", err)
 	}
 	return nil
+}
+
+func applyPodPolicyForEtcdCluster(policy *api.PodPolicy, clusterSpec *etcdCRAPI.ClusterSpec) {
+	clusterSpec.Pod.Resources = policy.Resources
+	clusterSpec.Pod.NodeSelector = policy.NodeSelector
+	clusterSpec.Pod.Tolerations = policy.Tolerations
 }
 
 // DeleteEtcdCluster deletes the etcd cluster for the given vault
@@ -255,6 +263,7 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 			}},
 		},
 	}
+
 	if v.Spec.Pod != nil {
 		applyPodPolicy(&podTempl.Spec, v.Spec.Pod)
 	}
@@ -335,6 +344,9 @@ func UpgradeDeployment(kubecli kubernetes.Interface, vr *api.VaultService, d *ap
 }
 
 func applyPodPolicy(s *v1.PodSpec, p *api.PodPolicy) {
+	s.NodeSelector = p.NodeSelector
+	s.Tolerations = p.Tolerations
+
 	for i := range s.Containers {
 		s.Containers[i].Resources = p.Resources
 	}
