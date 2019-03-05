@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: vault-operator
-        image: quay.io/coreos/vault-operator:latest
+        image: 239226036377.dkr.ecr.us-east-1.amazonaws.com/vault-operator:latest
         env:
         - name: MY_POD_NAMESPACE
           valueFrom:
