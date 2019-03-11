@@ -66,14 +66,11 @@ func (v *Vaults) run(ctx context.Context) {
 
 func (v *Vaults) onAddVault(obj interface{}) {
 	key, err := cache.MetaNamespaceKeyFunc(obj)
-	annotations := api.GetAnnotations()
 	if err != nil {
 		panic(err)
 	}
 	v.queue.Add(key)
-	logrus.Infof("Vault CR (%s) is created", annotations)
-	//annotations := api.GetAnnotations()
-	//logrus.Infof("Annotations: %s", annotations)
+	logrus.Infof("Vault CR (%s) is created", key)
 }
 
 func (v *Vaults) onUpdateVault(oldObj, newObj interface{}) {

@@ -22,7 +22,6 @@ import (
 
 	api "github.com/coreos/vault-operator/pkg/apis/vault/v1alpha1"
 	"github.com/coreos/vault-operator/pkg/util/vaultutil"
-	"github.com/golang/glog"
 
 	etcdCRAPI "github.com/coreos/etcd-operator/pkg/apis/etcd/v1beta2"
 	etcdCRClient "github.com/coreos/etcd-operator/pkg/generated/clientset/versioned"
@@ -236,15 +235,12 @@ func statsdExporterContainer() v1.Container {
 // it and return no error. It is safe to retry on this function.
 func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 	selector := LabelsForVault(v.GetName())
-	annotations := v.GetAnnotations()
-	glog.Warnf(annotations)
-	fmt.Printf(annotations)
 
 	podTempl := v1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   v.GetName(),
 			Labels: selector,
-			// Annotations: v.GetAnnotations()
+			Annotations: v.GetAnnotations(),
 		},
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{vaultContainer(v), statsdExporterContainer()},

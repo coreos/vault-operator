@@ -52,28 +52,6 @@
   version = "v1.12.63"
 
 [[projects]]
-  digest = "1:6811ad355c0a0a602c8ae0bef0d999bdcbeedf05604ba7db382722182139f2fc"
-  name = "github.com/coreos-inc/vault-operator"
-  packages = [
-    "pkg/apis/vault/v1alpha1",
-    "pkg/client",
-    "pkg/generated/clientset/versioned",
-    "pkg/generated/clientset/versioned/scheme",
-    "pkg/generated/clientset/versioned/typed/vault/v1alpha1",
-    "pkg/generated/informers/externalversions/internalinterfaces",
-    "pkg/generated/informers/externalversions/vault/v1alpha1",
-    "pkg/generated/listers/vault/v1alpha1",
-    "pkg/util/k8sutil",
-    "pkg/util/probe",
-    "pkg/util/tlsutil",
-    "pkg/util/vaultutil",
-    "test/e2e/e2eutil",
-  ]
-  pruneopts = ""
-  revision = "43a1dd73183fd9d40b40e6f1e58b465c784d11a5"
-  version = "0.1.9"
-
-[[projects]]
   digest = "1:0af98a9f37993282a01fbb948a53bcf96053151ba61f9f00b762467099d83727"
   name = "github.com/coreos/etcd"
   packages = [
@@ -109,34 +87,6 @@
   pruneopts = ""
   revision = "85c37511b1293a530ab98c0118e117a30ad0fe26"
   version = "v0.8.3"
-
-[[projects]]
-  digest = "1:6811ad355c0a0a602c8ae0bef0d999bdcbeedf05604ba7db382722182139f2fc"
-  name = "github.com/coreos/vault-operator"
-  packages = [
-    "pkg/apis/vault/v1alpha1",
-    "pkg/client",
-    "pkg/generated/clientset/versioned",
-    "pkg/generated/clientset/versioned/scheme",
-    "pkg/generated/clientset/versioned/typed/vault/v1alpha1",
-    "pkg/generated/clientset/versioned/typed/vault/v1alpha1/fake",
-    "pkg/generated/informers/externalversions/internalinterfaces",
-    "pkg/generated/informers/externalversions/vault",
-    "pkg/generated/informers/externalversions/vault/v1alpha1",
-    "pkg/generated/listers/vault/v1alpha1",
-    "pkg/operator",
-    "pkg/util/k8sutil",
-    "pkg/util/probe",
-    "pkg/util/tlsutil",
-    "pkg/util/vaultutil",
-    "test/e2e/e2eutil",
-    "test/e2e/framework",
-    "test/e2e/upgradetest/framework",
-    "version",
-  ]
-  pruneopts = ""
-  revision = "43a1dd73183fd9d40b40e6f1e58b465c784d11a5"
-  version = "0.1.9"
 
 [[projects]]
   digest = "1:56c130d885a4aacae1dd9c7b71cfe39912c7ebc1ff7d2b46083c8812996dc43b"
@@ -833,25 +783,6 @@
     "github.com/coreos/etcd-operator/pkg/util/probe",
     "github.com/coreos/etcd-operator/pkg/util/retryutil",
     "github.com/coreos/etcd-operator/test/e2e/e2eutil",
-    "github.com/coreos/vault-operator/pkg/apis/vault/v1alpha1",
-    "github.com/coreos/vault-operator/pkg/client",
-    "github.com/coreos/vault-operator/pkg/generated/clientset/versioned",
-    "github.com/coreos/vault-operator/pkg/generated/clientset/versioned/scheme",
-    "github.com/coreos/vault-operator/pkg/generated/clientset/versioned/typed/vault/v1alpha1",
-    "github.com/coreos/vault-operator/pkg/generated/clientset/versioned/typed/vault/v1alpha1/fake",
-    "github.com/coreos/vault-operator/pkg/generated/informers/externalversions/internalinterfaces",
-    "github.com/coreos/vault-operator/pkg/generated/informers/externalversions/vault",
-    "github.com/coreos/vault-operator/pkg/generated/informers/externalversions/vault/v1alpha1",
-    "github.com/coreos/vault-operator/pkg/generated/listers/vault/v1alpha1",
-    "github.com/coreos/vault-operator/pkg/operator",
-    "github.com/coreos/vault-operator/pkg/util/k8sutil",
-    "github.com/coreos/vault-operator/pkg/util/probe",
-    "github.com/coreos/vault-operator/pkg/util/tlsutil",
-    "github.com/coreos/vault-operator/pkg/util/vaultutil",
-    "github.com/coreos/vault-operator/test/e2e/e2eutil",
-    "github.com/coreos/vault-operator/test/e2e/framework",
-    "github.com/coreos/vault-operator/test/e2e/upgradetest/framework",
-    "github.com/coreos/vault-operator/version",
     "github.com/golang/glog",
     "github.com/hashicorp/vault/api",
     "github.com/sirupsen/logrus",
