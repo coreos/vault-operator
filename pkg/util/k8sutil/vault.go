@@ -240,6 +240,7 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   v.GetName(),
 			Labels: selector,
+			Annotations: v.GetAnnotations(),
 		},
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{vaultContainer(v), statsdExporterContainer()},
