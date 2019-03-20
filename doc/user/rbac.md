@@ -12,7 +12,7 @@ This example binds a Role to the `default` service account in the `default` name
 
 **Note:** For production usage you should create a specific service account to bind the Role to.
 
-1. Generate the RBAC manifest from the template given in the repository by setting the namesapce and service account:
+1. Generate the RBAC manifest from the template given in the repository by setting the namespace and service account:
 
     ```sh
     $ sed -e 's/<namespace>/default/g' \
