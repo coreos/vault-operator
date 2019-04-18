@@ -43,6 +43,7 @@ var (
 	vaultConfigVolName   = "vault-config"
 	evnVaultRedirectAddr = "VAULT_API_ADDR"
 	evnVaultClusterAddr  = "VAULT_CLUSTER_ADDR"
+	evnAnnotationHash 	 = "CONFIG_MAP_HASH"
 )
 
 const (
@@ -142,6 +143,9 @@ func DeleteEtcdCluster(etcdCRCli etcdCRClient.Interface, v *api.VaultService) er
 }
 
 func vaultContainer(v *api.VaultService) v1.Container {
+	annotations := v.GetAnnotations()
+	configMapHash := annotations["hash"]
+
 	return v1.Container{
 		Name:  "vault",
 		Image: fmt.Sprintf("%s:%s", v.Spec.BaseImage, v.Spec.Version),
@@ -158,6 +162,10 @@ func vaultContainer(v *api.VaultService) v1.Container {
 			{
 				Name:  evnVaultClusterAddr,
 				Value: VaultServiceURL(v.GetName(), v.GetNamespace(), vaultClusterPort),
+			},
+			{
+				Name:  evnAnnotationHash,
+				Value: configMapHash,
 			},
 		},
 		VolumeMounts: []v1.VolumeMount{{
