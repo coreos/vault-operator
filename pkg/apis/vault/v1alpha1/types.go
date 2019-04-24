@@ -23,6 +23,7 @@ const (
 	defaultBaseImage = "quay.io/coreos/vault"
 	// version format is "<upstream-version>-<our-version>"
 	defaultVersion = "0.9.1-0"
+	defaultConfigMapHash = "QC4hpsVMtN/vk+w2Htu6+eyxslwD0QITxA5SNGW6CrPb8gtLwRGEsJ0wBl9F4Gg0x569GV"
 )
 
 type ClusterPhase string
@@ -61,6 +62,9 @@ type VaultServiceSpec struct {
 	// Version of Vault to be deployed.
 	Version string `json:"version"`
 
+	// configMapHash of Vault configmap.
+	ConfigMapHash string `json:"configMapHash"`
+
 	// Pod defines the policy for pods owned by vault operator.
 	// This field cannot be updated once the CR is created.
 	Pod *PodPolicy `json:"pod,omitempty"`
@@ -95,6 +99,10 @@ func (v *VaultService) SetDefaults() bool {
 	}
 	if len(vs.Version) == 0 {
 		vs.Version = defaultVersion
+		changed = true
+	}
+	if len(vs.ConfigMapHash) == 0 {
+		vs.ConfigMapHash = defaultConfigMapHash
 		changed = true
 	}
 	if vs.TLS == nil {

@@ -43,6 +43,7 @@ var (
 	vaultConfigVolName   = "vault-config"
 	evnVaultRedirectAddr = "VAULT_API_ADDR"
 	evnVaultClusterAddr  = "VAULT_CLUSTER_ADDR"
+	evnAnnotationHash 	 = "CONFIG_MAP_HASH"
 )
 
 const (
@@ -146,9 +147,9 @@ func vaultContainer(v *api.VaultService) v1.Container {
 		Name:  "vault",
 		Image: fmt.Sprintf("%s:%s", v.Spec.BaseImage, v.Spec.Version),
 		Command: []string{
-			"/bin/vault",
-			"server",
-			"-config=" + VaultConfigPath,
+			"sh",
+			"-c",
+			"apk --no-cache add curl && setcap cap_ipc_lock=+ep $(readlink -f $(which vault)) && exec /bin/vault server -config=" + VaultConfigPath,
 		},
 		Env: []v1.EnvVar{
 			{
@@ -158,6 +159,10 @@ func vaultContainer(v *api.VaultService) v1.Container {
 			{
 				Name:  evnVaultClusterAddr,
 				Value: VaultServiceURL(v.GetName(), v.GetNamespace(), vaultClusterPort),
+			},
+			{
+				Name:  evnAnnotationHash,
+				Value: v.Spec.ConfigMapHash,
 			},
 		},
 		VolumeMounts: []v1.VolumeMount{{
@@ -240,6 +245,7 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   v.GetName(),
 			Labels: selector,
+			Annotations: v.GetAnnotations(),
 		},
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{vaultContainer(v), statsdExporterContainer()},
