@@ -143,9 +143,6 @@ func DeleteEtcdCluster(etcdCRCli etcdCRClient.Interface, v *api.VaultService) er
 }
 
 func vaultContainer(v *api.VaultService) v1.Container {
-	annotations := v.GetAnnotations()
-	configMapHash := annotations["hash"]
-
 	return v1.Container{
 		Name:  "vault",
 		Image: fmt.Sprintf("%s:%s", v.Spec.BaseImage, v.Spec.Version),
@@ -165,7 +162,7 @@ func vaultContainer(v *api.VaultService) v1.Container {
 			},
 			{
 				Name:  evnAnnotationHash,
-				Value: configMapHash,
+				Value: v.Spec.ConfigMapHash,
 			},
 		},
 		VolumeMounts: []v1.VolumeMount{{
