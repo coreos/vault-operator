@@ -10,4 +10,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: vault-tokenreview
-  namespace: vault-services
+  namespace: default
