@@ -1,14 +1,19 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: vault-operator
+  namespace: vault
 spec:
+  selector:
+    matchLabels:
+      name: vault-operator
   replicas: 1
   template:
     metadata:
       labels:
         name: vault-operator
     spec:
+      serviceAccountName: vault
       containers:
       - name: vault-operator
         image: quay.io/coreos/vault-operator:latest
