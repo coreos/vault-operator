@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: vault-operator
+  namespace: vault
 spec:
   selector:
     matchLabels:
