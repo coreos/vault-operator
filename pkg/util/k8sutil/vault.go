@@ -28,7 +28,7 @@ import (
 	"github.com/coreos/etcd-operator/pkg/util/retryutil"
 	vaultapi "github.com/hashicorp/vault/api"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -283,7 +283,17 @@ func DeployVault(kubecli kubernetes.Interface, v *api.VaultService) error {
 	AddOwnerRefToObject(d, AsOwner(v))
 	_, err := kubecli.AppsV1beta1().Deployments(v.Namespace).Create(d)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
-		return err
+		// after 1.15, the deployment moves to v1 per https://v1-16.docs.kubernetes.io/zh/docs/concepts/workloads/controllers/deployment/
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+
+		// then try fail back on different versioning namespace
+		_, err = kubecli.AppsV1().Deployments(v.Namespace).Create(d)
+
+		if err != nil && !apierrors.IsAlreadyExists(err) {
+			return err
+		}
 	}
 
 	svc := &v1.Service{
